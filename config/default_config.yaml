@@ -1,0 +1,30 @@
+# Vector store settings
+vector_store:
+  persist_directory: "./chromadb"
+  embedding_model: "text-embedding-3-large"
+  embedding_dimensions: 3072
+
+# Content processing
+content:
+  chunk_size: 500
+  chunk_overlap: 100
+  ui_patterns:
+    - "Theme\\s+Auto\\s+Light\\s+Dark"
+    - "Previous\\s+topic|Next\\s+topic"
+    - "Navigation"
+    - "Jump\\s+to"
+    - "Search"
+    - "Skip\\s+to\\s+content"
+
+# Search settings
+search:
+  default_limit: 5
+  default_score_threshold: 0.2
+
+# Selenium settings
+selenium:
+  wait_time: 2
+  options:
+    - "--headless"
+    - "--no-sandbox"
+    - "--disable-dev-shm-usage"
