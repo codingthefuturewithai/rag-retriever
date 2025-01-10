@@ -48,8 +48,8 @@ class Searcher:
             List of SearchResult objects.
         """
         # Use defaults from config if not specified
-        limit = limit or self.default_limit
-        score_threshold = score_threshold or self.default_score_threshold
+        limit = self.default_limit if limit is None else limit
+        score_threshold = self.default_score_threshold if score_threshold is None else score_threshold
 
         # Get raw results from vector store
         raw_results = self.vector_store.search(

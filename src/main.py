@@ -5,6 +5,7 @@ import json
 from src.crawling.crawler import Crawler
 from src.search.searcher import Searcher
 from src.vectorstore.store import VectorStore
+from src.utils.config import config
 
 def process_url(url: str, max_depth: int = 2) -> int:
     """Crawl and index content from a URL."""
