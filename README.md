@@ -47,13 +47,174 @@ cp .env.example .env
 # Edit .env with your OpenAI API key
 ```
 
+## Usage Examples
+
+### Fetching and Indexing Content
+
+Using Python directly:
+
+Index a single page:
+
+```bash
+python rag_retriever.py --fetch https://example.com
+```
+
+Or using convenience scripts:
+
+```bash
+# Windows
+run.bat --fetch https://example.com
+
+# Mac/Linux
+./run.sh --fetch https://example.com
+```
+
+Index with depth control (crawls linked pages):
+
+```bash
+# Python
+python rag_retriever.py --fetch https://example.com --max-depth 2
+
+# Windows
+run.bat --fetch https://example.com --max-depth 2
+
+# Mac/Linux
+./run.sh --fetch https://example.com --max-depth 2
+```
+
+The `--max-depth` parameter controls how deep the crawler will follow links:
+
+- depth 0: Only the initial URL
+- depth 1: Initial URL + linked pages
+- depth 2 (default): Initial URL + linked pages + pages linked from those
+- depth 3+: Continue following links to specified depth
+
+Index multiple pages:
+
+```bash
+# Python
+python rag_retriever.py --fetch https://docs.example.com/page1
+python rag_retriever.py --fetch https://docs.example.com/page2
+
+# Windows
+run.bat --fetch https://docs.example.com/page1
+run.bat --fetch https://docs.example.com/page2
+
+# Mac/Linux
+./run.sh --fetch https://docs.example.com/page1
+./run.sh --fetch https://docs.example.com/page2
+```
+
+### Searching Content
+
+Using Python directly:
+
+Basic search:
+
+```bash
+python rag_retriever.py --query "How do I get started?"
+```
+
+Or using convenience scripts:
+
+```bash
+# Windows
+run.bat --query "How do I get started?"
+
+# Mac/Linux
+./run.sh --query "How do I get started?"
+```
+
+Search with custom result limit:
+
+```bash
+# Python
+python rag_retriever.py --query "deployment options" --limit 3
+
+# Windows
+run.bat --query "deployment options" --limit 3
+
+# Mac/Linux
+./run.sh --query "deployment options" --limit 3
+```
+
+Search with custom relevance threshold:
+
+```bash
+# Python
+python rag_retriever.py --query "advanced configuration" --score-threshold 0.3
+
+# Windows
+run.bat --query "advanced configuration" --score-threshold 0.3
+
+# Mac/Linux
+./run.sh --query "advanced configuration" --score-threshold 0.3
+```
+
+Show full content in results:
+
+```bash
+# Python
+python rag_retriever.py --query "installation steps" --full
+
+# Windows
+run.bat --query "installation steps" --full
+
+# Mac/Linux
+./run.sh --query "installation steps" --full
+```
+
+Get JSON output:
+
+```bash
+# Python
+python rag_retriever.py --query "API reference" --json
+
+# Windows
+run.bat --query "API reference" --json
+
+# Mac/Linux
+./run.sh --query "API reference" --json
+```
+
+### Managing the Vector Store
+
+Clean (delete) the vector store:
+
+```bash
+python rag_retriever.py --clean
+```
+
+Or using convenience scripts:
+
+```bash
+# Windows
+run.bat clean
+
+# Mac/Linux
+./run.sh clean
+```
+
+## Understanding Search Results
+
+The search results include relevance scores based on cosine similarity:
+
+- Scores closer to 1.0 indicate higher relevance
+- Typical ranges:
+  - 0.8 - 1.0: Very high relevance (nearly exact matches)
+  - 0.6 - 0.8: High relevance
+  - 0.4 - 0.6: Moderate relevance
+  - Below 0.4: Lower relevance
+
+The default threshold is 0.2, but you can adjust this using the `--score-threshold` parameter.
+
 ## Features
 
 - Recursively crawl and index web pages up to a specified depth
 - Respect URL path depth for more controlled crawling
 - Handle JavaScript-rendered content using Selenium WebDriver
 - Clean and structure content while preserving meaningful hierarchy
-- Store embeddings in a local Chroma vector database
+- Store embeddings in a local Chroma vector database using cosine similarity
 - Perform semantic search with customizable relevance scoring
 - Support for full content display and relevance threshold filtering
 
@@ -73,68 +234,38 @@ rag-retriever/
 └── run.bat               # Windows convenience script
 ```
 
-## Usage
-
-The application comes with convenience scripts for both Windows and Mac/Linux users.
-
-### Windows Users
-
-```batch
-# Run the application
-run.bat [arguments]
-
-# Clean the vector store
-run.bat clean
-```
-
-### Mac/Linux Users
-
-First, make the script executable:
-
-```bash
-chmod +x run.sh
-```
-
-Then:
-
-```bash
-# Run the application
-./run.sh [arguments]
-
-# Clean the vector store
-./run.sh clean
-```
-
-### Understanding Relevance Scores
-
-The search results include relevance scores that indicate how well each document matches your query:
-
-- Scores above 0.4 indicate very high relevance
-- Scores between 0.3-0.4 indicate good relevance
-- Scores below 0.3 indicate lower relevance
-
 ## Configuration
 
-The application uses a modular configuration system:
+The application uses a YAML-based configuration system (`config/default_config.yaml`):
 
-- Vector store location: `./vectorstore/`
-- Default relevance threshold: 0.3
-- Configurable crawling depth and URL patterns
-- Environment-based API key management
+```yaml
+vector_store:
+  persist_directory: "./chromadb"
+  embedding_model: "text-embedding-3-large"
+  embedding_dimensions: 3072
+
+content:
+  chunk_size: 500
+  chunk_overlap: 100
+
+search:
+  default_limit: 5
+  default_score_threshold: 0.2
+```
 
 ## Dependencies
 
 Key dependencies include:
 
-- openai: For embeddings generation
-- chromadb: Vector store implementation
+- openai: For embeddings generation (text-embedding-3-large model)
+- chromadb: Vector store implementation with cosine similarity
 - selenium: JavaScript content rendering
 - beautifulsoup4: HTML parsing
 - python-dotenv: Environment management
 
 ## Development
 
-The application follows a modular architecture for better maintainability:
+The application follows a modular architecture:
 
 - Separate modules for crawling, storage, and search functionality
 - Configuration management through dedicated config module
@@ -146,6 +277,7 @@ The application follows a modular architecture for better maintainability:
 - Content is automatically cleaned and structured during indexing
 - Implements URL depth-based crawling control
 - Vector store persists between runs unless explicitly deleted
+- Uses cosine similarity for more intuitive relevance scoring
 
 ## Contributing
 

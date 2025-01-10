@@ -89,6 +89,18 @@ def clean_vectorstore():
     else:
         logger.info("Vector store not found at %s", vectorstore_path)
 
+def confirm_max_depth(max_depth: int) -> bool:
+    """Confirm with user if they want to proceed with max_depth > 1."""
+    print(f"\nWARNING: You are about to crawl with max_depth={max_depth}.")
+    print("This means the crawler will:")
+    print("1. Start at the initial URL")
+    print("2. Follow links from that page")
+    if max_depth > 1:
+        print(f"3. Continue following links up to {max_depth} levels deep")
+    print("\nThis can potentially crawl many pages and take a long time.")
+    response = input("Are you sure you want to proceed? (y/N): ")
+    return response.lower() == 'y'
+
 def main():
     parser = create_parser()
     args = parser.parse_args()
@@ -99,6 +111,11 @@ def main():
             return 0
             
         if args.fetch:
+            # Only prompt once for max_depth > 1
+            if args.max_depth > 1 and not confirm_max_depth(args.max_depth):
+                logger.info("Operation cancelled")
+                return 0
+                
             return process_url(
                 args.fetch,
                 max_depth=args.max_depth
