@@ -35,4 +35,12 @@ Clean the vector store:
 /run ./rag_direct.sh --clean
 ```
 
-For detailed explanations of all available options and features, please consult the project's README.md file.
+<div align="center">
+<table>
+<tr>
+<td>
+<h3>📚 For detailed explanations of all available options and features, please consult the project's <code>README.md</code> file</h3>
+</td>
+</tr>
+</table>
+</div>
