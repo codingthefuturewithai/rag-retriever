@@ -1,6 +1,8 @@
 # Using RAG Retriever in Aider Sessions
 
-This guide explains how to use the RAG retriever direct execution scripts during an aider chat session. For detailed information about the RAG Retriever tool's features, configuration options, and general usage, please refer to the project's README.md file.
+> **Note:** This guide covers only the direct execution scripts for use within aider sessions.
+> For complete documentation of the RAG Retriever tool's features, configuration, and general usage,
+> please refer to the project's **README.md** file.
 
 ## Usage Within Aider
 
