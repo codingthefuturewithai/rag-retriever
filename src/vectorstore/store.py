@@ -63,9 +63,13 @@ class VectorStore:
 
     def add_documents(self, documents: List[Document]) -> int:
         """Add documents to the vector store."""
-        db = self._get_or_create_db()  # Get existing DB without documents
-        if documents:  # Only add if we have documents
+        try:
+            # Try to get existing DB
+            db = self._get_or_create_db()
             db.add_documents(documents)
+        except ValueError:
+            # No existing DB, create new one with documents
+            db = self._get_or_create_db(documents)
         return len(documents)
 
     def search(

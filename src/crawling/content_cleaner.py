@@ -87,16 +87,13 @@ class ContentCleaner:
         )
 
     def clean(self, html_content: str) -> str:
-        """Clean and structure HTML content.
-
-        Args:
-            html_content: Raw HTML content to clean.
-
-        Returns:
-            Cleaned and structured text content.
-        """
+        """Clean and structure HTML content."""
         # Suppress parser warnings
         warnings.filterwarnings("ignore", category=GuessedAtParserWarning)
+
+        # Remove template code comments
+        html_content = re.sub(r'<!--\[\[\[.*?\]\]\]-->', '', html_content, flags=re.DOTALL)
+        html_content = re.sub(r'<!--.*?-->', '', html_content, flags=re.DOTALL)
 
         soup = BeautifulSoup(html_content, "lxml")
 

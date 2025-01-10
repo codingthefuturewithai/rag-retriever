@@ -5,6 +5,9 @@ import logging
 from typing import List, Set
 from urllib.parse import urljoin, urlparse
 from bs4 import BeautifulSoup
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.common.by import By
 
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
@@ -107,30 +110,33 @@ class Crawler:
         return unique_links
 
     def get_page_content(self, url: str) -> str:
-        """Get page content using Selenium for JavaScript support.
-
-        Args:
-            url: URL to fetch content from.
-
-        Returns:
-            Raw HTML content of the page.
-
-        Raises:
-            PageLoadError: If the page cannot be loaded.
-        """
+        """Get page content using Selenium for JavaScript support."""
         logger.info(f"Fetching content from {url}")
-        driver = None
+        options = Options()
+        options.add_argument("--headless")  # Run in headless mode
+        options.add_argument("--no-sandbox")
+        options.add_argument("--disable-dev-shm-usage")
+
         try:
-            driver = self._setup_driver()
+            service = Service(ChromeDriverManager().install())
+            driver = webdriver.Chrome(service=service, options=options)
             driver.get(url)
-            # Wait for dynamic content to load
-            time.sleep(self.wait_time)
-            return driver.page_source
-        except WebDriverException as e:
-            raise PageLoadError(f"Failed to load page {url}: {str(e)}")
-        finally:
-            if driver:
+            
+            # Wait for main content to be present
+            WebDriverWait(driver, 10).until(
+                EC.presence_of_element_located((By.TAG_NAME, "main"))
+            )
+            
+            # Additional wait for dynamic content
+            time.sleep(3)
+            
+            content = driver.page_source
+            driver.quit()
+            return content
+        except Exception as e:
+            if 'driver' in locals():
                 driver.quit()
+            raise PageLoadError(f"Failed to load page {url}: {str(e)}")
 
     def _crawl_recursive(
         self, url: str, current_depth: int, max_depth: int
@@ -165,6 +171,13 @@ class Crawler:
         try:
             # Get page content
             content = self.get_page_content(url)
+            
+            # DEBUG: Print raw content
+            print("\n\n========= RAW CONTENT FROM", url, "=========")
+            print(content[:1000])  # First 1000 chars
+            # print(content)
+            print("...[content truncated]...")
+            print("=========================================\n\n")
 
             # Extract links before cleaning content
             if current_depth < max_depth:
@@ -172,6 +185,13 @@ class Crawler:
 
             # Clean content for storage
             cleaned_text = self.content_cleaner.clean(content)
+
+            # DEBUG: Print cleaned content
+            print("\n\n========= CLEANED CONTENT FROM", url, "=========")
+            # print(cleaned_text[:1000])  # First 1000 chars
+            print(cleaned_text)
+            # print("...[content truncated]...")
+            print("=========================================\n\n")
 
             if cleaned_text.strip():
                 doc = Document(
