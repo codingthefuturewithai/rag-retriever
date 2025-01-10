@@ -23,7 +23,7 @@ class VectorStore:
     def __init__(self, persist_directory: Optional[str] = None):
         """Initialize vector store."""
         self.persist_directory = persist_directory or get_vectorstore_path()
-        logger.info("Vector store directory: %s", self.persist_directory)
+        logger.debug("Vector store directory: %s", self.persist_directory)
         self.embeddings = self._get_embeddings()
         self._db = None
 
@@ -42,11 +42,11 @@ class VectorStore:
 
         # Create the directory if it doesn't exist
         os.makedirs(self.persist_directory, exist_ok=True)
-        logger.info("Created directory: %s", self.persist_directory)
+        logger.debug("Created directory: %s", self.persist_directory)
 
         # Load existing DB if it exists
         if os.path.exists(self.persist_directory) and os.listdir(self.persist_directory):
-            logger.info("Loading existing database from: %s", self.persist_directory)
+            logger.debug("Loading existing database from: %s", self.persist_directory)
             self._db = Chroma(
                 persist_directory=self.persist_directory,
                 embedding_function=self.embeddings,
@@ -54,7 +54,7 @@ class VectorStore:
             )
             # Add new documents if provided
             if documents is not None:
-                logger.info("Adding %d documents to existing database", len(documents))
+                logger.debug("Adding %d documents to existing database", len(documents))
                 self._db.add_documents(documents)
             return self._db
 
@@ -65,7 +65,7 @@ class VectorStore:
                 "No existing vector store found and no documents provided to create one."
             )
 
-        logger.info("Creating new database with %d documents", len(documents))
+        logger.debug("Creating new database with %d documents", len(documents))
         self._db = Chroma.from_documents(
             documents=documents,
             embedding=self.embeddings,
@@ -83,19 +83,19 @@ class VectorStore:
                 chunk_overlap=config.content["chunk_overlap"],
                 length_function=len,
             )
-            logger.info("Splitting documents with chunk_size=%d, chunk_overlap=%d", 
+            logger.debug("Splitting documents with chunk_size=%d, chunk_overlap=%d", 
                        config.content["chunk_size"], config.content["chunk_overlap"])
             splits = text_splitter.split_documents(documents)
-            logger.info("Split %d documents into %d chunks", len(documents), len(splits))
+            logger.debug("Split %d documents into %d chunks", len(documents), len(splits))
 
             # Try to get existing DB
-            logger.info("Attempting to add %d chunks", len(splits))
+            logger.debug("Attempting to add %d chunks", len(splits))
             db = self._get_or_create_db()
             db.add_documents(splits)
             return len(splits)
         except ValueError:
             # No existing DB, create new one with documents
-            logger.info("Creating new database with documents")
+            logger.debug("Creating new database with documents")
             db = self._get_or_create_db(splits)
             return len(splits)
 

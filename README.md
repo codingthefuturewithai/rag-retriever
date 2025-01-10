@@ -49,6 +49,28 @@ cp .env.example .env
 
 ## Usage Examples
 
+### Direct Execution (No venv activation)
+
+For scenarios where you need to run the tool from another Python environment or application, use the direct execution scripts:
+
+**Windows:**
+
+```batch
+C:\path\to\rag-retriever\rag_direct.bat --fetch https://example.com
+```
+
+**Mac/Linux:**
+
+```bash
+/path/to/rag-retriever/rag_direct.sh --fetch https://example.com
+```
+
+These scripts use the tool's Python environment directly without activation, making them safe to use:
+
+- From another Python virtual environment
+- From scripts or applications
+- Without interfering with the current Python environment
+
 ### Fetching and Indexing Content
 
 Using Python directly:

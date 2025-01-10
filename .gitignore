@@ -60,3 +60,4 @@ htmlcov/
 # Chrome WebDriver
 .wdm/
 chromedriver* 
+.aider*
