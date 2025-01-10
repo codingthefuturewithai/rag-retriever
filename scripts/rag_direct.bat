@@ -5,6 +5,8 @@ setlocal
 set "SCRIPT_DIR=%~dp0"
 :: Remove trailing backslash
 set "SCRIPT_DIR=%SCRIPT_DIR:~0,-1%"
+:: Get the parent directory (project root)
+for %%I in ("%SCRIPT_DIR%\..") do set "PROJECT_ROOT=%%~fI"
 
 :: Use the venv Python directly without activating
-"%SCRIPT_DIR%\venv\Scripts\python.exe" "%SCRIPT_DIR%\rag_retriever.py" %* 
+"%PROJECT_ROOT%\venv\Scripts\python.exe" "%PROJECT_ROOT%\rag_retriever.py" %* 

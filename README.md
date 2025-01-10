@@ -85,10 +85,10 @@ Or using convenience scripts:
 
 ```bash
 # Windows
-run.bat --fetch https://example.com
+scripts/run.bat --fetch https://example.com
 
 # Mac/Linux
-./run.sh --fetch https://example.com
+./scripts/run.sh --fetch https://example.com
 ```
 
 Index with depth control (crawls linked pages):
@@ -98,10 +98,10 @@ Index with depth control (crawls linked pages):
 python rag_retriever.py --fetch https://example.com --max-depth 2
 
 # Windows
-run.bat --fetch https://example.com --max-depth 2
+scripts/run.bat --fetch https://example.com --max-depth 2
 
 # Mac/Linux
-./run.sh --fetch https://example.com --max-depth 2
+./scripts/run.sh --fetch https://example.com --max-depth 2
 ```
 
 The `--max-depth` parameter controls how deep the crawler will follow links:
@@ -119,12 +119,12 @@ python rag_retriever.py --fetch https://docs.example.com/page1
 python rag_retriever.py --fetch https://docs.example.com/page2
 
 # Windows
-run.bat --fetch https://docs.example.com/page1
-run.bat --fetch https://docs.example.com/page2
+scripts/run.bat --fetch https://docs.example.com/page1
+scripts/run.bat --fetch https://docs.example.com/page2
 
 # Mac/Linux
-./run.sh --fetch https://docs.example.com/page1
-./run.sh --fetch https://docs.example.com/page2
+./scripts/run.sh --fetch https://docs.example.com/page1
+./scripts/run.sh --fetch https://docs.example.com/page2
 ```
 
 ### Searching Content
@@ -141,10 +141,10 @@ Or using convenience scripts:
 
 ```bash
 # Windows
-run.bat --query "How do I get started?"
+scripts/run.bat --query "How do I get started?"
 
 # Mac/Linux
-./run.sh --query "How do I get started?"
+./scripts/run.sh --query "How do I get started?"
 ```
 
 Search with custom result limit:
@@ -154,10 +154,10 @@ Search with custom result limit:
 python rag_retriever.py --query "deployment options" --limit 3
 
 # Windows
-run.bat --query "deployment options" --limit 3
+scripts/run.bat --query "deployment options" --limit 3
 
 # Mac/Linux
-./run.sh --query "deployment options" --limit 3
+./scripts/run.sh --query "deployment options" --limit 3
 ```
 
 Search with custom relevance threshold:
@@ -167,10 +167,10 @@ Search with custom relevance threshold:
 python rag_retriever.py --query "advanced configuration" --score-threshold 0.3
 
 # Windows
-run.bat --query "advanced configuration" --score-threshold 0.3
+scripts/run.bat --query "advanced configuration" --score-threshold 0.3
 
 # Mac/Linux
-./run.sh --query "advanced configuration" --score-threshold 0.3
+./scripts/run.sh --query "advanced configuration" --score-threshold 0.3
 ```
 
 Show full content in results:
@@ -180,10 +180,10 @@ Show full content in results:
 python rag_retriever.py --query "installation steps" --full
 
 # Windows
-run.bat --query "installation steps" --full
+scripts/run.bat --query "installation steps" --full
 
 # Mac/Linux
-./run.sh --query "installation steps" --full
+./scripts/run.sh --query "installation steps" --full
 ```
 
 Get JSON output:
@@ -193,10 +193,10 @@ Get JSON output:
 python rag_retriever.py --query "API reference" --json
 
 # Windows
-run.bat --query "API reference" --json
+scripts/run.bat --query "API reference" --json
 
 # Mac/Linux
-./run.sh --query "API reference" --json
+./scripts/run.sh --query "API reference" --json
 ```
 
 ### Managing the Vector Store
@@ -211,10 +211,10 @@ Or using convenience scripts:
 
 ```bash
 # Windows
-run.bat clean
+scripts/run.bat clean
 
 # Mac/Linux
-./run.sh clean
+./scripts/run.sh clean
 ```
 
 ## Understanding Search Results
@@ -252,8 +252,13 @@ rag-retriever/
 │   └── utils/            # Utility functions
 ├── tests/                 # Test files
 ├── rag_retriever.py      # Command-line interface
-├── run.sh                # Unix convenience script
-└── run.bat               # Windows convenience script
+├── scripts/             # Convenience scripts for running the application
+│   ├── run.sh          # Unix convenience script
+│   ├── run.bat         # Windows convenience script
+│   ├── rag.sh          # Unix script with additional features
+│   ├── rag.bat         # Windows script with additional features
+│   ├── rag_direct.sh   # Unix script for direct execution
+│   └── rag_direct.bat  # Windows script for direct execution
 ```
 
 ## Configuration
