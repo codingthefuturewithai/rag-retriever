@@ -1,6 +1,6 @@
 # Using RAG Retriever in Aider Sessions
 
-This guide explains how to use the RAG retriever direct execution scripts during an aider chat session to enhance your coding conversations with relevant documentation context.
+This guide explains how to use the RAG retriever direct execution scripts during an aider chat session. For detailed information about the RAG Retriever tool's features, configuration options, and general usage, please refer to the project's README.md file.
 
 ## Usage Within Aider
 
@@ -33,8 +33,4 @@ Clean the vector store:
 /run ./rag_direct.sh --clean
 ```
 
-## Tips
-
-1. Run relevant searches before asking questions to give aider proper context
-2. Use `--full` when you need complete documentation sections
-3. Clean the index occasionally to remove outdated content
+For detailed explanations of all available options and features, please consult the project's README.md file.
