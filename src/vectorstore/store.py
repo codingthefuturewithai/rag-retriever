@@ -86,17 +86,24 @@ class VectorStore:
             logger.debug("Splitting documents with chunk_size=%d, chunk_overlap=%d", 
                        config.content["chunk_size"], config.content["chunk_overlap"])
             splits = text_splitter.split_documents(documents)
-            logger.debug("Split %d documents into %d chunks", len(documents), len(splits))
+            
+            total_content_size = sum(len(doc.page_content) for doc in documents)
+            total_chunk_size = sum(len(split.page_content) for split in splits)
+            
+            logger.info("Processing %d documents (total size: %d chars) into %d chunks (total size: %d chars)", 
+                      len(documents), total_content_size, len(splits), total_chunk_size)
 
             # Try to get existing DB
             logger.debug("Attempting to add %d chunks", len(splits))
             db = self._get_or_create_db()
             db.add_documents(splits)
+            logger.info("Successfully added %d chunks to vector store", len(splits))
             return len(splits)
         except ValueError:
             # No existing DB, create new one with documents
             logger.debug("Creating new database with documents")
             db = self._get_or_create_db(splits)
+            logger.info("Successfully created new vector store with %d chunks", len(splits))
             return len(splits)
 
     def search(

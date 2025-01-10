@@ -34,16 +34,10 @@ class Crawler:
         self.selenium_options = config.selenium["options"]
         self.content_cleaner = ContentCleaner()
         self.visited_urls: Set[str] = set()
+        self._total_chunks = 0
 
     def _setup_driver(self) -> webdriver.Chrome:
-        """Set up Chrome WebDriver with configured options.
-
-        Returns:
-            Configured Chrome WebDriver instance.
-
-        Raises:
-            PageLoadError: If WebDriver setup fails.
-        """
+        """Set up Chrome WebDriver with configured options."""
         try:
             options = Options()
             for option in self.selenium_options:
@@ -55,33 +49,17 @@ class Crawler:
             raise PageLoadError(f"Failed to setup WebDriver: {str(e)}")
 
     def _is_same_domain(self, base_url: str, url: str) -> bool:
-        """Check if two URLs belong to the same domain.
-
-        Args:
-            base_url: The original URL being crawled.
-            url: The URL to check.
-
-        Returns:
-            True if URLs belong to the same domain, False otherwise.
-        """
+        """Check if two URLs belong to the same domain."""
         base_domain = urlparse(base_url).netloc
         check_domain = urlparse(url).netloc
         logger.debug(f"Comparing domains: {base_domain} vs {check_domain}")
         return base_domain == check_domain
 
     def _extract_links(self, html_content: str, base_url: str) -> List[str]:
-        """Extract links from HTML content.
-
-        Args:
-            html_content: Raw HTML content.
-            base_url: Base URL for resolving relative links.
-
-        Returns:
-            List of absolute URLs found in the content.
-        """
+        """Extract links from HTML content."""
         soup = BeautifulSoup(html_content, "html.parser")
         links = []
-        logger.info(f"Extracting links from {base_url}")
+        logger.debug(f"Extracting links from {base_url}")
 
         # Extract all links, including those in navigation
         for anchor in soup.find_all("a", href=True):
@@ -97,21 +75,19 @@ class Crawler:
             if self._is_same_domain(base_url, absolute_url):
                 # Remove trailing slashes for consistency
                 absolute_url = absolute_url.rstrip("/")
-                if absolute_url != base_url.rstrip(
-                    "/"
-                ):  # Don't include self-references
-                    logger.info(f"Found valid link: {absolute_url}")
+                if absolute_url != base_url.rstrip("/"):  # Don't include self-references
+                    logger.debug(f"Found valid link: {absolute_url}")
                     links.append(absolute_url)
             else:
                 logger.debug(f"Skipping external link: {absolute_url}")
 
         unique_links = list(set(links))  # Remove duplicates
-        logger.info(f"Found {len(unique_links)} unique links on {base_url}")
+        logger.debug(f"Found {len(unique_links)} unique links on {base_url}")
         return unique_links
 
     def get_page_content(self, url: str) -> str:
         """Get page content using Selenium for JavaScript support."""
-        logger.info(f"Fetching content from {url}")
+        logger.debug(f"Fetching content from {url}")
         options = Options()
         options.add_argument("--headless")  # Run in headless mode
         options.add_argument("--no-sandbox")
@@ -141,28 +117,15 @@ class Crawler:
     def _crawl_recursive(
         self, url: str, current_depth: int, max_depth: int
     ) -> List[Document]:
-        """Recursively crawl URLs up to max_depth.
-
-        Args:
-            url: Current URL to crawl.
-            current_depth: Current crawl depth.
-            max_depth: Maximum depth for recursive crawling.
-
-        Returns:
-            List of Document objects containing page content.
-
-        Raises:
-            PageLoadError: If pages cannot be loaded.
-            ContentExtractionError: If content cannot be extracted.
-        """
-        logger.info(f"Crawling {url} at depth {current_depth}/{max_depth}")
+        """Recursively crawl URLs up to max_depth."""
+        logger.debug(f"Crawling {url} at depth {current_depth}/{max_depth}")
 
         if current_depth > max_depth:
-            logger.info(f"Reached max depth at {url}")
+            logger.debug(f"Reached max depth at {url}")
             return []
 
         if url in self.visited_urls:
-            logger.info(f"Already visited {url}")
+            logger.debug(f"Already visited {url}")
             return []
 
         self.visited_urls.add(url)
@@ -172,26 +135,12 @@ class Crawler:
             # Get page content
             content = self.get_page_content(url)
             
-            # DEBUG: Print raw content
-            print("\n\n========= RAW CONTENT FROM", url, "=========")
-            print(content[:1000])  # First 1000 chars
-            # print(content)
-            print("...[content truncated]...")
-            print("=========================================\n\n")
-
             # Extract links before cleaning content
             if current_depth < max_depth:
                 links = self._extract_links(content, url)
 
             # Clean content for storage
             cleaned_text = self.content_cleaner.clean(content)
-
-            # DEBUG: Print cleaned content
-            print("\n\n========= CLEANED CONTENT FROM", url, "=========")
-            # print(cleaned_text[:1000])  # First 1000 chars
-            print(cleaned_text)
-            # print("...[content truncated]...")
-            print("=========================================\n\n")
 
             if cleaned_text.strip():
                 doc = Document(
@@ -202,18 +151,17 @@ class Crawler:
                     },
                 )
                 documents.append(doc)
-                logger.info(f"Added document from {url}")
+                logger.info(f"Processed document: {url}")
 
                 # Follow extracted links if not at max depth
                 if current_depth < max_depth and links:
-                    logger.info(f"Following {len(links)} links from {url}")
+                    logger.debug(f"Following {len(links)} links from {url}")
                     for link in links:
                         # Recursively crawl each link
                         sub_docs = self._crawl_recursive(
                             link, current_depth + 1, max_depth
                         )
                         documents.extend(sub_docs)
-                        logger.info(f"Added {len(sub_docs)} documents from {link}")
 
             return documents
 
@@ -225,19 +173,9 @@ class Crawler:
             return documents
 
     def crawl(self, url: str, max_depth: int = 2) -> List[Document]:
-        """Crawl a URL and its linked pages up to max_depth.
-
-        Args:
-            url: Starting URL to crawl.
-            max_depth: Maximum depth for recursive crawling.
-
-        Returns:
-            List of Document objects containing page content.
-
-        Raises:
-            PageLoadError: If pages cannot be loaded.
-            ContentExtractionError: If content cannot be extracted.
-        """
-        logger.info(f"Starting crawl from {url} with max depth {max_depth}")
+        """Crawl a URL and its linked pages up to max_depth."""
+        logger.info(f"Starting crawl of {url}")
         self.visited_urls.clear()  # Reset visited URLs for new crawl
-        return self._crawl_recursive(url, 0, max_depth)
+        documents = self._crawl_recursive(url, 0, max_depth)
+        logger.info(f"Completed crawl: processed {len(documents)} documents")
+        return documents
