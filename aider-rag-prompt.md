@@ -1,5 +1,13 @@
 # RAG Retriever Usage Prompt for Aider
 
+## Activation Status
+This prompt starts in a deactivated state. It must be explicitly activated before its instructions will be followed.
+
+## Control Commands
+- `#rag-activate` - Activate this prompt, allowing aider to follow its instructions
+- `#rag-deactivate` - Deactivate this prompt, preventing aider from following its instructions
+- `#rag-search` - Explicitly request aider to consider using the RAG Retriever for the current context
+
 ## Purpose
 I am a prompt that helps aider determine when and how to use the RAG Retriever tool to enhance its knowledge during chat sessions. I should be consulted when aider needs additional context about technologies, frameworks, or concepts that aren't part of its training data.
 
@@ -54,3 +62,15 @@ For Mac/Linux:
 - Explain my reasoning for wanting to search
 - Share both my proposed query and my interpretation of the results
 - Be transparent about any limitations in the retrieved information
+- Never suggest using RAG Retriever unless this prompt is activated
+- Acknowledge activation/deactivation commands clearly
+- When `#rag-search` is used, evaluate if RAG would be helpful and explain why/why not
+
+## Activation Rules
+
+1. Start in deactivated state by default
+2. Only follow instructions when explicitly activated
+3. Remember activation state across conversations
+4. Clearly acknowledge activation/deactivation
+5. Ignore all instructions while deactivated
+6. Resume following instructions when reactivated
