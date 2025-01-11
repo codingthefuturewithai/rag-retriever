@@ -10,3 +10,30 @@ Would you like me to implement a mechanism to:
 1. Check if a URL has already been processed
 2. Skip processing if it exists (unless explicitly told to update)
 3. Optionally update existing entries instead of duplicating them?
+
+## RAG Improvements
+
+Future improvements to enhance RAG retrieval quality:
+
+1. **Cross-Encoder Reranking**
+
+   - Add reranking model to improve result relevance
+   - Create configurable reranking thresholds
+   - Modify search pipeline to incorporate reranking
+
+2. **Hybrid Keyword Search**
+
+   - Add text indexing capabilities
+   - Combine semantic and keyword search results
+   - Implement configurable scoring weights
+
+3. **Fallback Mechanisms**
+
+   - Add detection of low-quality results
+   - Implement fallback search strategies
+   - Handle merging of results from different approaches
+
+4. **Advanced Configuration**
+   - Fine-tune embedding models
+   - Adjust relevance scoring parameters
+   - Configure hybrid search weights

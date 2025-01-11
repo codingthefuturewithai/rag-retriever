@@ -107,6 +107,7 @@ class VectorStore:
             text_splitter = RecursiveCharacterTextSplitter(
                 chunk_size=config.content["chunk_size"],
                 chunk_overlap=config.content["chunk_overlap"],
+                separators=config.content["separators"],
                 length_function=len,
             )
             logger.debug(

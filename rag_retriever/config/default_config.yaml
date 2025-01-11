@@ -6,8 +6,19 @@ vector_store:
 
 # Content processing
 content:
-  chunk_size: 500
-  chunk_overlap: 100
+  chunk_size: 2000
+  chunk_overlap: 400
+  # Separators for text splitting, in order of preference
+  # Each level represents a stronger boundary, with more context preserved
+  separators:
+    - "\n## " # h2 headers (strongest break)
+    - "\n### " # h3 headers
+    - "\n#### " # h4 headers
+    - "\n- " # bullet points
+    - "\n• " # alternative bullet points
+    - "\n\n" # paragraphs
+    - ". " # sentences (weakest break)
+  # Patterns to clean from UI elements
   ui_patterns:
     - "Theme\\s+Auto\\s+Light\\s+Dark"
     - "Previous\\s+topic|Next\\s+topic"
