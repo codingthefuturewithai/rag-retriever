@@ -14,15 +14,21 @@ from rag_retriever.utils.config import config, mask_api_key
 logger = logging.getLogger(__name__)
 
 
-def process_url(url: str, max_depth: int = 2) -> int:
+def process_url(url: str, max_depth: int = 2, verbose: bool = True) -> int:
     """Process a URL, extracting and indexing its content."""
-    logger.info("\nStarting content fetch and indexing process...")
-    logger.info("Configuration:")
-    logger.info("- URL: %s", url)
-    logger.info("- Max depth: %d", max_depth)
-    logger.info("- Vector store: %s", get_vectorstore_path())
-    logger.info("- Model: %s", config.vector_store["embedding_model"])
-    logger.info("- API key: %s", mask_api_key(os.getenv("OPENAI_API_KEY", "")))
+    # Set logging levels based on verbose mode
+    if verbose:
+        logging.getLogger().setLevel(logging.INFO)
+        logging.getLogger("chromadb").setLevel(logging.INFO)
+        logging.getLogger("httpx").setLevel(logging.INFO)
+        # Log configuration
+        logger.info("\nStarting content fetch and indexing process...")
+        logger.info("Configuration:")
+        logger.info("- URL: %s", url)
+        logger.info("- Max depth: %d", max_depth)
+        logger.info("- Vector store: %s", get_vectorstore_path())
+        logger.info("- Model: %s", config.vector_store["embedding_model"])
+        logger.info("- API key: %s", mask_api_key(os.getenv("OPENAI_API_KEY", "")))
 
     try:
         crawler = Crawler()
@@ -40,6 +46,7 @@ def search_content(
     score_threshold: Optional[float] = None,
     full_content: bool = False,
     json_output: bool = False,
+    verbose: bool = False,
 ) -> int:
     """Search indexed content."""
     # Use default values from config if not specified
@@ -48,14 +55,20 @@ def search_content(
     if score_threshold is None:
         score_threshold = config.search["default_score_threshold"]
 
-    logger.info("\nStarting content search...")
-    logger.info("Configuration:")
-    logger.info("- Query: %s", query)
-    logger.info("- Result limit: %d", limit)
-    logger.info("- Score threshold: %.2f", score_threshold)
-    logger.info("- Vector store: %s", get_vectorstore_path())
-    logger.info("- Model: %s", config.vector_store["embedding_model"])
-    logger.info("- API key: %s", mask_api_key(os.getenv("OPENAI_API_KEY", "")))
+    # Set logging levels based on verbose mode
+    if verbose:
+        logging.getLogger().setLevel(logging.INFO)
+        logging.getLogger("chromadb").setLevel(logging.INFO)
+        logging.getLogger("httpx").setLevel(logging.INFO)
+        # Log configuration
+        logger.info("\nStarting content search...")
+        logger.info("Configuration:")
+        logger.info("- Query: %s", query)
+        logger.info("- Result limit: %d", limit)
+        logger.info("- Score threshold: %.2f", score_threshold)
+        logger.info("- Vector store: %s", get_vectorstore_path())
+        logger.info("- Model: %s", config.vector_store["embedding_model"])
+        logger.info("- API key: %s", mask_api_key(os.getenv("OPENAI_API_KEY", "")))
 
     try:
         searcher = Searcher()
@@ -66,7 +79,8 @@ def search_content(
         )
 
         if not results:
-            logger.info("\nNo results found matching the query.")
+            if verbose:
+                logger.info("\nNo results found matching the query.")
             return 0
 
         if json_output:
@@ -74,7 +88,8 @@ def search_content(
                 json.dumps([searcher.format_result_json(r) for r in results], indent=2)
             )
         else:
-            print("\nSearch Results:\n")
+            if verbose:
+                print("\nSearch Results:\n")
             for i, result in enumerate(results, 1):
                 print(f"{i}. {searcher.format_result(result, show_full=full_content)}")
 

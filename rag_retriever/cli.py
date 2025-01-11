@@ -11,7 +11,13 @@ from rag_retriever.main import process_url, search_content
 from rag_retriever.vectorstore.store import clean_vectorstore
 from rag_retriever.utils.config import initialize_user_files
 
+# Configure logging - suppress most output by default
+logging.basicConfig(level=logging.WARNING)
 logger = logging.getLogger(__name__)
+
+# Set default levels for other modules
+logging.getLogger("chromadb").setLevel(logging.WARNING)
+logging.getLogger("httpx").setLevel(logging.WARNING)
 
 
 def create_parser() -> argparse.ArgumentParser:
@@ -75,6 +81,12 @@ def create_parser() -> argparse.ArgumentParser:
         help="Clean (delete) the vector store",
     )
 
+    parser.add_argument(
+        "--verbose",
+        action="store_true",
+        help="Enable verbose output for troubleshooting",
+    )
+
     return parser
 
 
@@ -105,7 +117,9 @@ def main():
                 logger.info("Operation cancelled")
                 return 0
 
-            return process_url(args.fetch, max_depth=args.max_depth)
+            return process_url(
+                args.fetch, max_depth=args.max_depth, verbose=args.verbose
+            )
 
         if args.query:
             return search_content(
@@ -114,6 +128,7 @@ def main():
                 score_threshold=args.score_threshold,
                 full_content=args.full,
                 json_output=args.json,
+                verbose=args.verbose,
             )
 
         # No command specified, show help
