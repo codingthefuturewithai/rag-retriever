@@ -29,6 +29,8 @@ def process_url(url: str, max_depth: int = 2, verbose: bool = True) -> int:
         logger.info("- Vector store: %s", get_vectorstore_path())
         logger.info("- Model: %s", config.vector_store["embedding_model"])
         logger.info("- API key: %s", mask_api_key(os.getenv("OPENAI_API_KEY", "")))
+        logger.info("- Config file: %s", config.config_path)
+        logger.info("- Environment file: %s", config.env_path)
 
     try:
         crawler = Crawler()
@@ -69,6 +71,8 @@ def search_content(
         logger.info("- Vector store: %s", get_vectorstore_path())
         logger.info("- Model: %s", config.vector_store["embedding_model"])
         logger.info("- API key: %s", mask_api_key(os.getenv("OPENAI_API_KEY", "")))
+        logger.info("- Config file: %s", config.config_path)
+        logger.info("- Environment file: %s", config.env_path)
 
     try:
         searcher = Searcher()

@@ -172,6 +172,9 @@ class Config:
             config_path: Path to the YAML configuration file.
                         If None, uses default config from package.
         """
+        self._config_path = None
+        self._env_path = None
+
         # Load default config first
         with resources.files("rag_retriever.config").joinpath(
             "default_config.yaml"
@@ -186,6 +189,7 @@ class Config:
                     user_config = yaml.safe_load(f)
                 # Merge user config with default config
                 self._merge_configs(user_config)
+                self._config_path = str(user_config_path)
                 logger.debug("Loaded user config from %s", user_config_path)
             except Exception as e:
                 logger.warning("Failed to load user config: %s", str(e))
@@ -201,9 +205,19 @@ class Config:
                 with open(config_path, "r") as f:
                     explicit_config = yaml.safe_load(f)
                 self._merge_configs(explicit_config)
+                self._config_path = config_path
                 logger.debug("Loaded explicit config from %s", config_path)
             except Exception as e:
                 logger.warning("Failed to load explicit config: %s", str(e))
+
+        # Check for environment file
+        local_env = Path(".env")
+        if local_env.exists():
+            self._env_path = str(local_env.absolute())
+        else:
+            env_path = get_user_env_path()
+            if env_path.exists():
+                self._env_path = str(env_path)
 
         # Apply environment variable overrides
         self._apply_env_overrides()
@@ -261,6 +275,16 @@ class Config:
     def selenium(self) -> Dict[str, Any]:
         """Get Selenium configuration."""
         return self._config["selenium"]
+
+    @property
+    def config_path(self) -> str:
+        """Get the path to the active configuration file."""
+        return self._config_path or "using default configuration"
+
+    @property
+    def env_path(self) -> str:
+        """Get the path to the active environment file."""
+        return self._env_path or "environment variables not loaded from file"
 
 
 # Global config instance
