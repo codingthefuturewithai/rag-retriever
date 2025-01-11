@@ -1,6 +1,6 @@
 # Vector store settings
 vector_store:
-  persist_directory: "./chromadb"
+  persist_directory: null # Will be set by the application to OS-specific path
   embedding_model: "text-embedding-3-large"
   embedding_dimensions: 3072
 

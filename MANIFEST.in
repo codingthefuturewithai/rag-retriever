@@ -1,0 +1,7 @@
+include README.md
+include requirements.txt
+include pyproject.toml
+include setup.py
+recursive-include rag_retriever *.py
+recursive-include rag_retriever/config *.yaml
+recursive-include tests *.py 

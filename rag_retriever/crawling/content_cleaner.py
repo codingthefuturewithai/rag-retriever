@@ -1,11 +1,11 @@
-"""HTML content cleaning and processing module."""
+"""Content cleaning and processing module."""
 
 import re
 import warnings
 from typing import List
-
 from bs4 import BeautifulSoup, NavigableString, GuessedAtParserWarning
-from src.utils.config import config
+
+from rag_retriever.utils.config import config
 
 
 class ContentCleaner:
@@ -92,8 +92,10 @@ class ContentCleaner:
         warnings.filterwarnings("ignore", category=GuessedAtParserWarning)
 
         # Remove template code comments
-        html_content = re.sub(r'<!--\[\[\[.*?\]\]\]-->', '', html_content, flags=re.DOTALL)
-        html_content = re.sub(r'<!--.*?-->', '', html_content, flags=re.DOTALL)
+        html_content = re.sub(
+            r"<!--\[\[\[.*?\]\]\]-->", "", html_content, flags=re.DOTALL
+        )
+        html_content = re.sub(r"<!--.*?-->", "", html_content, flags=re.DOTALL)
 
         soup = BeautifulSoup(html_content, "lxml")
 

@@ -1,10 +1,11 @@
 """Search functionality for the RAG retriever."""
 
-from typing import List, Dict, Any
+import json
+from typing import List, Tuple, Dict, Any
 from dataclasses import dataclass
 
-from src.utils.config import config
-from src.vectorstore.store import VectorStore
+from rag_retriever.utils.config import config
+from rag_retriever.vectorstore.store import VectorStore
 
 
 @dataclass
@@ -49,7 +50,9 @@ class Searcher:
         """
         # Use defaults from config if not specified
         limit = self.default_limit if limit is None else limit
-        score_threshold = self.default_score_threshold if score_threshold is None else score_threshold
+        score_threshold = (
+            self.default_score_threshold if score_threshold is None else score_threshold
+        )
 
         # Get raw results from vector store
         raw_results = self.vector_store.search(

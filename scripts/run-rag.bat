@@ -9,4 +9,4 @@ set "SCRIPT_DIR=%SCRIPT_DIR:~0,-1%"
 for %%I in ("%SCRIPT_DIR%\..") do set "PROJECT_ROOT=%%~fI"
 
 :: Use the venv Python directly without activating
-"%PROJECT_ROOT%\venv\Scripts\python.exe" "%PROJECT_ROOT%\rag_retriever.py" %* 
+"%PROJECT_ROOT%\venv\Scripts\rag-retriever.exe" %* 

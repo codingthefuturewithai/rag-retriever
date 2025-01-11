@@ -16,9 +16,13 @@ from selenium.common.exceptions import WebDriverException
 from webdriver_manager.chrome import ChromeDriverManager
 from langchain_core.documents import Document
 
-from src.utils.config import config
-from src.crawling.exceptions import PageLoadError, ContentExtractionError, CrawlerError
-from src.crawling.content_cleaner import ContentCleaner
+from rag_retriever.utils.config import config
+from rag_retriever.crawling.exceptions import (
+    PageLoadError,
+    ContentExtractionError,
+    CrawlerError,
+)
+from rag_retriever.crawling.content_cleaner import ContentCleaner
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -75,7 +79,9 @@ class Crawler:
             if self._is_same_domain(base_url, absolute_url):
                 # Remove trailing slashes for consistency
                 absolute_url = absolute_url.rstrip("/")
-                if absolute_url != base_url.rstrip("/"):  # Don't include self-references
+                if absolute_url != base_url.rstrip(
+                    "/"
+                ):  # Don't include self-references
                     logger.debug(f"Found valid link: {absolute_url}")
                     links.append(absolute_url)
             else:
@@ -97,20 +103,20 @@ class Crawler:
             service = Service(ChromeDriverManager().install())
             driver = webdriver.Chrome(service=service, options=options)
             driver.get(url)
-            
+
             # Wait for main content to be present
             WebDriverWait(driver, 10).until(
                 EC.presence_of_element_located((By.TAG_NAME, "main"))
             )
-            
+
             # Additional wait for dynamic content
             time.sleep(3)
-            
+
             content = driver.page_source
             driver.quit()
             return content
         except Exception as e:
-            if 'driver' in locals():
+            if "driver" in locals():
                 driver.quit()
             raise PageLoadError(f"Failed to load page {url}: {str(e)}")
 
@@ -134,7 +140,7 @@ class Crawler:
         try:
             # Get page content
             content = self.get_page_content(url)
-            
+
             # Extract links before cleaning content
             if current_depth < max_depth:
                 links = self._extract_links(content, url)

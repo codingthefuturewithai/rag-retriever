@@ -6,4 +6,4 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 PROJECT_ROOT="$( dirname "$SCRIPT_DIR" )"
 
 # Use the venv Python directly without activating
-"$PROJECT_ROOT/venv/bin/python" "$PROJECT_ROOT/rag_retriever.py" "$@" 
+PYTHONPATH="$PROJECT_ROOT" "$PROJECT_ROOT/venv/bin/python" "$PROJECT_ROOT/rag_retriever/cli.py" "$@" 

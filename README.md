@@ -6,102 +6,53 @@ A Python application that recursively loads web pages, indexes their content usi
 
 ### Prerequisites
 
-- Python 3.8 or higher
+- Python 3.10 or higher
 - pip (Python package installer)
 
 ### Installation
 
-1. Clone the repository:
+1. Install the package:
 
 ```bash
-git clone <repository-url>
-cd rag-retriever
+pip install rag-retriever
 ```
 
-2. Create and activate a virtual environment:
-
-**Windows:**
+2. Initialize user files:
 
 ```bash
-python -m venv venv
-venv\Scripts\activate
+rag-retriever --init
 ```
 
-**Mac/Linux:**
+This will create:
+
+- Configuration file at `~/.config/rag-retriever/config.yaml`
+- Environment file at `~/.config/rag-retriever/.env`
+- Data directory at `~/.local/share/rag-retriever/`
+
+3. Edit the `.env` file to add your OpenAI API key:
 
 ```bash
-python3 -m venv venv
-source venv/bin/activate
-```
+# Unix/Mac
+nano ~/.config/rag-retriever/.env
 
-3. Install dependencies:
-
-```bash
-pip install -r requirements.txt
-```
-
-4. Set up environment variables:
-
-```bash
-cp .env.example .env
-# Edit .env with your OpenAI API key
+# Windows
+notepad %APPDATA%\rag-retriever\.env
 ```
 
 ## Usage Examples
 
-### Direct Execution (No venv activation)
-
-For scenarios where you need to run the tool from another Python environment or application, use the direct execution scripts:
-
-**Windows:**
-
-```batch
-C:\path\to\rag-retriever\rag_direct.bat --fetch https://example.com
-```
-
-**Mac/Linux:**
-
-```bash
-/path/to/rag-retriever/rag_direct.sh --fetch https://example.com
-```
-
-These scripts use the tool's Python environment directly without activation, making them safe to use:
-
-- From another Python virtual environment
-- From scripts or applications
-- Without interfering with the current Python environment
-
 ### Fetching and Indexing Content
-
-Using Python directly:
 
 Index a single page:
 
 ```bash
-python rag_retriever.py --fetch https://example.com
-```
-
-Or using convenience scripts:
-
-```bash
-# Windows
-scripts/run.bat --fetch https://example.com
-
-# Mac/Linux
-./scripts/run.sh --fetch https://example.com
+rag-retriever --fetch https://example.com
 ```
 
 Index with depth control (crawls linked pages):
 
 ```bash
-# Python
-python rag_retriever.py --fetch https://example.com --max-depth 2
-
-# Windows
-scripts/run.bat --fetch https://example.com --max-depth 2
-
-# Mac/Linux
-./scripts/run.sh --fetch https://example.com --max-depth 2
+rag-retriever --fetch https://example.com --max-depth 2
 ```
 
 The `--max-depth` parameter controls how deep the crawler will follow links:
@@ -114,89 +65,40 @@ The `--max-depth` parameter controls how deep the crawler will follow links:
 Index multiple pages:
 
 ```bash
-# Python
-python rag_retriever.py --fetch https://docs.example.com/page1
-python rag_retriever.py --fetch https://docs.example.com/page2
-
-# Windows
-scripts/run.bat --fetch https://docs.example.com/page1
-scripts/run.bat --fetch https://docs.example.com/page2
-
-# Mac/Linux
-./scripts/run.sh --fetch https://docs.example.com/page1
-./scripts/run.sh --fetch https://docs.example.com/page2
+rag-retriever --fetch https://docs.example.com/page1
+rag-retriever --fetch https://docs.example.com/page2
 ```
 
 ### Searching Content
 
-Using Python directly:
-
 Basic search:
 
 ```bash
-python rag_retriever.py --query "How do I get started?"
-```
-
-Or using convenience scripts:
-
-```bash
-# Windows
-scripts/run.bat --query "How do I get started?"
-
-# Mac/Linux
-./scripts/run.sh --query "How do I get started?"
+rag-retriever --query "How do I get started?"
 ```
 
 Search with custom result limit:
 
 ```bash
-# Python
-python rag_retriever.py --query "deployment options" --limit 3
-
-# Windows
-scripts/run.bat --query "deployment options" --limit 3
-
-# Mac/Linux
-./scripts/run.sh --query "deployment options" --limit 3
+rag-retriever --query "deployment options" --limit 3
 ```
 
 Search with custom relevance threshold:
 
 ```bash
-# Python
-python rag_retriever.py --query "advanced configuration" --score-threshold 0.3
-
-# Windows
-scripts/run.bat --query "advanced configuration" --score-threshold 0.3
-
-# Mac/Linux
-./scripts/run.sh --query "advanced configuration" --score-threshold 0.3
+rag-retriever --query "advanced configuration" --score-threshold 0.3
 ```
 
 Show full content in results:
 
 ```bash
-# Python
-python rag_retriever.py --query "installation steps" --full
-
-# Windows
-scripts/run.bat --query "installation steps" --full
-
-# Mac/Linux
-./scripts/run.sh --query "installation steps" --full
+rag-retriever --query "installation steps" --full
 ```
 
 Get JSON output:
 
 ```bash
-# Python
-python rag_retriever.py --query "API reference" --json
-
-# Windows
-scripts/run.bat --query "API reference" --json
-
-# Mac/Linux
-./scripts/run.sh --query "API reference" --json
+rag-retriever --query "API reference" --json
 ```
 
 ### Managing the Vector Store
@@ -204,17 +106,7 @@ scripts/run.bat --query "API reference" --json
 Clean (delete) the vector store:
 
 ```bash
-python rag_retriever.py --clean
-```
-
-Or using convenience scripts:
-
-```bash
-# Windows
-scripts/run.bat clean
-
-# Mac/Linux
-./scripts/run.sh clean
+rag-retriever --clean
 ```
 
 ## Understanding Search Results
@@ -230,6 +122,75 @@ The search results include relevance scores based on cosine similarity:
 
 The default threshold is 0.2, but you can adjust this using the `--score-threshold` parameter.
 
+## Configuration
+
+The application uses a standard directory structure for user files:
+
+### File Locations
+
+**Unix/Mac:**
+
+- Config: `~/.config/rag-retriever/`
+  - `config.yaml`: Configuration settings
+  - `.env`: Environment variables and API keys
+- Data: `~/.local/share/rag-retriever/`
+  - `chromadb/`: Vector store database
+
+**Windows:**
+
+- Config: `%APPDATA%\rag-retriever\`
+  - `config.yaml`: Configuration settings
+  - `.env`: Environment variables and API keys
+- Data: `%LOCALAPPDATA%\rag-retriever\`
+  - `chromadb/`: Vector store database
+
+### Configuration Options
+
+The default configuration includes:
+
+```yaml
+vector_store:
+  persist_directory: null # Set automatically to OS-specific path
+  embedding_model: "text-embedding-3-large"
+  embedding_dimensions: 3072
+
+content:
+  chunk_size: 500
+  chunk_overlap: 100
+  ui_patterns:
+    - "Theme\\s+Auto\\s+Light\\s+Dark"
+    - "Previous\\s+topic|Next\\s+topic"
+    - "Navigation"
+    - "Jump\\s+to"
+    - "Search"
+    - "Skip\\s+to\\s+content"
+
+search:
+  default_limit: 5
+  default_score_threshold: 0.2
+
+selenium:
+  wait_time: 2
+  options:
+    - "--headless"
+    - "--no-sandbox"
+    - "--disable-dev-shm-usage"
+```
+
+### Environment Variables
+
+You can override any setting using environment variables in your `.env` file:
+
+```bash
+# Required
+OPENAI_API_KEY=your-api-key-here
+
+# Optional overrides
+RAG_RETRIEVER_EMBEDDING_MODEL=text-embedding-3-large
+RAG_RETRIEVER_CHUNK_SIZE=1000
+RAG_RETRIEVER_DEFAULT_LIMIT=10
+```
+
 ## Features
 
 - Recursively crawl and index web pages up to a specified depth
@@ -244,40 +205,12 @@ The default threshold is 0.2, but you can adjust this using the `--score-thresho
 
 ```
 rag-retriever/
-├── config/                 # Configuration settings
-├── src/
-│   ├── crawling/          # Web crawling functionality
-│   ├── vectorstore/       # Vector storage operations
-│   ├── search/           # Search functionality
-│   └── utils/            # Utility functions
-├── tests/                 # Test files
-├── rag_retriever.py      # Command-line interface
-├── scripts/             # Convenience scripts for running the application
-│   ├── run.sh          # Unix convenience script
-│   ├── run.bat         # Windows convenience script
-│   ├── rag.sh          # Unix script with additional features
-│   ├── rag.bat         # Windows script with additional features
-│   ├── rag_direct.sh   # Unix script for direct execution
-│   └── rag_direct.bat  # Windows script for direct execution
-```
-
-## Configuration
-
-The application uses a YAML-based configuration system (`config/default_config.yaml`):
-
-```yaml
-vector_store:
-  persist_directory: "./chromadb"
-  embedding_model: "text-embedding-3-large"
-  embedding_dimensions: 3072
-
-content:
-  chunk_size: 500
-  chunk_overlap: 100
-
-search:
-  default_limit: 5
-  default_score_threshold: 0.2
+├── rag_retriever/         # Main package directory
+│   ├── config/           # Configuration settings
+│   ├── crawling/         # Web crawling functionality
+│   ├── vectorstore/      # Vector storage operations
+│   ├── search/          # Search functionality
+│   └── utils/           # Utility functions
 ```
 
 ## Dependencies
@@ -289,14 +222,6 @@ Key dependencies include:
 - selenium: JavaScript content rendering
 - beautifulsoup4: HTML parsing
 - python-dotenv: Environment management
-
-## Development
-
-The application follows a modular architecture:
-
-- Separate modules for crawling, storage, and search functionality
-- Configuration management through dedicated config module
-- Prepared for future test implementation
 
 ## Notes
 

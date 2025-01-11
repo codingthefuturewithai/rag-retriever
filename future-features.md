@@ -4,3 +4,9 @@
 4. Allow users to delete a collection.
 5. Allow users to delete a document.
 6. Allow users to delete a parent URL, thus deleting its collection and all of its children.
+
+Would you like me to implement a mechanism to:
+
+1. Check if a URL has already been processed
+2. Skip processing if it exists (unless explicitly told to update)
+3. Optionally update existing entries instead of duplicating them?
