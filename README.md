@@ -64,7 +64,7 @@ If you want to contribute to RAG Retriever or modify the code:
 
 ```bash
 # Clone the repository
-git clone <repository-url>
+git clone https://github.com/codingthefuturewithai/rag-retriever.git
 cd rag-retriever
 
 # Create and activate virtual environment
@@ -104,45 +104,17 @@ The application uses standard locations for all user files, regardless of instal
 
 ## Usage Examples
 
-### Using as a System Command
+### Fetching and Indexing
 
 ```bash
-# Index content
-rag-retriever --fetch https://example.com
-
-# Search content
-rag-retriever --query "How do I get started?"
-
-# Clean vector store
-rag-retriever --clean
-```
-
-### Using in Development Mode
-
-```bash
-# Unix/Mac
-./scripts/run-rag.sh --fetch https://example.com
-./scripts/run-rag.sh --query "How do I get started?"
-
-# Windows
-scripts\run-rag.bat --fetch https://example.com
-scripts\run-rag.bat --query "How do I get started?"
-```
-
-### Command Options
-
-#### Fetching and Indexing
-
-```bash
-# Basic fetch
+# Basic fetch (shows detailed output by default)
 rag-retriever --fetch https://example.com
 
 # With depth control
 rag-retriever --fetch https://example.com --max-depth 2
 
-# Multiple pages
-rag-retriever --fetch https://docs.example.com/page1
-rag-retriever --fetch https://docs.example.com/page2
+# Minimal output mode
+rag-retriever --fetch https://example.com --max-depth 0 --verbose false
 ```
 
 The `--max-depth` parameter controls crawling depth:
@@ -151,11 +123,14 @@ The `--max-depth` parameter controls crawling depth:
 - depth 1: Initial URL + linked pages
 - depth 2 (default): Initial URL + linked pages + pages linked from those
 
-#### Searching Content
+### Searching Content
 
 ```bash
-# Basic search
+# Basic search (shows full content by default)
 rag-retriever --query "How do I get started?"
+
+# With truncated content
+rag-retriever --query "How do I get started?" --truncate
 
 # With custom limit
 rag-retriever --query "deployment options" --limit 3
@@ -163,11 +138,11 @@ rag-retriever --query "deployment options" --limit 3
 # With relevance threshold
 rag-retriever --query "advanced configuration" --score-threshold 0.3
 
-# Show full content
-rag-retriever --query "installation steps" --full
-
 # JSON output
 rag-retriever --query "API reference" --json
+
+# Troubleshooting mode with verbose output
+rag-retriever --query "installation steps" --verbose
 ```
 
 ## Understanding Search Results
@@ -238,7 +213,9 @@ RAG_RETRIEVER_DEFAULT_LIMIT=10
 - Clean and structure content while preserving meaningful hierarchy
 - Store embeddings in a local Chroma vector database using cosine similarity
 - Perform semantic search with customizable relevance scoring
-- Support for full content display and relevance threshold filtering
+- Support for full content display (default) with optional truncation
+- Minimal output by default with verbose mode for troubleshooting
+- JSON output format for integration with other tools
 
 ## Project Structure
 
@@ -269,6 +246,8 @@ Key dependencies include:
 - Implements URL depth-based crawling control
 - Vector store persists between runs unless explicitly deleted
 - Uses cosine similarity for more intuitive relevance scoring
+- Minimal output by default with `--verbose` flag for troubleshooting
+- Full content display by default with `--truncate` option for brevity
 
 ## Contributing
 

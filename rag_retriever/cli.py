@@ -64,9 +64,9 @@ def create_parser() -> argparse.ArgumentParser:
     )
 
     parser.add_argument(
-        "--full",
+        "--truncate",
         action="store_true",
-        help="Show full content in search results",
+        help="Truncate content in search results (default: show full content)",
     )
 
     parser.add_argument(
@@ -126,7 +126,7 @@ def main():
                 args.query,
                 limit=args.limit,
                 score_threshold=args.score_threshold,
-                full_content=args.full,
+                full_content=not args.truncate,  # Show full content by default
                 json_output=args.json,
                 verbose=args.verbose,
             )
