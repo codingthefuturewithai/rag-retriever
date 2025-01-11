@@ -2,129 +2,87 @@
 
 A Python application that recursively loads web pages, indexes their content using embeddings, and enables semantic search queries. Built with a modular architecture using OpenAI embeddings and Chroma vector store.
 
-## Setup Instructions
+## Prerequisites
 
-### Prerequisites
+- Python 3.7 or later (Download from [python.org](https://python.org))
+- pipx (Install with one of these commands):
 
-- Python 3.10 or higher
-- pip (Python package installer)
+  ```bash
+  # On MacOS
+  brew install pipx
 
-### Installation
+  # On Windows/Linux
+  python -m pip install --user pipx
+  ```
 
-1. Install the package:
+## Installation
+
+Install RAG Retriever as a standalone application:
 
 ```bash
-pip install rag-retriever
+pipx install rag-retriever
 ```
 
-2. Initialize user files:
+This will:
+
+- Create an isolated environment for the application
+- Install all required dependencies
+- Make the `rag-retriever` command available in your PATH
+
+After installation, initialize the configuration:
 
 ```bash
+# Initialize configuration
 rag-retriever --init
-```
 
-This will create:
-
-- Configuration file at `~/.config/rag-retriever/config.yaml`
-- Environment file at `~/.config/rag-retriever/.env`
-- Data directory at `~/.local/share/rag-retriever/`
-
-3. Edit the `.env` file to add your OpenAI API key:
-
-```bash
-# Unix/Mac
+# Edit .env file to add your OpenAI API key
+# Unix/Mac:
 nano ~/.config/rag-retriever/.env
-
-# Windows
+# Windows:
 notepad %APPDATA%\rag-retriever\.env
 ```
 
-## Usage Examples
+### Uninstallation
 
-### Fetching and Indexing Content
-
-Index a single page:
+To completely remove RAG Retriever:
 
 ```bash
-rag-retriever --fetch https://example.com
+# Remove the application and its isolated environment
+pipx uninstall rag-retriever
+
+# Optional: Remove configuration and data files
+# Unix/Mac:
+rm -rf ~/.config/rag-retriever ~/.local/share/rag-retriever
+# Windows (run in PowerShell):
+Remove-Item -Recurse -Force "$env:APPDATA\rag-retriever"
+Remove-Item -Recurse -Force "$env:LOCALAPPDATA\rag-retriever"
 ```
 
-Index with depth control (crawls linked pages):
+### Development Setup
+
+If you want to contribute to RAG Retriever or modify the code:
 
 ```bash
-rag-retriever --fetch https://example.com --max-depth 2
+# Clone the repository
+git clone <repository-url>
+cd rag-retriever
+
+# Create and activate virtual environment
+python -m venv venv
+source venv/bin/activate  # Unix/Mac
+venv\Scripts\activate     # Windows
+
+# Install in editable mode
+pip install -e .
+
+# Initialize user configuration
+./scripts/run-rag.sh --init  # Unix/Mac
+scripts\run-rag.bat --init   # Windows
 ```
-
-The `--max-depth` parameter controls how deep the crawler will follow links:
-
-- depth 0: Only the initial URL
-- depth 1: Initial URL + linked pages
-- depth 2 (default): Initial URL + linked pages + pages linked from those
-- depth 3+: Continue following links to specified depth
-
-Index multiple pages:
-
-```bash
-rag-retriever --fetch https://docs.example.com/page1
-rag-retriever --fetch https://docs.example.com/page2
-```
-
-### Searching Content
-
-Basic search:
-
-```bash
-rag-retriever --query "How do I get started?"
-```
-
-Search with custom result limit:
-
-```bash
-rag-retriever --query "deployment options" --limit 3
-```
-
-Search with custom relevance threshold:
-
-```bash
-rag-retriever --query "advanced configuration" --score-threshold 0.3
-```
-
-Show full content in results:
-
-```bash
-rag-retriever --query "installation steps" --full
-```
-
-Get JSON output:
-
-```bash
-rag-retriever --query "API reference" --json
-```
-
-### Managing the Vector Store
-
-Clean (delete) the vector store:
-
-```bash
-rag-retriever --clean
-```
-
-## Understanding Search Results
-
-The search results include relevance scores based on cosine similarity:
-
-- Scores closer to 1.0 indicate higher relevance
-- Typical ranges:
-  - 0.8 - 1.0: Very high relevance (nearly exact matches)
-  - 0.6 - 0.8: High relevance
-  - 0.4 - 0.6: Moderate relevance
-  - Below 0.4: Lower relevance
-
-The default threshold is 0.2, but you can adjust this using the `--score-threshold` parameter.
 
 ## Configuration
 
-The application uses a standard directory structure for user files:
+The application uses standard locations for all user files, regardless of installation method:
 
 ### File Locations
 
@@ -144,7 +102,88 @@ The application uses a standard directory structure for user files:
 - Data: `%LOCALAPPDATA%\rag-retriever\`
   - `chromadb/`: Vector store database
 
-### Configuration Options
+## Usage Examples
+
+### Using as a System Command
+
+```bash
+# Index content
+rag-retriever --fetch https://example.com
+
+# Search content
+rag-retriever --query "How do I get started?"
+
+# Clean vector store
+rag-retriever --clean
+```
+
+### Using in Development Mode
+
+```bash
+# Unix/Mac
+./scripts/run-rag.sh --fetch https://example.com
+./scripts/run-rag.sh --query "How do I get started?"
+
+# Windows
+scripts\run-rag.bat --fetch https://example.com
+scripts\run-rag.bat --query "How do I get started?"
+```
+
+### Command Options
+
+#### Fetching and Indexing
+
+```bash
+# Basic fetch
+rag-retriever --fetch https://example.com
+
+# With depth control
+rag-retriever --fetch https://example.com --max-depth 2
+
+# Multiple pages
+rag-retriever --fetch https://docs.example.com/page1
+rag-retriever --fetch https://docs.example.com/page2
+```
+
+The `--max-depth` parameter controls crawling depth:
+
+- depth 0: Only the initial URL
+- depth 1: Initial URL + linked pages
+- depth 2 (default): Initial URL + linked pages + pages linked from those
+
+#### Searching Content
+
+```bash
+# Basic search
+rag-retriever --query "How do I get started?"
+
+# With custom limit
+rag-retriever --query "deployment options" --limit 3
+
+# With relevance threshold
+rag-retriever --query "advanced configuration" --score-threshold 0.3
+
+# Show full content
+rag-retriever --query "installation steps" --full
+
+# JSON output
+rag-retriever --query "API reference" --json
+```
+
+## Understanding Search Results
+
+Search results include relevance scores based on cosine similarity:
+
+- Scores closer to 1.0 indicate higher relevance
+- Typical ranges:
+  - 0.8 - 1.0: Very high relevance (nearly exact matches)
+  - 0.6 - 0.8: High relevance
+  - 0.4 - 0.6: Moderate relevance
+  - Below 0.4: Lower relevance
+
+Default threshold is 0.2, adjustable with `--score-threshold`.
+
+## Configuration Options
 
 The default configuration includes:
 
@@ -179,7 +218,7 @@ selenium:
 
 ### Environment Variables
 
-You can override any setting using environment variables in your `.env` file:
+Override settings in your `.env` file:
 
 ```bash
 # Required

@@ -53,7 +53,7 @@ def ensure_user_directories() -> None:
 
 
 def create_user_env() -> None:
-    """Create a new .env file with template if it doesn't exist."""
+    """Create a new .env file in user config directory using the example template."""
     env_path = get_user_env_path()
 
     # Don't overwrite existing .env
@@ -61,26 +61,19 @@ def create_user_env() -> None:
         logger.info("User .env already exists at: %s", env_path)
         return
 
-    env_content = """# RAG Retriever Environment Configuration
-
-# Required: Your OpenAI API key
-OPENAI_API_KEY=your-api-key-here
-
-# Optional: Override configuration settings
-# RAG_RETRIEVER_EMBEDDING_MODEL=text-embedding-3-large
-# RAG_RETRIEVER_CHUNK_SIZE=1000
-# RAG_RETRIEVER_DEFAULT_LIMIT=10
-"""
-
-    with open(env_path, "w") as f:
-        f.write(env_content)
+    # Copy the example template from package resources
+    with resources.files("rag_retriever.config").joinpath(".env.example").open(
+        "r"
+    ) as src:
+        with open(env_path, "w") as dst:
+            dst.write(src.read())
 
     logger.info("Created .env file at: %s", env_path)
     logger.info("Please edit this file to add your OpenAI API key")
 
 
 def create_user_config() -> None:
-    """Create a new user config file with helpful comments."""
+    """Create a new user config file by copying the default."""
     config_path = get_user_config_path()
 
     # Don't overwrite existing config
@@ -88,42 +81,12 @@ def create_user_config() -> None:
         logger.info("User config already exists at: %s", config_path)
         return
 
-    # Get default config content
+    # Copy the default config file
     with resources.files("rag_retriever.config").joinpath("default_config.yaml").open(
         "r"
-    ) as f:
-        default_config = f.read()
-
-    # Add helpful header comments
-    user_config = f"""# RAG Retriever User Configuration
-#
-# This file allows you to customize the behavior of RAG Retriever.
-# Any settings here will override the default values.
-# You can also use environment variables prefixed with RAG_RETRIEVER_
-# (e.g., RAG_RETRIEVER_CHUNK_SIZE=1000)
-#
-# Common customizations:
-# 1. Vector store location:
-#    vector_store:
-#      persist_directory: "/path/to/your/preferred/location"
-#
-# 2. Content processing:
-#    content:
-#      chunk_size: 1000        # Larger chunks for more context
-#      chunk_overlap: 200      # More overlap to avoid missing context
-#
-# 3. Search behavior:
-#    search:
-#      default_limit: 10       # Show more results by default
-#      default_score_threshold: 0.3  # Higher threshold for better matches
-#
-# Below are the default settings you can override:
-
-{default_config}"""
-
-    # Write the config file
-    with open(config_path, "w") as f:
-        f.write(user_config)
+    ) as src:
+        with open(config_path, "w") as dst:
+            dst.write(src.read())
 
     logger.info("Created user config file at: %s", config_path)
 
@@ -141,14 +104,62 @@ def get_env_value(key: str, default: Any = None) -> Any:
     return os.environ.get(env_key, default)
 
 
+def mask_api_key(key: str) -> str:
+    """Mask an API key showing only first 4 and last 4 characters."""
+    if not key or len(key) < 8:
+        return "not set"
+    return f"{key[:4]}...{key[-4:]}"
+
+
+def log_env_source() -> None:
+    """Log information about where environment variables are loaded from."""
+    api_key = os.getenv("OPENAI_API_KEY")
+    if not api_key:
+        logger.warning("OPENAI_API_KEY is not set in any environment file")
+        return
+
+    # Check each possible source
+    env_sources = [
+        (Path("~/.env").expanduser(), "home directory (~/.env)"),
+        (get_user_env_path(), "user config directory"),
+        (Path(".env"), "current directory"),
+    ]
+
+    for env_path, description in env_sources:
+        if env_path.exists():
+            with open(env_path) as f:
+                if "OPENAI_API_KEY" in f.read():
+                    logger.info(
+                        "Using OPENAI_API_KEY from %s (key: %s)",
+                        description,
+                        mask_api_key(api_key),
+                    )
+                    return
+
+    logger.info(
+        "Using OPENAI_API_KEY from environment variables (key: %s)",
+        mask_api_key(api_key),
+    )
+
+
 # Initialize environment
 env_path = get_user_env_path()
-if env_path.exists():
+local_env = Path(".env")  # Local development .env file
+
+# Try local .env first (for development), then fall back to user config .env
+if local_env.exists():
+    load_dotenv(local_env)
+    logger.debug("Loaded .env from current directory: %s", local_env.absolute())
+elif env_path.exists():
     load_dotenv(env_path)
+    logger.debug("Loaded .env from user config: %s", env_path)
 else:
     logger.info(
         "No .env file found. Run 'rag-retriever --init' to create one at: %s", env_path
     )
+
+# Log where we got our environment variables from
+log_env_source()
 
 
 class Config:

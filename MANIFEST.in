@@ -4,4 +4,7 @@ include pyproject.toml
 include setup.py
 recursive-include rag_retriever *.py
 recursive-include rag_retriever/config *.yaml
+recursive-include rag_retriever/config *.example
 recursive-include tests *.py 
+include rag_retriever/config/default_config.yaml
+include .env.example 
