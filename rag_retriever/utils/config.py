@@ -257,6 +257,18 @@ class Config:
         if score_threshold := get_env_value("SCORE_THRESHOLD"):
             self._config["search"]["default_score_threshold"] = float(score_threshold)
 
+    def _merge_configs(self, override_config: Dict[str, Any]) -> None:
+        """Recursively merge override config into base config."""
+        for key, value in override_config.items():
+            if (
+                key in self._config
+                and isinstance(self._config[key], dict)
+                and isinstance(value, dict)
+            ):
+                self._config[key].update(value)
+            else:
+                self._config[key] = value
+
     @property
     def vector_store(self) -> Dict[str, Any]:
         """Get vector store configuration."""
