@@ -1,7 +1,9 @@
 """Web page crawling and content extraction module."""
 
 import time
+import random
 import logging
+import platform
 from typing import List, Set
 from urllib.parse import urljoin, urlparse
 from bs4 import BeautifulSoup
@@ -15,6 +17,7 @@ from selenium.webdriver.chrome.options import Options
 from selenium.common.exceptions import WebDriverException
 from webdriver_manager.chrome import ChromeDriverManager
 from langchain_core.documents import Document
+from selenium_stealth import stealth
 
 from rag_retriever.utils.config import config
 from rag_retriever.crawling.exceptions import (
@@ -39,16 +42,76 @@ class Crawler:
         self.content_cleaner = ContentCleaner()
         self.visited_urls: Set[str] = set()
         self._total_chunks = 0
+        self._setup_platform_config()
+
+    def _setup_platform_config(self):
+        """Set up platform-specific configuration."""
+        system = platform.system().lower()
+        if system == "darwin":  # macOS
+            self.platform_name = "MacIntel"
+            self.webgl_vendor = "Apple Inc."
+            self.renderer = "Apple GPU"
+            self.user_agent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+        elif system == "windows":
+            self.platform_name = "Win32"
+            self.webgl_vendor = "Google Inc."
+            self.renderer = (
+                "ANGLE (Intel, Intel(R) UHD Graphics Direct3D11 vs_5_0 ps_5_0)"
+            )
+            self.user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+        else:  # Linux and others
+            self.platform_name = "Linux x86_64"
+            self.webgl_vendor = "Google Inc."
+            self.renderer = "Mesa/X.org, ANGLE (Intel, Mesa Intel(R) UHD Graphics 620 (KBL GT2), OpenGL 4.6)"
+            self.user_agent = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
 
     def _setup_driver(self) -> webdriver.Chrome:
         """Set up Chrome WebDriver with configured options."""
         try:
             options = Options()
+
+            # Set platform-specific user agent
+            options.add_argument(f"user-agent={self.user_agent}")
+
+            # Add essential options for stealth
+            options.add_argument("--disable-blink-features=AutomationControlled")
+            options.add_argument("--disable-dev-shm-usage")
+            options.add_argument("--no-sandbox")
+            options.add_experimental_option("excludeSwitches", ["enable-automation"])
+            options.add_experimental_option("useAutomationExtension", False)
+
+            # Add any additional configured options
             for option in self.selenium_options:
-                options.add_argument(option)
+                if option not in options.arguments:
+                    options.add_argument(option)
 
             service = Service(ChromeDriverManager().install())
-            return webdriver.Chrome(service=service, options=options)
+            driver = webdriver.Chrome(service=service, options=options)
+
+            # Apply stealth settings with platform-specific values
+            stealth(
+                driver,
+                languages=["en-US", "en"],
+                vendor="Google Inc.",
+                platform=self.platform_name,
+                webgl_vendor=self.webgl_vendor,
+                renderer=self.renderer,
+                fix_hairline=True,
+                run_on_insecure_origins=True,
+            )
+
+            # Execute CDP commands to prevent detection
+            driver.execute_cdp_cmd(
+                "Network.setUserAgentOverride",
+                {"userAgent": self.user_agent},
+            )
+
+            # Remove webdriver property
+            driver.execute_script(
+                "Object.defineProperty(navigator, 'webdriver', {get: () => undefined})"
+            )
+
+            return driver
         except WebDriverException as e:
             raise PageLoadError(f"Failed to setup WebDriver: {str(e)}")
 
@@ -94,23 +157,30 @@ class Crawler:
     def get_page_content(self, url: str) -> str:
         """Get page content using Selenium for JavaScript support."""
         logger.debug(f"Fetching content from {url}")
-        options = Options()
-        options.add_argument("--headless")  # Run in headless mode
-        options.add_argument("--no-sandbox")
-        options.add_argument("--disable-dev-shm-usage")
 
         try:
-            service = Service(ChromeDriverManager().install())
-            driver = webdriver.Chrome(service=service, options=options)
+            driver = self._setup_driver()
+
+            # Add random delay before request (1-3 seconds)
+            time.sleep(random.uniform(1, 3))
+
             driver.get(url)
 
-            # Wait for main content to be present
-            WebDriverWait(driver, 10).until(
-                EC.presence_of_element_located((By.TAG_NAME, "main"))
-            )
+            # Random delay after page load (2-4 seconds)
+            time.sleep(random.uniform(2, 4))
 
-            # Additional wait for dynamic content
-            time.sleep(3)
+            try:
+                # Wait for main content with longer timeout
+                WebDriverWait(driver, 15).until(
+                    EC.presence_of_element_located((By.TAG_NAME, "body"))
+                )
+            except Exception as e:
+                logger.warning(
+                    f"Timeout waiting for main content, proceeding anyway: {str(e)}"
+                )
+
+            # Additional random delay for dynamic content (1-2 seconds)
+            time.sleep(random.uniform(1, 2))
 
             content = driver.page_source
             driver.quit()
