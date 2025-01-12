@@ -4,8 +4,7 @@ A Python application that recursively loads web pages, indexes their content usi
 
 ## Prerequisites
 
-- Python 3.7 or later (Download from [python.org](https://python.org))
-- Google Chrome browser installed (Required for web crawling)
+- Python 3.10-3.12 (Download from [python.org](https://python.org))
 - pipx (Install with one of these commands):
 
   ```bash
@@ -18,13 +17,13 @@ A Python application that recursively loads web pages, indexes their content usi
 
 ### System Requirements
 
-The application uses Chrome browser for web crawling. Make sure you have:
+The application uses Playwright with Chromium for web crawling:
 
-- Google Chrome browser installed (any recent version)
-- Sufficient disk space for the ChromeDriver (downloaded automatically)
+- Chromium browser is automatically installed during package installation
+- Sufficient disk space for Chromium (~200MB)
 - Internet connection for initial setup and crawling
 
-Note: The application will automatically download and manage the appropriate ChromeDriver version for your Chrome installation.
+Note: The application will automatically download and manage Chromium installation.
 
 ## Installation
 
@@ -38,6 +37,7 @@ This will:
 
 - Create an isolated environment for the application
 - Install all required dependencies
+- Install Chromium browser automatically
 - Make the `rag-retriever` command available in your PATH
 
 After installation, initialize the configuration:
@@ -90,6 +90,9 @@ To completely remove RAG Retriever:
 ```bash
 # Remove the application and its isolated environment
 pipx uninstall rag-retriever
+
+# Remove Playwright browsers
+python -m playwright uninstall chromium
 
 # Optional: Remove configuration and data files
 # Unix/Mac:
@@ -212,12 +215,20 @@ search:
   default_limit: 8
   default_score_threshold: 0.3
 
-selenium:
-  wait_time: 2
-  options:
-    - "--headless"
-    - "--no-sandbox"
-    - "--disable-dev-shm-usage"
+browser:
+  wait_time: 2 # Base wait time in seconds
+  viewport:
+    width: 1920
+    height: 1080
+  # Random delays to appear more human-like
+  delays:
+    before_request: [1, 3] # Min and max seconds
+    after_load: [2, 4]
+    after_dynamic: [1, 2]
+  # Browser launch options
+  launch_options:
+    headless: true
+    channel: "chrome" # Use system Chrome if available
 ```
 
 ### Environment Variables
