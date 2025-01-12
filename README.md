@@ -5,6 +5,7 @@ A Python application that recursively loads web pages, indexes their content usi
 ## Prerequisites
 
 - Python 3.7 or later (Download from [python.org](https://python.org))
+- Google Chrome browser installed (Required for web crawling)
 - pipx (Install with one of these commands):
 
   ```bash
@@ -14,6 +15,16 @@ A Python application that recursively loads web pages, indexes their content usi
   # On Windows/Linux
   python -m pip install --user pipx
   ```
+
+### System Requirements
+
+The application uses Chrome browser for web crawling. Make sure you have:
+
+- Google Chrome browser installed (any recent version)
+- Sufficient disk space for the ChromeDriver (downloaded automatically)
+- Internet connection for initial setup and crawling
+
+Note: The application will automatically download and manage the appropriate ChromeDriver version for your Chrome installation.
 
 ## Installation
 
