@@ -151,12 +151,13 @@ Search results include relevance scores based on cosine similarity:
 
 - Scores closer to 1.0 indicate higher relevance
 - Typical ranges:
-  - 0.8 - 1.0: Very high relevance (nearly exact matches)
-  - 0.6 - 0.8: High relevance
-  - 0.4 - 0.6: Moderate relevance
-  - Below 0.4: Lower relevance
+  - 0.7+: Very high relevance (nearly exact matches)
+  - 0.6 - 0.7: High relevance
+  - 0.5 - 0.6: Good relevance
+  - 0.3 - 0.5: Moderate relevance
+  - Below 0.3: Lower relevance
 
-Default threshold is 0.2, adjustable with `--score-threshold`.
+Default threshold is 0.3, adjustable with `--score-threshold`.
 
 ## Configuration Options
 

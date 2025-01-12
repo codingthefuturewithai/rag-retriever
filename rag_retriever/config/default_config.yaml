@@ -29,8 +29,8 @@ content:
 
 # Search settings
 search:
-  default_limit: 5
-  default_score_threshold: 0.2
+  default_limit: 8
+  default_score_threshold: 0.3
 
 # Selenium settings
 selenium:
