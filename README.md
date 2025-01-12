@@ -32,23 +32,45 @@ This will:
 After installation, initialize the configuration:
 
 ```bash
-# Initialize configuration and create default config.yaml
+# Initialize configuration files
 rag-retriever --init
-
-# Create .env file and add your OpenAI API key
-# Unix/Mac:
-echo "OPENAI_API_KEY=your-api-key-here" > ~/.config/rag-retriever/.env
-# Windows (PowerShell):
-Set-Content -Path "$env:APPDATA\rag-retriever\.env" -Value "OPENAI_API_KEY=your-api-key-here"
-
-# Optional: Review and customize settings in config.yaml
-# Unix/Mac:
-nano ~/.config/rag-retriever/config.yaml
-# Windows:
-notepad %APPDATA%\rag-retriever\config.yaml
 ```
 
-The `.env` file is used only for the OpenAI API key. All other settings should be modified in `config.yaml`.
+This creates:
+
+- A configuration file at `~/.config/rag-retriever/config.yaml` (Unix/Mac) or `%APPDATA%\rag-retriever\config.yaml` (Windows)
+- A `.env` file in the same directory for your OpenAI API key
+
+### Setting up your API Key
+
+Add your OpenAI API key to the `.env` file:
+
+```bash
+OPENAI_API_KEY=your-api-key-here
+```
+
+### Customizing Configuration
+
+All settings are in `config.yaml`. Common adjustments include:
+
+```yaml
+content:
+  chunk_size: 2000 # Size of text chunks for indexing
+  chunk_overlap: 400 # Overlap between chunks
+
+search:
+  default_limit: 8 # Number of results returned
+  default_score_threshold: 0.3 # Minimum relevance score
+```
+
+### Data Storage
+
+The vector store database is stored at:
+
+- Unix/Mac: `~/.local/share/rag-retriever/chromadb/`
+- Windows: `%LOCALAPPDATA%\rag-retriever\chromadb/`
+
+This location is automatically managed by the application and should not be modified directly.
 
 ### Uninstallation
 
@@ -87,43 +109,6 @@ pip install -e .
 ./scripts/run-rag.sh --init  # Unix/Mac
 scripts\run-rag.bat --init   # Windows
 ```
-
-## Configuration
-
-The application uses a YAML configuration file located at:
-
-- Unix/Mac: `~/.config/rag-retriever/config.yaml`
-- Windows: `%APPDATA%\rag-retriever\config.yaml`
-
-To modify default settings, edit this file directly. The only setting that should be set via environment variable is your OpenAI API key:
-
-```bash
-# Required: Set your OpenAI API key in .env
-OPENAI_API_KEY=your-api-key-here
-```
-
-All other settings should be modified in config.yaml. For example, to change chunk size or search limits:
-
-```yaml
-content:
-  chunk_size: 2000 # Adjust for different content splitting
-  chunk_overlap: 400
-
-search:
-  default_limit: 8 # Change number of results returned
-  default_score_threshold: 0.3 # Adjust minimum relevance score
-```
-
-The configuration file is created automatically when you run `rag-retriever --init`.
-
-### Data Storage
-
-The vector store database is stored at:
-
-- Unix/Mac: `~/.local/share/rag-retriever/chromadb/`
-- Windows: `%LOCALAPPDATA%\rag-retriever\chromadb/`
-
-This location is automatically managed by the application and should not be modified directly.
 
 ## Usage Examples
 
