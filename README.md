@@ -32,15 +32,23 @@ This will:
 After installation, initialize the configuration:
 
 ```bash
-# Initialize configuration
+# Initialize configuration and create default config.yaml
 rag-retriever --init
 
-# Edit .env file to add your OpenAI API key
+# Create .env file and add your OpenAI API key
 # Unix/Mac:
-nano ~/.config/rag-retriever/.env
+echo "OPENAI_API_KEY=your-api-key-here" > ~/.config/rag-retriever/.env
+# Windows (PowerShell):
+Set-Content -Path "$env:APPDATA\rag-retriever\.env" -Value "OPENAI_API_KEY=your-api-key-here"
+
+# Optional: Review and customize settings in config.yaml
+# Unix/Mac:
+nano ~/.config/rag-retriever/config.yaml
 # Windows:
-notepad %APPDATA%\rag-retriever\.env
+notepad %APPDATA%\rag-retriever\config.yaml
 ```
+
+The `.env` file is used only for the OpenAI API key. All other settings should be modified in `config.yaml`.
 
 ### Uninstallation
 
@@ -82,25 +90,40 @@ scripts\run-rag.bat --init   # Windows
 
 ## Configuration
 
-The application uses standard locations for all user files, regardless of installation method:
+The application uses a YAML configuration file located at:
 
-### File Locations
+- Unix/Mac: `~/.config/rag-retriever/config.yaml`
+- Windows: `%APPDATA%\rag-retriever\config.yaml`
 
-**Unix/Mac:**
+To modify default settings, edit this file directly. The only setting that should be set via environment variable is your OpenAI API key:
 
-- Config: `~/.config/rag-retriever/`
-  - `config.yaml`: Configuration settings
-  - `.env`: Environment variables and API keys
-- Data: `~/.local/share/rag-retriever/`
-  - `chromadb/`: Vector store database
+```bash
+# Required: Set your OpenAI API key in .env
+OPENAI_API_KEY=your-api-key-here
+```
 
-**Windows:**
+All other settings should be modified in config.yaml. For example, to change chunk size or search limits:
 
-- Config: `%APPDATA%\rag-retriever\`
-  - `config.yaml`: Configuration settings
-  - `.env`: Environment variables and API keys
-- Data: `%LOCALAPPDATA%\rag-retriever\`
-  - `chromadb/`: Vector store database
+```yaml
+content:
+  chunk_size: 2000 # Adjust for different content splitting
+  chunk_overlap: 400
+
+search:
+  default_limit: 8 # Change number of results returned
+  default_score_threshold: 0.3 # Adjust minimum relevance score
+```
+
+The configuration file is created automatically when you run `rag-retriever --init`.
+
+### Data Storage
+
+The vector store database is stored at:
+
+- Unix/Mac: `~/.local/share/rag-retriever/chromadb/`
+- Windows: `%LOCALAPPDATA%\rag-retriever\chromadb/`
+
+This location is automatically managed by the application and should not be modified directly.
 
 ## Usage Examples
 
@@ -133,7 +156,7 @@ rag-retriever --query "How do I get started?"
 rag-retriever --query "How do I get started?" --truncate
 
 # With custom limit
-rag-retriever --query "deployment options" --limit 3
+rag-retriever --query "deployment options" --limit 8
 
 # With relevance threshold
 rag-retriever --query "advanced configuration" --score-threshold 0.3
@@ -170,8 +193,17 @@ vector_store:
   embedding_dimensions: 3072
 
 content:
-  chunk_size: 500
-  chunk_overlap: 100
+  chunk_size: 2000
+  chunk_overlap: 400
+  # Separators for text splitting, in order of preference
+  separators:
+    - "\n## " # h2 headers (strongest break)
+    - "\n### " # h3 headers
+    - "\n#### " # h4 headers
+    - "\n- " # bullet points
+    - "\n• " # alternative bullet points
+    - "\n\n" # paragraphs
+    - ". " # sentences (weakest break)
   ui_patterns:
     - "Theme\\s+Auto\\s+Light\\s+Dark"
     - "Previous\\s+topic|Next\\s+topic"
@@ -181,8 +213,8 @@ content:
     - "Skip\\s+to\\s+content"
 
 search:
-  default_limit: 5
-  default_score_threshold: 0.2
+  default_limit: 8
+  default_score_threshold: 0.3
 
 selenium:
   wait_time: 2
@@ -194,17 +226,38 @@ selenium:
 
 ### Environment Variables
 
-Override settings in your `.env` file:
+The application requires an OpenAI API key to be set in your `.env` file:
 
 ```bash
-# Required
+# Required: Set in ~/.config/rag-retriever/.env (Unix/Mac)
+# or %APPDATA%\rag-retriever\.env (Windows)
 OPENAI_API_KEY=your-api-key-here
-
-# Optional overrides
-RAG_RETRIEVER_EMBEDDING_MODEL=text-embedding-3-large
-RAG_RETRIEVER_CHUNK_SIZE=1000
-RAG_RETRIEVER_DEFAULT_LIMIT=10
 ```
+
+All other configuration should be done by editing the config.yaml file as shown above.
+
+## Using with AI Assistants
+
+RAG Retriever can be integrated with most AI coding assistants (like aider, Cursor, GitHub Copilot, Codeium Windsurf, etc.) that are capable of running command line tools to enhance their knowledge with up-to-date documentation. We provide a prompt template that instructs AI assistants on how to properly use the RAG Retriever tool:
+
+[ai-assistant-prompt.md](docs/ai-assistant-prompt.md)
+
+**Important:** To use RAG Retriever with AI assistants, install it using the `pipx install rag-retriever` method described in the Installation section above. This ensures the `rag-retriever` command is available globally in your system PATH, which is required for AI assistants to access it.
+
+To use this prompt:
+
+1. Copy the prompt content into your AI assistant's instructions or system prompt
+2. Activate the RAG functionality with `#rag-activate`
+3. The assistant will now suggest using RAG Retriever when it needs additional context
+4. Use `#rag-search` to explicitly request the assistant to consider using RAG for a specific query
+5. Use `#rag-deactivate` to disable RAG functionality
+
+The prompt ensures the assistant:
+
+- Only suggests RAG when there are clear knowledge gaps
+- Properly analyzes search results before suggesting fetches
+- Uses appropriate search parameters and depth settings
+- Provides clear explanations of its search strategy
 
 ## Features
 
