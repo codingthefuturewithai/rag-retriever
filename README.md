@@ -280,13 +280,38 @@ Key dependencies include:
 
 ## Notes
 
-- Uses OpenAI's text-embedding-3-large model for generating embeddings
+- Uses OpenAI's text-embedding-3-large model for generating embeddings by default
 - Content is automatically cleaned and structured during indexing
 - Implements URL depth-based crawling control
 - Vector store persists between runs unless explicitly deleted
 - Uses cosine similarity for more intuitive relevance scoring
 - Minimal output by default with `--verbose` flag for troubleshooting
 - Full content display by default with `--truncate` option for brevity
+
+## Known Current Limitations
+
+The following limitations are currently being tracked, with possible future enhancements under consideration:
+
+- Does not check for existing URLs or content in the vector store during fetch operations
+
+  - Possible enhancement: Detect and skip already indexed content by default
+  - Possible enhancement: Add `--re-fetch` option to update existing content
+  - Possible enhancement: Provide status information about existing content age
+
+- Limited document management capabilities
+
+  - Possible enhancement: Support for deleting specific documents from the vector store
+  - Possible enhancement: Support for bulk deletion of documents by base URL
+  - Possible enhancement: Document listing and filtering tools
+
+- No direct access to vector store data for analysis
+
+  - Possible enhancement: Tools to examine and analyze stored embeddings and metadata
+  - Possible enhancement: Support for export/import of vector store data for backup or transfer
+
+- Command-line interface only
+  - Possible enhancement: Web UI for easier interaction with all features
+  - Possible enhancement: Real-time progress monitoring and result visualization
 
 ## Contributing
 
