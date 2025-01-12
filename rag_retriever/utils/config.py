@@ -56,20 +56,37 @@ def create_user_env() -> None:
     """Create a new .env file in user config directory using the example template."""
     env_path = get_user_env_path()
 
-    # Don't overwrite existing .env
+    # Check if .env exists and has content
     if env_path.exists():
-        logger.info("User .env already exists at: %s", env_path)
-        return
+        with open(env_path, "r") as f:
+            content = f.read().strip()
+            if content:  # File exists and has content
+                # Check if it has a valid API key
+                if "OPENAI_API_KEY" in content and not content.endswith(
+                    "your-api-key-here"
+                ):
+                    logger.info(
+                        "User .env already exists with API key at: %s", env_path
+                    )
+                    return
+                else:
+                    logger.warning("Existing .env found but no valid API key detected")
+                    logger.warning(
+                        "Please edit %s to add your OpenAI API key", env_path
+                    )
+                    return
 
-    # Copy the example template from package resources
-    with resources.files("rag_retriever.config").joinpath(".env.example").open(
-        "r"
-    ) as src:
+    # Create new .env or overwrite empty one
+    with (
+        resources.files("rag_retriever.config")
+        .joinpath(".env.example")
+        .open("r") as src
+    ):
         with open(env_path, "w") as dst:
             dst.write(src.read())
 
     logger.info("Created .env file at: %s", env_path)
-    logger.info("Please edit this file to add your OpenAI API key")
+    logger.warning("Please edit this file to add your OpenAI API key")
 
 
 def create_user_config() -> None:
@@ -82,9 +99,11 @@ def create_user_config() -> None:
         return
 
     # Copy the default config file
-    with resources.files("rag_retriever.config").joinpath("default_config.yaml").open(
-        "r"
-    ) as src:
+    with (
+        resources.files("rag_retriever.config")
+        .joinpath("default_config.yaml")
+        .open("r") as src
+    ):
         with open(config_path, "w") as dst:
             dst.write(src.read())
 
@@ -176,9 +195,11 @@ class Config:
         self._env_path = None
 
         # Load default config first
-        with resources.files("rag_retriever.config").joinpath(
-            "default_config.yaml"
-        ).open("r") as f:
+        with (
+            resources.files("rag_retriever.config")
+            .joinpath("default_config.yaml")
+            .open("r") as f
+        ):
             self._config = yaml.safe_load(f)
 
         # Try to load user config if it exists
@@ -222,18 +243,6 @@ class Config:
         # Apply environment variable overrides
         self._apply_env_overrides()
 
-    def _merge_configs(self, override_config: Dict[str, Any]) -> None:
-        """Recursively merge override config into base config."""
-        for key, value in override_config.items():
-            if (
-                key in self._config
-                and isinstance(self._config[key], dict)
-                and isinstance(value, dict)
-            ):
-                self._merge_configs(value)
-            else:
-                self._config[key] = value
-
     def _apply_env_overrides(self) -> None:
         """Apply environment variable overrides to config."""
         # Vector store overrides
@@ -241,14 +250,6 @@ class Config:
             self._config["vector_store"]["embedding_model"] = embed_model
         if embed_dim := get_env_value("EMBEDDING_DIMENSIONS"):
             self._config["vector_store"]["embedding_dimensions"] = int(embed_dim)
-        if persist_dir := get_env_value("PERSIST_DIRECTORY"):
-            self._config["vector_store"]["persist_directory"] = persist_dir
-
-        # Content processing overrides
-        if chunk_size := get_env_value("CHUNK_SIZE"):
-            self._config["content"]["chunk_size"] = int(chunk_size)
-        if chunk_overlap := get_env_value("CHUNK_OVERLAP"):
-            self._config["content"]["chunk_overlap"] = int(chunk_overlap)
 
         # Search overrides
         if default_limit := get_env_value("DEFAULT_LIMIT"):
@@ -272,9 +273,9 @@ class Config:
         return self._config["search"]
 
     @property
-    def selenium(self) -> Dict[str, Any]:
-        """Get Selenium configuration."""
-        return self._config["selenium"]
+    def browser(self) -> Dict[str, Any]:
+        """Get browser configuration."""
+        return self._config.get("browser", {})
 
     @property
     def config_path(self) -> str:

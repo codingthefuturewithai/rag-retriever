@@ -32,10 +32,29 @@ search:
   default_limit: 8
   default_score_threshold: 0.3
 
-# Selenium settings
-selenium:
-  wait_time: 2
-  options:
-    - "--headless"
-    - "--no-sandbox"
-    - "--disable-dev-shm-usage"
+# Browser settings for web crawling
+browser:
+  wait_time: 2 # Base wait time in seconds
+  viewport:
+    width: 1920
+    height: 1080
+  # Random delays to appear more human-like
+  delays:
+    before_request: [1, 3] # Min and max seconds
+    after_load: [2, 4]
+    after_dynamic: [1, 2]
+  # Browser launch options
+  launch_options:
+    headless: true
+    channel: "chrome" # Use system Chrome if available
+  # Context options for stealth
+  context_options:
+    bypass_csp: true # Bypass Content Security Policy
+    java_script_enabled: true
+    user_agent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+  # Additional stealth settings
+  stealth:
+    languages: ["en-US", "en"]
+    platform: "MacIntel" # Will be overridden based on OS
+    vendor: "Google Inc."
+    webgl_vendor: "Intel Inc." # Will be overridden based on OS

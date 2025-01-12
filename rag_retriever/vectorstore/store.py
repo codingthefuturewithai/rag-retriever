@@ -86,7 +86,7 @@ class VectorStore:
 
         # Create new DB with documents
         if documents is None:
-            logger.error("No existing database found and no documents provided")
+            logger.debug("No existing database found and no documents provided")
             raise ValueError(
                 "No existing vector store found and no documents provided to create one."
             )

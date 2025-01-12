@@ -4,14 +4,14 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "rag-retriever"
-version = "0.1.0"
+version = "0.1.2"
 description = "A tool for crawling, indexing, and semantically searching web content"
 readme = "README.md"
 authors = [
     {name = "Tim Kitchens", email = "codingthefuturewithai@gmail.com"}
 ]
 license = {text = "MIT"}
-requires-python = ">=3.10"
+requires-python = ">=3.10,<3.13"
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
@@ -34,18 +34,17 @@ dependencies = [
     "langchain-openai==0.2.14",
     "lxml==5.3.0",
     "openai==1.59.4",
+    "playwright==1.42.0",
     "python-dotenv==1.0.1",
-    "pyyaml==6.0.2",
-    "selenium",
-    "selenium-stealth==1.0.6",
-    "webdriver-manager"
+    "pyyaml==6.0.2"
 ]
 
 [project.scripts]
 rag-retriever = "rag_retriever.cli:main"
+post-install = "scripts.install:install_browsers"
 
 [tool.setuptools.packages.find]
-include = ["rag_retriever*"]
+include = ["rag_retriever*", "scripts*"]
 namespaces = true
 
 [tool.setuptools.package-data]
