@@ -245,26 +245,18 @@ All other configuration should be done by editing the config.yaml file as shown 
 
 ## Using with AI Assistants
 
-RAG Retriever can be integrated with most AI coding assistants (like aider, Cursor, GitHub Copilot, Codeium Windsurf, etc.) that are capable of running command line tools to enhance their knowledge with up-to-date documentation. We provide a prompt template that instructs AI assistants on how to properly use the RAG Retriever tool:
+RAG Retriever can be integrated with AI coding assistants (like aider, Cursor, GitHub Copilot, Codeium Windsurf, etc.) that are capable of running command line tools. This allows them to enhance their knowledge with up-to-date documentation.
 
-[ai-assistant-prompt.md](docs/ai-assistant-prompt.md)
+To use RAG Retriever with AI assistants:
 
-**Important:** To use RAG Retriever with AI assistants, install it using the `pipx install rag-retriever` method described in the Installation section above. This ensures the `rag-retriever` command is available globally in your system PATH, which is required for AI assistants to access it.
+1. Install RAG Retriever globally using `pipx install rag-retriever` as described in the Installation section
+2. Ensure the `rag-retriever` command is available in your system PATH
+3. Share this [usage guide](docs/rag-retriever-usage-guide.md) with your AI assistant by saying:
+   "I've provided instructions for a tool called RAG Retriever I have installed. Review this doc and keep it in mind for usage when you determine you need external context."
 
-To use this prompt:
+The assistant can then use RAG Retriever's fetch and query capabilities to gather relevant information when needed.
 
-1. Copy the prompt content into your AI assistant's instructions or system prompt
-2. Activate the RAG functionality with `#rag-activate`
-3. The assistant will now suggest using RAG Retriever when it needs additional context
-4. Use `#rag-search` to explicitly request the assistant to consider using RAG for a specific query
-5. Use `#rag-deactivate` to disable RAG functionality
-
-The prompt ensures the assistant:
-
-- Only suggests RAG when there are clear knowledge gaps
-- Properly analyzes search results before suggesting fetches
-- Uses appropriate search parameters and depth settings
-- Provides clear explanations of its search strategy
+You can also directly ask your coding assistant to use the tool at any time you believe additional context would help with "in-context learning" scenarios. This gives you control over when to enhance the assistant's knowledge with specific documentation or references.
 
 ## Features
 
