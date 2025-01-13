@@ -3,6 +3,24 @@ vector_store:
   persist_directory: null # Will be set by the application to OS-specific path
   embedding_model: "text-embedding-3-large"
   embedding_dimensions: 3072
+  chunk_size: 1000 # Default chunk size for text splitting
+  chunk_overlap: 200 # Default chunk overlap for text splitting
+
+# Local document processing
+document_processing:
+  supported_extensions:
+    - ".md"
+    - ".txt"
+  excluded_patterns:
+    - ".*"
+    - "node_modules/**"
+    - "__pycache__/**"
+    - "*.pyc"
+    - ".git/**"
+  encoding_fallbacks:
+    - "utf-8"
+    - "latin-1"
+    - "cp1252"
 
 # Content processing
 content:

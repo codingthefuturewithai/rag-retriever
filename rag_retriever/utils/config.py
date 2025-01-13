@@ -3,7 +3,7 @@
 import os
 from pathlib import Path
 from typing import Dict, Any
-from importlib import resources
+from importlib.resources import files
 import logging
 import shutil
 
@@ -77,11 +77,7 @@ def create_user_env() -> None:
                     return
 
     # Create new .env or overwrite empty one
-    with (
-        resources.files("rag_retriever.config")
-        .joinpath(".env.example")
-        .open("r") as src
-    ):
+    with files("rag_retriever.config").joinpath(".env.example").open("r") as src:
         with open(env_path, "w") as dst:
             dst.write(src.read())
 
@@ -99,11 +95,7 @@ def create_user_config() -> None:
         return
 
     # Copy the default config file
-    with (
-        resources.files("rag_retriever.config")
-        .joinpath("default_config.yaml")
-        .open("r") as src
-    ):
+    with files("rag_retriever.config").joinpath("config.yaml").open("r") as src:
         with open(config_path, "w") as dst:
             dst.write(src.read())
 
@@ -195,11 +187,7 @@ class Config:
         self._env_path = None
 
         # Load default config first
-        with (
-            resources.files("rag_retriever.config")
-            .joinpath("default_config.yaml")
-            .open("r") as f
-        ):
+        with files("rag_retriever.config").joinpath("config.yaml").open("r") as f:
             self._config = yaml.safe_load(f)
 
         # Try to load user config if it exists

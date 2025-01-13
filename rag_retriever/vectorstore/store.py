@@ -50,6 +50,10 @@ class VectorStore:
         logger.debug("Vector store directory: %s", self.persist_directory)
         self.embeddings = self._get_embeddings()
         self._db = None
+        self.text_splitter = RecursiveCharacterTextSplitter(
+            chunk_size=config.vector_store.get("chunk_size", 1000),
+            chunk_overlap=config.vector_store.get("chunk_overlap", 200),
+        )
 
     def _get_embeddings(self) -> OpenAIEmbeddings:
         """Get OpenAI embeddings instance with configuration."""
@@ -157,3 +161,31 @@ class VectorStore:
             score_threshold=score_threshold,
         )
         return results
+
+    def add_local_documents(self, documents: List[Document]) -> None:
+        """Add documents from local files to the vector store.
+
+        Args:
+            documents: List of Document objects to add
+
+        Raises:
+            ValueError: If no documents are provided
+        """
+        if not documents:
+            raise ValueError("No documents provided to add to vector store")
+
+        logger.info(f"Processing {len(documents)} local documents")
+
+        # Split documents into chunks
+        split_docs = []
+        for doc in documents:
+            splits = self.text_splitter.split_documents([doc])
+            split_docs.extend(splits)
+
+        logger.info(f"Created {len(split_docs)} chunks from {len(documents)} documents")
+
+        # Add to vector store
+        self._get_or_create_db(split_docs)
+        logger.info(
+            f"Successfully added {len(split_docs)} document chunks to vector store"
+        )
