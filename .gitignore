@@ -61,3 +61,8 @@ htmlcov/
 .wdm/
 chromedriver* 
 .aider*
+
+# Additional directories
+rag_retriever.egg-info/
+tests/results/
+.aider.tags.cache.v3/

@@ -1,0 +1,50 @@
+{
+  "test_cases": [
+    {
+      "file": "tables_093.pdf",
+      "query": "What terms are included under the skeletal system in the English-Spanish Dictionary of Health-Related Terms?",
+      "category": "tables",
+      "expected_keywords": [
+        "bone",
+        "skeletal",
+        "skeleton",
+        "hueso",
+        "esqueleto"
+      ]
+    },
+    {
+      "file": "images_344.pdf",
+      "query": "Provide an example of how GMAT-related scripts can be utilized",
+      "category": "images",
+      "expected_keywords": [
+        "GMAT",
+        "script",
+        "test",
+        "preparation"
+      ]
+    },
+    {
+      "file": "simple_079.pdf",
+      "query": "What responsibilities are highlighted under the 'Zorgplicht' (duty of care) in the Algemene Bankvoorwaarden?",
+      "category": "simple",
+      "expected_keywords": [
+        "zorgplicht",
+        "bank",
+        "voorwaarden",
+        "algemene",
+        "verplichtingen"
+      ]
+    },
+    {
+      "file": "technical_040.pdf",
+      "query": "What advancements does the TWINSCAN algorithm bring to genome annotation, according to the discussion on Caenorhabditis elegans?",
+      "category": "technical",
+      "expected_keywords": [
+        "TWINSCAN",
+        "genome",
+        "annotation",
+        "Caenorhabditis elegans"
+      ]
+    }
+  ]
+} 
