@@ -6,6 +6,7 @@ import logging
 import os
 import tempfile
 from PIL import Image
+import pytesseract
 
 from langchain_core.documents import Document
 from langchain_community.document_loaders import (
@@ -61,6 +62,24 @@ class LocalDocumentLoader:
                 f"PDF file size ({file_size_mb:.1f}MB) exceeds the maximum allowed size of {max_size_mb}MB"
             )
 
+    def _process_image_with_ocr(self, image_path: str, languages: List[str]) -> str:
+        """Process an image with OCR to extract text.
+
+        Args:
+            image_path: Path to the image file
+            languages: List of language codes for OCR
+
+        Returns:
+            Extracted text from the image
+        """
+        try:
+            # Configure tesseract language
+            lang_str = "+".join(languages)
+            return pytesseract.image_to_string(Image.open(image_path), lang=lang_str)
+        except Exception as e:
+            logger.error(f"OCR failed for image {image_path}: {str(e)}")
+            return ""
+
     def _process_pdf_images(self, file_path: str, temp_dir: str) -> List[Document]:
         """Extract and process images from PDF if enabled in settings.
 
@@ -69,7 +88,7 @@ class LocalDocumentLoader:
             temp_dir: Directory to store temporary image files
 
         Returns:
-            List of Document objects containing image metadata
+            List of Document objects containing image metadata and OCR text
         """
         if not self.pdf_settings.get("extract_images", False):
             return []
@@ -96,9 +115,21 @@ class LocalDocumentLoader:
                     with open(image_path, "wb") as img_file:
                         img_file.write(image_bytes)
 
-                    # Create document with image metadata
+                    # Extract text with OCR if enabled
+                    image_text = ""
+                    if self.pdf_settings.get("ocr_enabled", False):
+                        logger.debug(f"Running OCR on image from page {page_num + 1}")
+                        image_text = self._process_image_with_ocr(
+                            image_path, self.pdf_settings.get("languages", ["eng"])
+                        )
+
+                    # Create document with image metadata and OCR text
+                    content = f"Image on page {page_num + 1}"
+                    if image_text:
+                        content = f"{content}\nOCR Text:\n{image_text}"
+
                     image_doc = Document(
-                        page_content=f"Image on page {page_num + 1}",
+                        page_content=content,
                         metadata={
                             "source": file_path,
                             "page": page_num + 1,
@@ -106,6 +137,7 @@ class LocalDocumentLoader:
                             "image_index": img_idx,
                             "type": "image",
                             "size": len(image_bytes),
+                            "has_ocr": bool(image_text),
                         },
                     )
                     image_docs.append(image_doc)
@@ -159,19 +191,30 @@ class LocalDocumentLoader:
                 try:
                     loader = UnstructuredPDFLoader(
                         file_path,
-                        mode="elements",
-                        strategy="high_res",
+                        mode=self.pdf_settings.get("mode", "elements"),
+                        strategy=self.pdf_settings.get("strategy", "fast"),
+                        languages=(
+                            self.pdf_settings.get("ocr_languages", ["eng"])
+                            if self.pdf_settings.get("ocr_enabled", False)
+                            else None
+                        ),
                     )
                     documents.extend(loader.load())
+                    if not documents:  # If no text was extracted
+                        raise ValueError("No text extracted from PDF")
                 except Exception as e:
                     logger.error(f"Error loading PDF text with Unstructured: {str(e)}")
                     # Fallback to PyMuPDF for text
                     try:
+                        logger.info("Attempting fallback to PyMuPDF loader")
                         loader = PyMuPDFLoader(file_path)
                         documents.extend(loader.load())
+                        if not documents:  # If still no text
+                            raise ValueError("No text extracted with PyMuPDF")
                     except Exception as e2:
                         logger.error(f"Error loading PDF with PyMuPDF: {str(e2)}")
                         # Last resort fallback
+                        logger.info("Attempting final fallback to PyPDFLoader")
                         loader = PyPDFLoader(
                             file_path,
                             password=self.pdf_settings.get("password"),
