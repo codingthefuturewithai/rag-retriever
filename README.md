@@ -40,6 +40,20 @@ This will:
 - Install Chromium browser automatically
 - Make the `rag-retriever` command available in your PATH
 
+## How to Upgrade
+
+To upgrade RAG Retriever to the latest version:
+
+```bash
+pipx upgrade rag-retriever
+```
+
+This will:
+
+- Upgrade the package to the latest available version
+- Preserve your existing configuration and data
+- Update any new dependencies automatically
+
 After installation, initialize the configuration:
 
 ```bash
