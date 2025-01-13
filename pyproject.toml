@@ -34,9 +34,13 @@ dependencies = [
     "lxml==5.3.0",
     "openai==1.59.4",
     "playwright==1.42.0",
+    "pypdf==4.1.0",
     "python-dotenv==1.0.1",
     "pyyaml==6.0.2",
-    "importlib-resources>=6.1.1"
+    "importlib-resources>=6.1.1",
+    "unstructured[pdf]>=0.12.0",
+    "pillow>=10.2.0",
+    "pymupdf>=1.23.8"
 ]
 
 [project.scripts]

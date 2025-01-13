@@ -1,27 +1,123 @@
 """Module for loading local documents into the vector store."""
 
 from pathlib import Path
-from typing import List, Optional, Iterator
+from typing import List, Optional, Iterator, Dict, Any
 import logging
+import os
+import tempfile
+from PIL import Image
 
 from langchain_core.documents import Document
-from langchain_community.document_loaders import DirectoryLoader, TextLoader
+from langchain_community.document_loaders import (
+    DirectoryLoader,
+    TextLoader,
+    PyPDFLoader,
+    UnstructuredPDFLoader,
+    PyMuPDFLoader,
+)
 
 logger = logging.getLogger(__name__)
 
 
 class LocalDocumentLoader:
-    """Handles loading of local documents (markdown, text) into Document objects."""
+    """Handles loading of local documents (markdown, text, pdf) into Document objects."""
 
-    def __init__(self, show_progress: bool = True, use_multithreading: bool = True):
+    def __init__(
+        self,
+        config: Dict[str, Any],
+        show_progress: bool = True,
+        use_multithreading: bool = True,
+    ):
         """Initialize the document loader.
 
         Args:
+            config: Configuration dictionary containing document processing settings
             show_progress: Whether to show a progress bar during loading
             use_multithreading: Whether to use multiple threads for directory loading
         """
+        self.config = config
         self.show_progress = show_progress
         self.use_multithreading = use_multithreading
+        self.supported_extensions = set(
+            config.get("document_processing", {}).get("supported_extensions", [])
+        )
+        self.pdf_settings = config.get("document_processing", {}).get(
+            "pdf_settings", {}
+        )
+
+    def _check_pdf_size(self, file_path: Path) -> None:
+        """Check if PDF file size is within configured limits.
+
+        Args:
+            file_path: Path to the PDF file
+
+        Raises:
+            ValueError: If the file size exceeds the configured limit
+        """
+        max_size_mb = self.pdf_settings.get("max_file_size_mb", 50)
+        file_size_mb = os.path.getsize(file_path) / (1024 * 1024)  # Convert to MB
+        if file_size_mb > max_size_mb:
+            raise ValueError(
+                f"PDF file size ({file_size_mb:.1f}MB) exceeds the maximum allowed size of {max_size_mb}MB"
+            )
+
+    def _process_pdf_images(self, file_path: str, temp_dir: str) -> List[Document]:
+        """Extract and process images from PDF if enabled in settings.
+
+        Args:
+            file_path: Path to the PDF file
+            temp_dir: Directory to store temporary image files
+
+        Returns:
+            List of Document objects containing image metadata
+        """
+        if not self.pdf_settings.get("extract_images", False):
+            return []
+
+        try:
+            import fitz  # PyMuPDF
+
+            image_docs = []
+            pdf_document = fitz.open(file_path)
+
+            for page_num in range(len(pdf_document)):
+                page = pdf_document[page_num]
+                image_list = page.get_images()
+
+                for img_idx, img in enumerate(image_list):
+                    xref = img[0]
+                    base_image = pdf_document.extract_image(xref)
+                    image_bytes = base_image["image"]
+
+                    # Save image temporarily for processing
+                    image_path = os.path.join(
+                        temp_dir, f"page_{page_num}_img_{img_idx}.png"
+                    )
+                    with open(image_path, "wb") as img_file:
+                        img_file.write(image_bytes)
+
+                    # Create document with image metadata
+                    image_doc = Document(
+                        page_content=f"Image on page {page_num + 1}",
+                        metadata={
+                            "source": file_path,
+                            "page": page_num + 1,
+                            "image_path": image_path,
+                            "image_index": img_idx,
+                            "type": "image",
+                            "size": len(image_bytes),
+                        },
+                    )
+                    image_docs.append(image_doc)
+
+            return image_docs
+
+        except ImportError:
+            logger.warning("PyMuPDF not installed. Image extraction disabled.")
+            return []
+        except Exception as e:
+            logger.error(f"Error extracting images from PDF: {str(e)}")
+            return []
 
     def load_file(self, file_path: str) -> List[Document]:
         """Load a single file with appropriate loader based on extension.
@@ -34,14 +130,18 @@ class LocalDocumentLoader:
 
         Raises:
             FileNotFoundError: If the file doesn't exist
-            ValueError: If the file type is not supported
+            ValueError: If the file type is not supported or file size exceeds limits
         """
         path = Path(file_path)
         if not path.exists():
             raise FileNotFoundError(f"File not found: {file_path}")
 
-        if path.suffix.lower() in [".md", ".txt"]:
-            logger.debug(f"Loading file: {file_path}")
+        suffix = path.suffix.lower()
+        if suffix not in self.supported_extensions:
+            raise ValueError(f"Unsupported file type: {suffix}")
+
+        if suffix in [".md", ".txt"]:
+            logger.debug(f"Loading text file: {file_path}")
             loader = TextLoader(file_path, autodetect_encoding=True)
             try:
                 return list(loader.lazy_load())
@@ -49,17 +149,52 @@ class LocalDocumentLoader:
                 logger.error(f"Error loading file {file_path}: {str(e)}")
                 raise
 
-        raise ValueError(f"Unsupported file type: {path.suffix}")
+        if suffix == ".pdf":
+            logger.debug(f"Loading PDF file: {file_path}")
+            self._check_pdf_size(path)
+
+            documents = []
+            with tempfile.TemporaryDirectory() as temp_dir:
+                # Extract text with high-quality parsing
+                try:
+                    loader = UnstructuredPDFLoader(
+                        file_path,
+                        mode="elements",
+                        strategy="high_res",
+                    )
+                    documents.extend(loader.load())
+                except Exception as e:
+                    logger.error(f"Error loading PDF text with Unstructured: {str(e)}")
+                    # Fallback to PyMuPDF for text
+                    try:
+                        loader = PyMuPDFLoader(file_path)
+                        documents.extend(loader.load())
+                    except Exception as e2:
+                        logger.error(f"Error loading PDF with PyMuPDF: {str(e2)}")
+                        # Last resort fallback
+                        loader = PyPDFLoader(
+                            file_path,
+                            password=self.pdf_settings.get("password"),
+                        )
+                        documents.extend(loader.load())
+
+                # Extract images if enabled
+                image_docs = self._process_pdf_images(file_path, temp_dir)
+                documents.extend(image_docs)
+
+            return documents
+
+        raise ValueError(f"Unsupported file type: {suffix}")
 
     def load_directory(
-        self, directory_path: str, glob_pattern: str = "**/*.md"
+        self, directory_path: str, glob_pattern: str = "**/*.[mp][dt][fd]"
     ) -> List[Document]:
         """Load all supported documents from a directory.
 
         Args:
             directory_path: Path to the directory to load files from
-            glob_pattern: Pattern to match files against. Default matches .md files.
-                        Use "**/*.txt" for text files or "**/*.[mt][dx][td]" for both.
+            glob_pattern: Pattern to match files against. Default matches .md, .txt, and .pdf files.
+                        Use "**/*.txt" for text files, "**/*.pdf" for PDFs, or "**/*.md" for markdown.
 
         Returns:
             List of Document objects
@@ -85,19 +220,14 @@ class LocalDocumentLoader:
             f"Found {len(matching_files)} matching files: {[f.name for f in matching_files]}"
         )
 
-        loader = DirectoryLoader(
-            str(path),  # Convert path to string
-            glob=glob_pattern,
-            loader_cls=TextLoader,
-            loader_kwargs={"autodetect_encoding": True},
-            use_multithreading=self.use_multithreading,
-            show_progress=self.show_progress,
-        )
+        # Process each file individually to handle different loaders
+        documents = []
+        for file_path in matching_files:
+            try:
+                file_docs = self.load_file(str(file_path))
+                documents.extend(file_docs)
+            except Exception as e:
+                logger.error(f"Error loading file {file_path}: {str(e)}")
+                continue
 
-        try:
-            documents = loader.load()
-            logger.info(f"Loaded {len(documents)} documents from {directory_path}")
-            return documents
-        except Exception as e:
-            logger.error(f"Error loading directory {directory_path}: {str(e)}")
-            raise
+        return documents

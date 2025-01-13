@@ -10,7 +10,7 @@ import argparse
 from rag_retriever.main import process_url, search_content
 from rag_retriever.vectorstore.store import clean_vectorstore, VectorStore
 from rag_retriever.document_processor import LocalDocumentLoader
-from rag_retriever.utils.config import initialize_user_files
+from rag_retriever.utils.config import initialize_user_files, config
 
 # Configure logging - suppress most output by default
 logging.basicConfig(level=logging.WARNING)
@@ -131,7 +131,9 @@ def main():
     # Handle local document ingestion
     if args.ingest_file or args.ingest_directory:
         try:
-            loader = LocalDocumentLoader(show_progress=True, use_multithreading=True)
+            loader = LocalDocumentLoader(
+                config=config._config, show_progress=True, use_multithreading=True
+            )
             store = VectorStore()
 
             if args.ingest_file:
@@ -141,7 +143,7 @@ def main():
                 logger.info(f"Loading directory: {args.ingest_directory}")
                 documents = loader.load_directory(args.ingest_directory)
 
-            store.add_local_documents(documents)
+            store.add_documents(documents)
             logger.info("Successfully ingested local documents")
             sys.exit(0)
 
