@@ -21,7 +21,6 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Topic :: Software Development :: Libraries :: Python Modules",
-    "Topic :: Text Processing :: Indexing",
 ]
 keywords = ["ai", "rag", "embeddings", "semantic-search", "web-crawler", "vector-store"]
 dependencies = [
@@ -35,8 +34,14 @@ dependencies = [
     "lxml==5.3.0",
     "openai==1.59.4",
     "playwright==1.42.0",
+    "pypdf==4.1.0",
     "python-dotenv==1.0.1",
-    "pyyaml==6.0.2"
+    "pyyaml==6.0.2",
+    "importlib-resources>=6.1.1",
+    "unstructured[pdf]>=0.12.0",
+    "pillow>=10.2.0",
+    "pymupdf>=1.23.8",
+    "pytesseract>=0.3.10"
 ]
 
 [project.scripts]
@@ -48,4 +53,4 @@ include = ["rag_retriever*", "scripts*"]
 namespaces = true
 
 [tool.setuptools.package-data]
-rag_retriever = ["config/*.yaml"] 
+rag_retriever = ["config/*.yaml", "config/.env.example"] 

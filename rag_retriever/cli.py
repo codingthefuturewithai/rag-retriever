@@ -8,8 +8,9 @@ from pathlib import Path
 import argparse
 
 from rag_retriever.main import process_url, search_content
-from rag_retriever.vectorstore.store import clean_vectorstore
-from rag_retriever.utils.config import initialize_user_files
+from rag_retriever.vectorstore.store import clean_vectorstore, VectorStore
+from rag_retriever.document_processor import LocalDocumentLoader
+from rag_retriever.utils.config import initialize_user_files, config
 
 # Configure logging - suppress most output by default
 logging.basicConfig(level=logging.WARNING)
@@ -87,6 +88,18 @@ def create_parser() -> argparse.ArgumentParser:
         help="Enable verbose output for troubleshooting",
     )
 
+    parser.add_argument(
+        "--ingest-file",
+        type=str,
+        help="Path to a local markdown or text file to ingest",
+    )
+
+    parser.add_argument(
+        "--ingest-directory",
+        type=str,
+        help="Path to a directory containing markdown and text files to ingest",
+    )
+
     return parser
 
 
@@ -99,18 +112,46 @@ def confirm_max_depth(depth: int) -> bool:
 
 
 def main():
+    """Main entry point."""
     parser = create_parser()
     args = parser.parse_args()
 
+    if args.verbose:
+        logging.getLogger().setLevel(logging.INFO)
+        logger.debug("Verbose logging enabled")
+
+    if args.init:
+        initialize_user_files()
+        sys.exit(0)
+
+    if args.clean:
+        clean_vectorstore()
+        sys.exit(0)
+
+    # Handle local document ingestion
+    if args.ingest_file or args.ingest_directory:
+        try:
+            loader = LocalDocumentLoader(
+                config=config._config, show_progress=True, use_multithreading=True
+            )
+            store = VectorStore()
+
+            if args.ingest_file:
+                logger.info(f"Loading file: {args.ingest_file}")
+                documents = loader.load_file(args.ingest_file)
+            else:
+                logger.info(f"Loading directory: {args.ingest_directory}")
+                documents = loader.load_directory(args.ingest_directory)
+
+            store.add_documents(documents)
+            logger.info("Successfully ingested local documents")
+            sys.exit(0)
+
+        except Exception as e:
+            logger.error(f"Error ingesting documents: {str(e)}")
+            sys.exit(1)
+
     try:
-        if args.init:
-            initialize_user_files()
-            return 0
-
-        if args.clean:
-            clean_vectorstore()
-            return 0
-
         if args.fetch:
             # Only prompt once for max_depth > 1
             if args.max_depth > 1 and not confirm_max_depth(args.max_depth):

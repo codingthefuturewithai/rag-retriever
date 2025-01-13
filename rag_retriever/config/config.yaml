@@ -3,6 +3,33 @@ vector_store:
   persist_directory: null # Will be set by the application to OS-specific path
   embedding_model: "text-embedding-3-large"
   embedding_dimensions: 3072
+  chunk_size: 1000 # Default chunk size for text splitting
+  chunk_overlap: 200 # Default chunk overlap for text splitting
+
+# Local document processing
+document_processing:
+  supported_extensions:
+    - ".md"
+    - ".txt"
+    - ".pdf"
+  excluded_patterns:
+    - ".*"
+    - "node_modules/**"
+    - "__pycache__/**"
+    - "*.pyc"
+    - ".git/**"
+  encoding_fallbacks:
+    - "utf-8"
+    - "latin-1"
+    - "cp1252"
+  pdf_settings:
+    max_file_size_mb: 50 # Maximum PDF file size in megabytes
+    extract_images: false # Whether to extract and process images from PDFs
+    ocr_enabled: false # Whether to use OCR for scanned documents
+    languages: ["eng"] # Languages to use for text extraction and OCR
+    password: null # Default password for encrypted PDFs (null for none)
+    strategy: "fast" # PDF processing strategy: fast or accurate
+    mode: "elements" # PDF processing mode: single_page, paged, or elements
 
 # Content processing
 content:
