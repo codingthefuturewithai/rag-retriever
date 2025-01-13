@@ -1,6 +1,6 @@
 # RAG Retriever Usage Guide
 
-RAG Retriever is a command-line tool for searching and retrieving information from a knowledge base of documentation.
+RAG Retriever is a command-line tool for searching and retrieving information from a knowledge base built from both web documentation and local documents.
 
 ## Basic Search
 
@@ -33,11 +33,39 @@ rag-retriever --query "deployment options" --limit 12
 
 # Increase relevance threshold
 rag-retriever --query "security best practices" --score-threshold 0.5
+
+# Get truncated results
+rag-retriever --query "configuration options" --truncate
+
+# Output in JSON format
+rag-retriever --query "API endpoints" --json
 ```
 
 ## Adding Documentation
 
-Add new documentation to the knowledge base:
+### Local Documents
+
+Add local documents to the knowledge base:
+
+```bash
+# Add a single file (supports .pdf, .md, .txt)
+rag-retriever --ingest-file path/to/document.pdf
+
+# Add all supported files from a directory
+rag-retriever --ingest-directory path/to/docs/
+
+# Process a scanned document
+# NOTE: This will only work if OCR capability has been enabled on the Retriever
+rag-retriever --ingest-file scanned-document.pdf
+
+# Process a PDF containing images
+# NOTE: This will only extract images if image processing has been enabled on the Retriever
+rag-retriever --ingest-file document-with-images.pdf
+```
+
+### Web Documentation
+
+Add web documentation to the knowledge base:
 
 ```bash
 # Add a single page
@@ -45,6 +73,9 @@ rag-retriever --fetch https://docs.example.com/guide --max-depth 0
 
 # Add a section with limited depth
 rag-retriever --fetch https://docs.example.com/api --max-depth 1
+
+# Add documentation with default depth (2)
+rag-retriever --fetch https://docs.example.com/tutorial
 ```
 
 ## Understanding Results

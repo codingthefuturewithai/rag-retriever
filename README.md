@@ -1,6 +1,6 @@
 # RAG Retriever
 
-A Python application that recursively loads web pages, indexes their content using embeddings, and enables semantic search queries. Built with a modular architecture using OpenAI embeddings and Chroma vector store.
+A Python application that loads and processes both web pages and local documents, indexing their content using embeddings, and enabling semantic search queries. Built with a modular architecture using OpenAI embeddings and Chroma vector store.
 
 ## Prerequisites
 
@@ -62,16 +62,34 @@ OPENAI_API_KEY=your-api-key-here
 
 ### Customizing Configuration
 
-All settings are in `config.yaml`. Common adjustments include:
+All settings are in `config.yaml`. Key configuration sections include:
 
 ```yaml
-content:
-  chunk_size: 2000 # Size of text chunks for indexing
-  chunk_overlap: 400 # Overlap between chunks
+# Vector store settings
+vector_store:
+  embedding_model: "text-embedding-3-large"
+  embedding_dimensions: 3072
+  chunk_size: 1000
+  chunk_overlap: 200
 
+# Local document processing
+document_processing:
+  supported_extensions:
+    - ".md"
+    - ".txt"
+    - ".pdf"
+  pdf_settings:
+    max_file_size_mb: 50
+    extract_images: false
+    ocr_enabled: false
+    languages: ["eng"]
+    strategy: "fast"
+    mode: "elements"
+
+# Search settings
 search:
-  default_limit: 8 # Number of results returned
-  default_score_threshold: 0.3 # Minimum relevance score
+  default_limit: 8
+  default_score_threshold: 0.3
 ```
 
 ### Data Storage
@@ -126,75 +144,115 @@ scripts\run-rag.bat --init   # Windows
 
 ## Usage Examples
 
-### Fetching and Indexing
+### Local Document Processing
 
 ```bash
-# Basic fetch (shows detailed output by default)
+# Process a single file
+rag-retriever --ingest-file path/to/document.pdf
+
+# Process all supported files in a directory
+rag-retriever --ingest-directory path/to/docs/
+
+# Enable OCR for scanned documents (update config.yaml first)
+# Set in config.yaml:
+# document_processing.pdf_settings.ocr_enabled: true
+rag-retriever --ingest-file scanned-document.pdf
+
+# Enable image extraction from PDFs (update config.yaml first)
+# Set in config.yaml:
+# document_processing.pdf_settings.extract_images: true
+rag-retriever --ingest-file document-with-images.pdf
+```
+
+### Web Content Fetching
+
+```bash
+# Basic fetch
 rag-retriever --fetch https://example.com
 
 # With depth control
 rag-retriever --fetch https://example.com --max-depth 2
 
 # Minimal output mode
-rag-retriever --fetch https://example.com --max-depth 0 --verbose false
+rag-retriever --fetch https://example.com --verbose false
 ```
-
-The `--max-depth` parameter controls crawling depth:
-
-- depth 0: Only the initial URL
-- depth 1: Initial URL + linked pages
-- depth 2 (default): Initial URL + linked pages + pages linked from those
 
 ### Searching Content
 
 ```bash
-# Basic search (shows full content by default)
+# Basic search
 rag-retriever --query "How do I get started?"
 
 # With truncated content
 rag-retriever --query "How do I get started?" --truncate
 
-# With custom limit
-rag-retriever --query "deployment options" --limit 8
+# With custom result limit
+rag-retriever --query "deployment options" --limit 5
 
-# With relevance threshold
-rag-retriever --query "advanced configuration" --score-threshold 0.3
+# With minimum relevance score
+rag-retriever --query "advanced configuration" --score-threshold 0.5
 
-# JSON output
+# JSON output format
 rag-retriever --query "API reference" --json
-
-# Troubleshooting mode with verbose output
-rag-retriever --query "installation steps" --verbose
 ```
-
-## Understanding Search Results
-
-Search results include relevance scores based on cosine similarity:
-
-- Scores closer to 1.0 indicate higher relevance
-- Typical ranges:
-  - 0.7+: Very high relevance (nearly exact matches)
-  - 0.6 - 0.7: High relevance
-  - 0.5 - 0.6: Good relevance
-  - 0.3 - 0.5: Moderate relevance
-  - Below 0.3: Lower relevance
-
-Default threshold is 0.3, adjustable with `--score-threshold`.
 
 ## Configuration Options
 
-The default configuration includes:
+The configuration file (`config.yaml`) is organized into several sections:
+
+### Vector Store Settings
 
 ```yaml
 vector_store:
   persist_directory: null # Set automatically to OS-specific path
   embedding_model: "text-embedding-3-large"
   embedding_dimensions: 3072
+  chunk_size: 1000 # Size of text chunks for indexing
+  chunk_overlap: 200 # Overlap between chunks
+```
 
+### Document Processing Settings
+
+```yaml
+document_processing:
+  # Supported file extensions
+  supported_extensions:
+    - ".md"
+    - ".txt"
+    - ".pdf"
+
+  # Patterns to exclude from processing
+  excluded_patterns:
+    - ".*"
+    - "node_modules/**"
+    - "__pycache__/**"
+    - "*.pyc"
+    - ".git/**"
+
+  # Fallback encodings for text files
+  encoding_fallbacks:
+    - "utf-8"
+    - "latin-1"
+    - "cp1252"
+
+  # PDF processing settings
+  pdf_settings:
+    max_file_size_mb: 50
+    extract_images: false
+    ocr_enabled: false
+    languages: ["eng"]
+    password: null
+    strategy: "fast" # Options: fast, accurate
+    mode: "elements" # Options: single_page, paged, elements
+```
+
+### Content Processing Settings
+
+```yaml
 content:
   chunk_size: 2000
   chunk_overlap: 400
-  # Separators for text splitting, in order of preference
+  # Text splitting separators (in order of preference)
   separators:
     - "\n## " # h2 headers (strongest break)
     - "\n### " # h3 headers
@@ -203,72 +261,62 @@ content:
     - "\n• " # alternative bullet points
     - "\n\n" # paragraphs
     - ". " # sentences (weakest break)
-  ui_patterns:
-    - "Theme\\s+Auto\\s+Light\\s+Dark"
-    - "Previous\\s+topic|Next\\s+topic"
-    - "Navigation"
-    - "Jump\\s+to"
-    - "Search"
-    - "Skip\\s+to\\s+content"
+```
 
+### Search Settings
+
+```yaml
 search:
-  default_limit: 8
-  default_score_threshold: 0.3
+  default_limit: 8 # Default number of results
+  default_score_threshold: 0.3 # Minimum relevance score
+```
 
+### Browser Settings (Web Crawling)
+
+```yaml
 browser:
   wait_time: 2 # Base wait time in seconds
   viewport:
     width: 1920
     height: 1080
-  # Random delays to appear more human-like
   delays:
     before_request: [1, 3] # Min and max seconds
     after_load: [2, 4]
     after_dynamic: [1, 2]
-  # Browser launch options
   launch_options:
     headless: true
-    channel: "chrome" # Use system Chrome if available
+    channel: "chrome"
+  context_options:
+    bypass_csp: true
+    java_script_enabled: true
 ```
 
-### Environment Variables
+## Understanding Search Results
 
-The application requires an OpenAI API key to be set in your `.env` file:
+Search results include relevance scores based on cosine similarity:
 
-```bash
-# Required: Set in ~/.config/rag-retriever/.env (Unix/Mac)
-# or %APPDATA%\rag-retriever\.env (Windows)
-OPENAI_API_KEY=your-api-key-here
-```
-
-All other configuration should be done by editing the config.yaml file as shown above.
-
-## Using with AI Assistants
-
-RAG Retriever can be integrated with AI coding assistants (like aider, Cursor, GitHub Copilot, Codeium Windsurf, etc.) that are capable of running command line tools. This allows them to enhance their knowledge with up-to-date documentation.
-
-To use RAG Retriever with AI assistants:
-
-1. Install RAG Retriever globally using `pipx install rag-retriever` as described in the Installation section
-2. Ensure the `rag-retriever` command is available in your system PATH
-3. Share this [usage guide](docs/rag-retriever-usage-guide.md) with your AI assistant by saying:
-   "I've provided instructions for a tool called RAG Retriever I have installed. Review this doc and keep it in mind for usage when you determine you need external context."
-
-The assistant can then use RAG Retriever's fetch and query capabilities to gather relevant information when needed.
-
-You can also directly ask your coding assistant to use the tool at any time you believe additional context would help with "in-context learning" scenarios. This gives you control over when to enhance the assistant's knowledge with specific documentation or references.
+- Scores range from 0 to 1, where 1 indicates perfect similarity
+- Default threshold is 0.3 (configurable via `search.default_score_threshold`)
+- Typical interpretation:
+  - 0.7+: Very high relevance (nearly exact matches)
+  - 0.6 - 0.7: High relevance
+  - 0.5 - 0.6: Good relevance
+  - 0.3 - 0.5: Moderate relevance
+  - Below 0.3: Lower relevance
 
 ## Features
 
-- Recursively crawl and index web pages up to a specified depth
-- Respect URL path depth for more controlled crawling
-- Handle JavaScript-rendered content using Selenium WebDriver
-- Clean and structure content while preserving meaningful hierarchy
-- Store embeddings in a local Chroma vector database using cosine similarity
-- Perform semantic search with customizable relevance scoring
-- Support for full content display (default) with optional truncation
-- Minimal output by default with verbose mode for troubleshooting
-- JSON output format for integration with other tools
+- **Local Document Loading**: Load markdown, text, and PDF files from local directories.
+
+  - **Single File and Directory Loading**: Easily load individual files or entire directories with support for multithreading and progress indication.
+  - **PDF Processing**: Extract text and images from PDFs using multiple loaders, with optional OCR for scanned documents.
+  - **Configurable Settings**: Customize supported file types, PDF processing options, and more through configuration files.
+
+- **Error Handling**: Robust error handling for unsupported file types and missing files, with detailed logging for troubleshooting.
+
+- **Configuration**: Flexible configuration options for document processing, including supported extensions and PDF settings.
+
+For more detailed usage instructions and examples, please refer to the [local-document-loading.md](docs/local-document-loading.md) documentation.
 
 ## Project Structure
 
