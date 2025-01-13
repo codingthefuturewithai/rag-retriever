@@ -73,9 +73,44 @@ class LocalDocumentLoader:
             Extracted text from the image
         """
         try:
-            # Configure tesseract language
+            # Open and preprocess the image
+            image = Image.open(image_path)
+
+            # Convert to RGB if needed (some PDFs produce RGBA images)
+            if image.mode != "RGB":
+                image = image.convert("RGB")
+
+            # Resize if image is too small (helps with OCR accuracy)
+            min_size = 1000
+            ratio = max(min_size / image.width, min_size / image.height)
+            if ratio > 1:
+                new_size = (int(image.width * ratio), int(image.height * ratio))
+                image = image.resize(new_size, Image.Resampling.LANCZOS)
+
+            # Configure tesseract with better parameters
             lang_str = "+".join(languages)
-            return pytesseract.image_to_string(Image.open(image_path), lang=lang_str)
+            custom_config = (
+                f"-l {lang_str} "  # Language
+                "--oem 3 "  # OCR Engine Mode: Default LSTM
+                "--psm 6 "  # Page Segmentation Mode: Assume uniform block of text
+                "-c tessedit_char_whitelist=ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_(),./ "  # Limit characters
+                "preserve_interword_spaces=1 "  # Preserve spacing between words
+                "textord_heavy_nr=1"  # Handle noisy images better
+            )
+
+            # Perform OCR
+            text = pytesseract.image_to_string(image, config=custom_config)
+
+            # Post-process the text
+            lines = []
+            for line in text.splitlines():
+                # Remove extra whitespace
+                line = " ".join(line.split())
+                if line:  # Only keep non-empty lines
+                    lines.append(line)
+
+            return "\n".join(lines)
+
         except Exception as e:
             logger.error(f"OCR failed for image {image_path}: {str(e)}")
             return ""
