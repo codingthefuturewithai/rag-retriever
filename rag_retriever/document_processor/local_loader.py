@@ -1,12 +1,14 @@
 """Module for loading local documents into the vector store."""
 
 from pathlib import Path
-from typing import List, Optional, Iterator, Dict, Any
+from typing import List, Optional, Iterator, Dict, Any, Tuple
 import logging
 import os
 import tempfile
 from PIL import Image
 import pytesseract
+import io
+import numpy as np
 
 from langchain_core.documents import Document
 from langchain_community.document_loaders import (
@@ -46,6 +48,15 @@ class LocalDocumentLoader:
             "pdf_settings", {}
         )
 
+        # Initialize OCR settings
+        self.ocr_config = {
+            "enabled": self.pdf_settings.get("ocr_enabled", False),
+            "languages": self.pdf_settings.get("languages", ["eng"]),
+            "min_confidence": self.pdf_settings.get("min_ocr_confidence", 60),
+            "max_image_size": self.pdf_settings.get("max_image_size", 4096),
+            "min_image_size": self.pdf_settings.get("min_image_size", 50),
+        }
+
     def _check_pdf_size(self, file_path: Path) -> None:
         """Check if PDF file size is within configured limits.
 
@@ -62,6 +73,61 @@ class LocalDocumentLoader:
                 f"PDF file size ({file_size_mb:.1f}MB) exceeds the maximum allowed size of {max_size_mb}MB"
             )
 
+    def _preprocess_image(self, image: Image.Image) -> Tuple[Image.Image, bool]:
+        """Preprocess image for better OCR results.
+
+        Args:
+            image: PIL Image to preprocess
+
+        Returns:
+            Tuple of (preprocessed image, whether preprocessing succeeded)
+        """
+        try:
+            # Convert to RGB if needed
+            if image.mode not in ("RGB", "L"):
+                image = image.convert("RGB")
+
+            # Get image dimensions
+            width, height = image.size
+
+            # Check if image is too small
+            if (
+                width < self.ocr_config["min_image_size"]
+                or height < self.ocr_config["min_image_size"]
+            ):
+                logger.debug(f"Image too small ({width}x{height}), skipping")
+                return image, False
+
+            # Resize if image is too large
+            max_size = self.ocr_config["max_image_size"]
+            if width > max_size or height > max_size:
+                ratio = min(max_size / width, max_size / height)
+                new_size = (int(width * ratio), int(height * ratio))
+                image = image.resize(new_size, Image.Resampling.LANCZOS)
+                logger.debug(
+                    f"Resized image from {width}x{height} to {new_size[0]}x{new_size[1]}"
+                )
+
+            # Convert to grayscale for better OCR
+            image = image.convert("L")
+
+            # Enhance contrast
+            import PIL.ImageOps
+
+            image = PIL.ImageOps.autocontrast(image)
+
+            # Denoise (if image is noisy)
+            if self.pdf_settings.get("denoise_images", True):
+                import PIL.ImageFilter
+
+                image = image.filter(PIL.ImageFilter.MedianFilter(size=3))
+
+            return image, True
+
+        except Exception as e:
+            logger.error(f"Error preprocessing image: {str(e)}")
+            return image, False
+
     def _process_image_with_ocr(self, image_path: str, languages: List[str]) -> str:
         """Process an image with OCR to extract text.
 
@@ -73,43 +139,60 @@ class LocalDocumentLoader:
             Extracted text from the image
         """
         try:
-            # Open and preprocess the image
-            image = Image.open(image_path)
+            # Open image
+            with Image.open(image_path) as image:
+                # Preprocess image
+                processed_image, success = self._preprocess_image(image)
+                if not success:
+                    return ""
 
-            # Convert to RGB if needed (some PDFs produce RGBA images)
-            if image.mode != "RGB":
-                image = image.convert("RGB")
+                # Configure tesseract
+                lang_str = "+".join(languages)
+                custom_config = (
+                    f"-l {lang_str} "  # Language
+                    "--oem 1 "  # LSTM only
+                    "--psm 6 "  # Assume uniform block of text
+                    "-c tessedit_create_pdf=0 "  # Don't create PDF
+                    "-c tessedit_pageseg_mode=6 "  # Assume uniform text block
+                    "-c textord_heavy_nr=0 "  # Don't assume heavy noise
+                    "-c tessedit_do_invert=0 "  # Don't try to invert colors
+                    "-c tessedit_min_word_length=3"  # Minimum word length
+                )
 
-            # Resize if image is too small (helps with OCR accuracy)
-            min_size = 1000
-            ratio = max(min_size / image.width, min_size / image.height)
-            if ratio > 1:
-                new_size = (int(image.width * ratio), int(image.height * ratio))
-                image = image.resize(new_size, Image.Resampling.LANCZOS)
+                # Perform OCR with confidence check
+                result = pytesseract.image_to_data(
+                    processed_image,
+                    config=custom_config,
+                    output_type=pytesseract.Output.DICT,
+                )
 
-            # Configure tesseract with better parameters
-            lang_str = "+".join(languages)
-            custom_config = (
-                f"-l {lang_str} "  # Language
-                "--oem 3 "  # OCR Engine Mode: Default LSTM
-                "--psm 6 "  # Page Segmentation Mode: Assume uniform block of text
-                "-c tessedit_char_whitelist=ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_(),./ "  # Limit characters
-                "preserve_interword_spaces=1 "  # Preserve spacing between words
-                "textord_heavy_nr=1"  # Handle noisy images better
-            )
+                # Filter by confidence and build text
+                lines = []
+                current_line = []
+                last_block_num = -1
 
-            # Perform OCR
-            text = pytesseract.image_to_string(image, config=custom_config)
+                for i in range(len(result["text"])):
+                    conf = int(result["conf"][i])
+                    text = result["text"][i].strip()
+                    block_num = result["block_num"][i]
 
-            # Post-process the text
-            lines = []
-            for line in text.splitlines():
-                # Remove extra whitespace
-                line = " ".join(line.split())
-                if line:  # Only keep non-empty lines
-                    lines.append(line)
+                    # Skip low confidence or empty text
+                    if conf < self.ocr_config["min_confidence"] or not text:
+                        continue
 
-            return "\n".join(lines)
+                    # Handle line breaks
+                    if block_num != last_block_num and current_line:
+                        lines.append(" ".join(current_line))
+                        current_line = []
+
+                    current_line.append(text)
+                    last_block_num = block_num
+
+                # Add final line
+                if current_line:
+                    lines.append(" ".join(current_line))
+
+                return "\n".join(lines)
 
         except Exception as e:
             logger.error(f"OCR failed for image {image_path}: {str(e)}")
@@ -139,43 +222,57 @@ class LocalDocumentLoader:
                 image_list = page.get_images()
 
                 for img_idx, img in enumerate(image_list):
-                    xref = img[0]
-                    base_image = pdf_document.extract_image(xref)
-                    image_bytes = base_image["image"]
+                    try:
+                        xref = img[0]
+                        base_image = pdf_document.extract_image(xref)
+                        image_bytes = base_image["image"]
 
-                    # Save image temporarily for processing
-                    image_path = os.path.join(
-                        temp_dir, f"page_{page_num}_img_{img_idx}.png"
-                    )
-                    with open(image_path, "wb") as img_file:
-                        img_file.write(image_bytes)
+                        # Skip if image is too small
+                        if len(image_bytes) < 1024:  # Skip images smaller than 1KB
+                            continue
 
-                    # Extract text with OCR if enabled
-                    image_text = ""
-                    if self.pdf_settings.get("ocr_enabled", False):
-                        logger.debug(f"Running OCR on image from page {page_num + 1}")
-                        image_text = self._process_image_with_ocr(
-                            image_path, self.pdf_settings.get("languages", ["eng"])
+                        # Save image temporarily for processing
+                        image_path = os.path.join(
+                            temp_dir, f"page_{page_num}_img_{img_idx}.png"
                         )
+                        with open(image_path, "wb") as img_file:
+                            img_file.write(image_bytes)
 
-                    # Create document with image metadata and OCR text
-                    content = f"Image on page {page_num + 1}"
-                    if image_text:
-                        content = f"{content}\nOCR Text:\n{image_text}"
+                        # Extract text with OCR if enabled
+                        image_text = ""
+                        if self.ocr_config["enabled"]:
+                            logger.debug(
+                                f"Running OCR on image from page {page_num + 1}"
+                            )
+                            image_text = self._process_image_with_ocr(
+                                image_path, self.ocr_config["languages"]
+                            )
 
-                    image_doc = Document(
-                        page_content=content,
-                        metadata={
-                            "source": file_path,
-                            "page": page_num + 1,
-                            "image_path": image_path,
-                            "image_index": img_idx,
-                            "type": "image",
-                            "size": len(image_bytes),
-                            "has_ocr": bool(image_text),
-                        },
-                    )
-                    image_docs.append(image_doc)
+                        if image_text or not self.ocr_config["enabled"]:
+                            # Create document with image metadata and OCR text
+                            content = f"Image on page {page_num + 1}"
+                            if image_text:
+                                content = f"{content}\nOCR Text:\n{image_text}"
+
+                            image_doc = Document(
+                                page_content=content,
+                                metadata={
+                                    "source": file_path,
+                                    "page": page_num + 1,
+                                    "image_path": image_path,
+                                    "image_index": img_idx,
+                                    "type": "image",
+                                    "size": len(image_bytes),
+                                    "has_ocr": bool(image_text),
+                                },
+                            )
+                            image_docs.append(image_doc)
+
+                    except Exception as e:
+                        logger.error(
+                            f"Error processing image {img_idx} on page {page_num}: {str(e)}"
+                        )
+                        continue
 
             return image_docs
 
@@ -222,47 +319,59 @@ class LocalDocumentLoader:
 
             documents = []
             with tempfile.TemporaryDirectory() as temp_dir:
-                # Extract text with high-quality parsing
-                try:
-                    loader = UnstructuredPDFLoader(
-                        file_path,
-                        mode=self.pdf_settings.get("mode", "elements"),
-                        strategy=self.pdf_settings.get("strategy", "fast"),
-                        languages=(
-                            self.pdf_settings.get("ocr_languages", ["eng"])
-                            if self.pdf_settings.get("ocr_enabled", False)
-                            else None
-                        ),
-                    )
-                    documents.extend(loader.load())
-                    if not documents:  # If no text was extracted
-                        raise ValueError("No text extracted from PDF")
-                except Exception as e:
-                    logger.error(f"Error loading PDF text with Unstructured: {str(e)}")
-                    # Fallback to PyMuPDF for text
+                # Try different loaders in order of preference
+                loaders = [
+                    (PyMuPDFLoader, "PyMuPDF"),
+                    (UnstructuredPDFLoader, "Unstructured"),
+                    (PyPDFLoader, "PyPDF"),
+                ]
+
+                text_extracted = False
+                for loader_class, name in loaders:
                     try:
-                        logger.info("Attempting fallback to PyMuPDF loader")
-                        loader = PyMuPDFLoader(file_path)
-                        documents.extend(loader.load())
-                        if not documents:  # If still no text
-                            raise ValueError("No text extracted with PyMuPDF")
-                    except Exception as e2:
-                        logger.error(f"Error loading PDF with PyMuPDF: {str(e2)}")
-                        # Last resort fallback
-                        logger.info("Attempting final fallback to PyPDFLoader")
-                        loader = PyPDFLoader(
-                            file_path,
-                            password=self.pdf_settings.get("password"),
-                        )
-                        documents.extend(loader.load())
+                        if name == "Unstructured":
+                            loader = loader_class(
+                                file_path,
+                                mode=self.pdf_settings.get("mode", "elements"),
+                                strategy=self.pdf_settings.get("strategy", "fast"),
+                                languages=(
+                                    self.pdf_settings.get("ocr_languages", ["eng"])
+                                    if self.ocr_config["enabled"]
+                                    else None
+                                ),
+                            )
+                        else:
+                            loader = loader_class(file_path)
 
-                # Extract images if enabled
-                image_docs = self._process_pdf_images(file_path, temp_dir)
-                documents.extend(image_docs)
+                        page_docs = loader.load()
+                        if page_docs:
+                            documents.extend(page_docs)
+                            text_extracted = True
+                            logger.info(f"Successfully extracted text with {name}")
+                            break
+                        else:
+                            logger.warning(f"No text extracted with {name}")
 
-            return documents
+                    except Exception as e:
+                        logger.error(f"Error loading PDF with {name}: {str(e)}")
+                        continue
 
-        raise ValueError(f"Unsupported file type: {suffix}")
+                if not text_extracted:
+                    logger.warning("Failed to extract text with all loaders")
+
+                # Process images regardless of text extraction success
+                if self.pdf_settings.get("extract_images", False):
+                    image_docs = self._process_pdf_images(file_path, temp_dir)
+                    if image_docs:
+                        documents.extend(image_docs)
+                        logger.info(f"Extracted {len(image_docs)} images from PDF")
+
+                if not documents:
+                    raise ValueError("No content could be extracted from PDF")
+
+                return documents
+
+        raise ValueError(f"Unhandled file type: {suffix}")
 
     def load_directory(
         self, directory_path: str, glob_pattern: str = "**/*.[mp][dt][fd]"
