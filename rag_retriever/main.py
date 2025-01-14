@@ -79,46 +79,46 @@ def process_url(url: str, max_depth: int = 2, verbose: bool = True) -> int:
         "errors": {},
     }
 
-    # Set logging levels based on verbose mode
+    # Set third-party logging levels based on verbose mode
     if verbose:
-        logging.getLogger().setLevel(logging.INFO)
         logging.getLogger("chromadb").setLevel(logging.INFO)
         logging.getLogger("httpx").setLevel(logging.INFO)
+        logging.getLogger("urllib3").setLevel(logging.INFO)
 
-        # System diagnostics
-        sys_info = get_system_info()
-        logger.info("\nSystem Information:")
-        for key, value in sys_info.items():
-            logger.info(f"- {key}: {value}")
+    # System diagnostics
+    sys_info = get_system_info()
+    logger.debug("\nSystem Information:")
+    for key, value in sys_info.items():
+        logger.debug(f"- {key}: {value}")
 
-        # Log configuration
-        logger.info("\nStarting content fetch and indexing process...")
-        logger.info("Configuration:")
-        logger.info("- URL: %s", url)
-        logger.info("- Max depth: %d", max_depth)
-        logger.info("- Vector store: %s", get_vectorstore_path())
-        logger.info("- Model: %s", config.vector_store["embedding_model"])
-        api_key = config.get_openai_api_key()
-        logger.info("- API key: %s", mask_api_key(api_key if api_key else ""))
-        logger.info("- Config file: %s", config.config_path)
-        logger.info("- Environment file: %s", config.env_path)
+    # Log configuration
+    logger.debug("\nConfiguration:")
+    logger.debug("- URL: %s", url)
+    logger.debug("- Max depth: %d", max_depth)
+    logger.debug("- Vector store: %s", get_vectorstore_path())
+    logger.debug("- Model: %s", config.vector_store["embedding_model"])
+    api_key = config.get_openai_api_key()
+    logger.debug("- API key: %s", mask_api_key(api_key if api_key else ""))
+    logger.debug("- Config file: %s", config.config_path)
+    logger.debug("- Environment file: %s", config.env_path)
 
-        # Browser configuration
-        logger.info("\nBrowser configuration:")
-        logger.info("- Headless mode: %s", config.browser["launch_options"]["headless"])
-        logger.info(
-            "- Browser channel: %s",
-            config.browser["launch_options"].get("channel", "default"),
-        )
-        logger.info("- Wait time: %d seconds", config.browser["wait_time"])
-        logger.info(
-            "- Viewport: %dx%d",
-            config.browser["viewport"]["width"],
-            config.browser["viewport"]["height"],
-        )
+    # Browser configuration
+    logger.debug("\nBrowser configuration:")
+    logger.debug("- Headless mode: %s", config.browser["launch_options"]["headless"])
+    logger.debug(
+        "- Browser channel: %s",
+        config.browser["launch_options"].get("channel", "default"),
+    )
+    logger.debug("- Wait time: %d seconds", config.browser["wait_time"])
+    logger.debug(
+        "- Viewport: %dx%d",
+        config.browser["viewport"]["width"],
+        config.browser["viewport"]["height"],
+    )
 
     try:
-        logger.info("\nInitializing browser...")
+        logger.info("\nStarting content fetch and indexing process...")
+        logger.debug("Initializing browser...")
         crawler = PlaywrightCrawler()
         store = VectorStore()
 
@@ -247,25 +247,26 @@ def search_content(
     if score_threshold is None:
         score_threshold = config.search["default_score_threshold"]
 
-    # Set logging levels based on verbose mode
+    # Set third-party logging levels based on verbose mode
     if verbose:
-        logging.getLogger().setLevel(logging.INFO)
         logging.getLogger("chromadb").setLevel(logging.INFO)
         logging.getLogger("httpx").setLevel(logging.INFO)
-        # Log configuration
-        logger.info("\nStarting content search...")
-        logger.info("Configuration:")
-        logger.info("- Query: %s", query)
-        logger.info("- Result limit: %d", limit)
-        logger.info("- Score threshold: %.2f", score_threshold)
-        logger.info("- Vector store: %s", get_vectorstore_path())
-        logger.info("- Model: %s", config.vector_store["embedding_model"])
-        api_key = config.get_openai_api_key()
-        logger.info("- API key: %s", mask_api_key(api_key if api_key else ""))
-        logger.info("- Config file: %s", config.config_path)
-        logger.info("- Environment file: %s", config.env_path)
+        logging.getLogger("urllib3").setLevel(logging.INFO)
+
+    # Log configuration
+    logger.debug("\nConfiguration:")
+    logger.debug("- Query: %s", query)
+    logger.debug("- Result limit: %d", limit)
+    logger.debug("- Score threshold: %.2f", score_threshold)
+    logger.debug("- Vector store: %s", get_vectorstore_path())
+    logger.debug("- Model: %s", config.vector_store["embedding_model"])
+    api_key = config.get_openai_api_key()
+    logger.debug("- API key: %s", mask_api_key(api_key if api_key else ""))
+    logger.debug("- Config file: %s", config.config_path)
+    logger.debug("- Environment file: %s", config.env_path)
 
     try:
+        logger.info("\nStarting content search...")
         searcher = Searcher()
         results = searcher.search(
             query,

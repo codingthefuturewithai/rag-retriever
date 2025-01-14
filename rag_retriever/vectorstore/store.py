@@ -21,10 +21,10 @@ def get_vectorstore_path() -> str:
     # Check for environment variable first
     if "VECTOR_STORE_PATH" in os.environ:
         store_path = Path(os.environ["VECTOR_STORE_PATH"])
-        logger.info(f"Using vector store path from environment variable: {store_path}")
+        logger.debug(f"Using vector store path from environment variable: {store_path}")
     else:
         store_path = get_data_dir() / "chromadb"
-        logger.info(f"Using default vector store path: {store_path}")
+        logger.debug(f"Using default vector store path: {store_path}")
 
     os.makedirs(store_path, exist_ok=True)
     return str(store_path)

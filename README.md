@@ -2,6 +2,19 @@
 
 A Python application that loads and processes both web pages and local documents, indexing their content using embeddings, and enabling semantic search queries. Built with a modular architecture using OpenAI embeddings and Chroma vector store.
 
+## What It Does
+
+RAG Retriever enhances your AI coding assistant (like aider or Cursor) by giving it access to:
+
+- Documentation about new technologies and features
+- Your organization's architecture decisions and coding standards
+- Internal APIs and tools documentation
+- Any other knowledge that isn't part of the LLM's training data
+
+This helps prevent hallucinations and ensures your AI assistant follows your team's practices.
+
+> **💡 Note**: While our examples focus on AI coding assistants, RAG Retriever can enhance any AI-powered development environment or tool that can execute command-line applications. Use it to augment IDEs, CLI tools, or any development workflow that needs reliable, up-to-date information.
+
 ## Prerequisites
 
 - Python 3.10-3.12 (Download from [python.org](https://python.org))
@@ -24,6 +37,14 @@ The application uses Playwright with Chromium for web crawling:
 - Internet connection for initial setup and crawling
 
 Note: The application will automatically download and manage Chromium installation.
+
+---
+
+### 🚀 Ready to Try It?
+
+Head over to our [Getting Started Guide](docs/getting-started.md) for a quick setup that will get your AI assistant using the RAG Retriever in 5 minutes!
+
+---
 
 ## Installation
 

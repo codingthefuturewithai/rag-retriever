@@ -8,15 +8,17 @@ from pathlib import Path
 import argparse
 
 # Configure logging first, before any other imports
-log_level = os.environ.get("RAG_RETRIEVER_LOG_LEVEL", "WARNING").upper()
+log_level = os.environ.get("RAG_RETRIEVER_LOG_LEVEL", "INFO").upper()
 logging.basicConfig(
     level=getattr(logging, log_level), format="%(levelname)s:%(name)s:%(message)s"
 )
 
-# Set module log levels before imports
+# Set module log levels
 logging.getLogger("rag_retriever").setLevel(getattr(logging, log_level))
+# Keep third-party logs at WARNING by default
 logging.getLogger("chromadb").setLevel(logging.WARNING)
 logging.getLogger("httpx").setLevel(logging.WARNING)
+logging.getLogger("urllib3").setLevel(logging.WARNING)
 
 # Now import the rest
 from rag_retriever.main import process_url, search_content
