@@ -15,6 +15,7 @@ from rag_retriever.crawling.exceptions import PageLoadError, ContentExtractionEr
 from rag_retriever.search.searcher import Searcher
 from rag_retriever.vectorstore.store import VectorStore, get_vectorstore_path
 from rag_retriever.utils.config import config, mask_api_key
+from openai import OpenAI
 
 logger = logging.getLogger(__name__)
 
@@ -37,6 +38,33 @@ def get_system_info() -> Dict[str, str]:
             else "N/A"
         ),
     }
+
+
+def get_openai_client() -> OpenAI:
+    """Get an authenticated OpenAI client."""
+    logger.debug("Getting OpenAI client...")
+    api_key = config.get_openai_api_key()
+    logger.debug(
+        "API key retrieved from config: %s", "Found" if api_key else "Not found"
+    )
+
+    if not api_key:
+        logger.error("No valid API key found in config or environment")
+        raise ValueError(
+            "Valid OpenAI API key not found. Please configure it by either:\n"
+            "1. Setting OPENAI_API_KEY environment variable\n"
+            "2. Adding it to ~/.config/rag-retriever/config.yaml under api.openai_api_key\n"
+            "The API key should start with 'sk-'"
+        )
+
+    logger.debug("Creating OpenAI client with API key")
+    try:
+        client = OpenAI(api_key=api_key)
+        logger.debug("OpenAI client created successfully")
+        return client
+    except Exception as e:
+        logger.error("Failed to create OpenAI client: %s", str(e))
+        raise
 
 
 def process_url(url: str, max_depth: int = 2, verbose: bool = True) -> int:
@@ -70,7 +98,8 @@ def process_url(url: str, max_depth: int = 2, verbose: bool = True) -> int:
         logger.info("- Max depth: %d", max_depth)
         logger.info("- Vector store: %s", get_vectorstore_path())
         logger.info("- Model: %s", config.vector_store["embedding_model"])
-        logger.info("- API key: %s", mask_api_key(os.getenv("OPENAI_API_KEY", "")))
+        api_key = config.get_openai_api_key()
+        logger.info("- API key: %s", mask_api_key(api_key if api_key else ""))
         logger.info("- Config file: %s", config.config_path)
         logger.info("- Environment file: %s", config.env_path)
 
@@ -231,7 +260,8 @@ def search_content(
         logger.info("- Score threshold: %.2f", score_threshold)
         logger.info("- Vector store: %s", get_vectorstore_path())
         logger.info("- Model: %s", config.vector_store["embedding_model"])
-        logger.info("- API key: %s", mask_api_key(os.getenv("OPENAI_API_KEY", "")))
+        api_key = config.get_openai_api_key()
+        logger.info("- API key: %s", mask_api_key(api_key if api_key else ""))
         logger.info("- Config file: %s", config.config_path)
         logger.info("- Environment file: %s", config.env_path)
 

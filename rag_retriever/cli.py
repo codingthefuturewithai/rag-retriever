@@ -7,18 +7,25 @@ import logging
 from pathlib import Path
 import argparse
 
+# Configure logging first, before any other imports
+log_level = os.environ.get("RAG_RETRIEVER_LOG_LEVEL", "WARNING").upper()
+logging.basicConfig(
+    level=getattr(logging, log_level), format="%(levelname)s:%(name)s:%(message)s"
+)
+
+# Set module log levels before imports
+logging.getLogger("rag_retriever").setLevel(getattr(logging, log_level))
+logging.getLogger("chromadb").setLevel(logging.WARNING)
+logging.getLogger("httpx").setLevel(logging.WARNING)
+
+# Now import the rest
 from rag_retriever.main import process_url, search_content
 from rag_retriever.vectorstore.store import clean_vectorstore, VectorStore
 from rag_retriever.document_processor import LocalDocumentLoader
 from rag_retriever.utils.config import initialize_user_files, config
 
-# Configure logging - suppress most output by default
-logging.basicConfig(level=logging.WARNING)
 logger = logging.getLogger(__name__)
-
-# Set default levels for other modules
-logging.getLogger("chromadb").setLevel(logging.WARNING)
-logging.getLogger("httpx").setLevel(logging.WARNING)
+logger.debug("Log level set to: %s", log_level)
 
 
 def create_parser() -> argparse.ArgumentParser:

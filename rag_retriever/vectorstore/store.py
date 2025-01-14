@@ -11,7 +11,7 @@ from langchain_chroma import Chroma
 from langchain_core.documents import Document
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 
-from rag_retriever.utils.config import config, get_data_dir
+from rag_retriever.utils.config import config, get_data_dir, mask_api_key
 
 logger = logging.getLogger(__name__)
 
@@ -63,9 +63,17 @@ class VectorStore:
         )
 
     def _get_embeddings(self) -> OpenAIEmbeddings:
-        """Get OpenAI embeddings instance with configuration."""
+        """Get OpenAI embeddings instance."""
+        api_key = config.get_openai_api_key()
+        if not api_key:
+            raise ValueError(
+                "OpenAI API key not found. Please configure it in ~/.config/rag-retriever/config.yaml"
+            )
+
+        logger.debug("Using OpenAI API key: %s", mask_api_key(api_key))
         return OpenAIEmbeddings(
             model=config.vector_store["embedding_model"],
+            openai_api_key=api_key,
             dimensions=config.vector_store["embedding_dimensions"],
         )
 

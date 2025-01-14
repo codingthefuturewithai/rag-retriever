@@ -2,15 +2,22 @@
 
 import os
 from pathlib import Path
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 from importlib.resources import files
 import logging
 import shutil
+import stat
 
 import yaml
 from dotenv import load_dotenv
 
 logger = logging.getLogger(__name__)
+
+
+def secure_file_permissions(file_path: Path) -> None:
+    """Set secure file permissions (600) on the given file."""
+    if os.name != "nt":  # Skip on Windows
+        os.chmod(file_path, stat.S_IRUSR | stat.S_IWUSR)
 
 
 def get_config_dir() -> Path:
@@ -99,14 +106,18 @@ def create_user_config() -> None:
         with open(config_path, "w") as dst:
             dst.write(src.read())
 
+    # Set secure permissions on the config file
+    secure_file_permissions(config_path)
+
     logger.info("Created user config file at: %s", config_path)
+    logger.info("Please edit this file to add your OpenAI API key")
+    logger.info("File permissions have been set to be readable only by the owner")
 
 
 def initialize_user_files() -> None:
     """Initialize all user-specific files in standard locations."""
     ensure_user_directories()
     create_user_config()
-    create_user_env()
 
 
 def get_env_value(key: str, default: Any = None) -> Any:
@@ -153,60 +164,63 @@ def log_env_source() -> None:
     )
 
 
-# Initialize environment
-env_path = get_user_env_path()
-local_env = Path(".env")  # Local development .env file
-
-# Try local .env first (for development), then fall back to user config .env
-if local_env.exists():
-    load_dotenv(local_env)
-    logger.debug("Loaded .env from current directory: %s", local_env.absolute())
-elif env_path.exists():
-    load_dotenv(env_path)
-    logger.debug("Loaded .env from user config: %s", env_path)
-else:
-    logger.info(
-        "No .env file found. Run 'rag-retriever --init' to create one at: %s", env_path
-    )
-
-# Log where we got our environment variables from
-log_env_source()
-
-
 class Config:
     """Configuration manager for the application."""
 
     def __init__(self, config_path: str | None = None):
-        """Initialize configuration manager.
-
-        Args:
-            config_path: Path to the YAML configuration file.
-                        If None, uses default config from package.
-        """
+        """Initialize configuration manager."""
         self._config_path = None
         self._env_path = None
+
+        # Debug path resolution
+        config_dir = get_config_dir()
+        user_config_path = get_user_config_path()
+        logger.debug("Config directory resolved to: %s", config_dir)
+        logger.debug("User config path resolved to: %s", user_config_path)
+        logger.debug("User config exists: %s", user_config_path.exists())
+        if user_config_path.exists():
+            logger.debug(
+                "User config is readable: %s", os.access(user_config_path, os.R_OK)
+            )
+            logger.debug(
+                "User config file permissions: %o", user_config_path.stat().st_mode
+            )
 
         # Load default config first
         with files("rag_retriever.config").joinpath("config.yaml").open("r") as f:
             self._config = yaml.safe_load(f)
+            logger.debug(
+                "Loaded default config with keys: %s", list(self._config.keys())
+            )
 
         # Try to load user config if it exists
         user_config_path = get_user_config_path()
+        logger.debug("Looking for user config at: %s", user_config_path)
         if user_config_path.exists():
             try:
                 with open(user_config_path, "r") as f:
                     user_config = yaml.safe_load(f)
+                    logger.debug(
+                        "Loaded user config with keys: %s", list(user_config.keys())
+                    )
+                    if "api" in user_config:
+                        logger.debug(
+                            "Found api section with keys: %s",
+                            list(user_config["api"].keys()),
+                        )
                 # Merge user config with default config
                 self._merge_configs(user_config)
                 self._config_path = str(user_config_path)
-                logger.debug("Loaded user config from %s", user_config_path)
+                logger.debug(
+                    "After merge, config has keys: %s", list(self._config.keys())
+                )
+                if "api" in self._config:
+                    logger.debug(
+                        "After merge, api section has keys: %s",
+                        list(self._config["api"].keys()),
+                    )
             except Exception as e:
                 logger.warning("Failed to load user config: %s", str(e))
-        else:
-            logger.info(
-                "No user config found. Run 'rag-retriever --init' to create one at: %s",
-                user_config_path,
-            )
 
         # If explicit config path provided, load and merge it
         if config_path:
@@ -218,15 +232,6 @@ class Config:
                 logger.debug("Loaded explicit config from %s", config_path)
             except Exception as e:
                 logger.warning("Failed to load explicit config: %s", str(e))
-
-        # Check for environment file
-        local_env = Path(".env")
-        if local_env.exists():
-            self._env_path = str(local_env.absolute())
-        else:
-            env_path = get_user_env_path()
-            if env_path.exists():
-                self._env_path = str(env_path)
 
         # Apply environment variable overrides
         self._apply_env_overrides()
@@ -286,6 +291,51 @@ class Config:
     def env_path(self) -> str:
         """Get the path to the active environment file."""
         return self._env_path or "environment variables not loaded from file"
+
+    @property
+    def api(self) -> Dict[str, Any]:
+        """Get API configuration."""
+        return self._config.get("api", {})
+
+    def get_openai_api_key(self) -> Optional[str]:
+        """Get OpenAI API key from config or environment."""
+        logger.debug("Attempting to get OpenAI API key...")
+        logger.debug("Config keys available: %s", list(self._config.keys()))
+
+        if "api" in self._config:
+            logger.debug("API section found in config")
+            logger.debug("API section keys: %s", list(self._config["api"].keys()))
+            if "openai_api_key" in self._config["api"]:
+                logger.debug("openai_api_key found in config")
+                api_key = self._config["api"]["openai_api_key"]
+                logger.debug("API key type: %s", type(api_key))
+                logger.debug(
+                    "API key starts with sk-: %s",
+                    str(api_key).startswith("sk-") if api_key else False,
+                )
+        else:
+            logger.debug("No api section found in config")
+
+        # First try config file (takes precedence)
+        if api_key := self.api.get("openai_api_key"):
+            logger.debug("Found API key in config file")
+            if isinstance(api_key, str) and api_key.startswith("sk-"):
+                logger.debug("Using API key from config file")
+                return api_key
+            else:
+                logger.debug("API key in config is invalid format: %s", type(api_key))
+
+        # Then try environment variable as fallback
+        if api_key := os.getenv("OPENAI_API_KEY"):
+            logger.debug("Found API key in environment")
+            if api_key.startswith("sk-"):
+                logger.debug("Using API key from environment variable")
+                return api_key
+            else:
+                logger.debug("API key in environment is invalid format")
+
+        logger.debug("No valid API key found in config or environment")
+        return None
 
 
 # Global config instance

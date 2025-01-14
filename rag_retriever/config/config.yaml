@@ -85,3 +85,8 @@ browser:
     platform: "MacIntel" # Will be overridden based on OS
     vendor: "Google Inc."
     webgl_vendor: "Intel Inc." # Will be overridden based on OS
+
+# API settings
+api:
+  openai_api_key: null # Set this in your user config file
+  # You can add other API settings here in the future
