@@ -1,6 +1,6 @@
 # Getting Started with RAG Retriever
 
-This guide will walk you through installing RAG Retriever, loading your first documentation, and testing it with AI coding assistants.
+This guide will walk you through installing RAG Retriever, loading your first documentation, and testing it with two different AI coding assistants.
 
 ## Installation
 

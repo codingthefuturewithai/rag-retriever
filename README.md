@@ -384,31 +384,19 @@ Key dependencies include:
 - Uses cosine similarity for more intuitive relevance scoring
 - Minimal output by default with `--verbose` flag for troubleshooting
 - Full content display by default with `--truncate` option for brevity
+- ⚠️ Changing chunk size/overlap settings after ingesting content may lead to inconsistent search results. Consider reprocessing existing content if these settings must be changed.
 
-## Known Current Limitations
+## Future Development
 
-The following limitations are currently being tracked, with possible future enhancements under consideration:
+RAG Retriever is under active development with many planned improvements. We maintain a detailed roadmap of future enhancements in our [Future Features](docs/future-features.md) document, which outlines:
 
-- Does not check for existing URLs or content in the vector store during fetch operations
+- Document lifecycle management improvements
+- Integration with popular documentation platforms
+- Vector store analysis and visualization
+- Search quality enhancements
+- Performance optimizations
 
-  - Possible enhancement: Detect and skip already indexed content by default
-  - Possible enhancement: Add `--re-fetch` option to update existing content
-  - Possible enhancement: Provide status information about existing content age
-
-- Limited document management capabilities
-
-  - Possible enhancement: Support for deleting specific documents from the vector store
-  - Possible enhancement: Support for bulk deletion of documents by base URL
-  - Possible enhancement: Document listing and filtering tools
-
-- No direct access to vector store data for analysis
-
-  - Possible enhancement: Tools to examine and analyze stored embeddings and metadata
-  - Possible enhancement: Support for export/import of vector store data for backup or transfer
-
-- Command-line interface only
-  - Possible enhancement: Web UI for easier interaction with all features
-  - Possible enhancement: Real-time progress monitoring and result visualization
+While the current version is fully functional for core use cases, there are currently some limitations that will be addressed in future releases. Check the future features document for details on potential upcoming improvements.
 
 ## Contributing
 

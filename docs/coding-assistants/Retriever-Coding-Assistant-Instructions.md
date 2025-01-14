@@ -1,4 +1,4 @@
-# RAG Retriever Usage Instructions
+# RAG Retriever Usage Instructions for AI Assistants
 
 ⚠️ CRITICAL: KNOWLEDGE VERIFICATION REQUIRED
 Before responding to ANY request involving:

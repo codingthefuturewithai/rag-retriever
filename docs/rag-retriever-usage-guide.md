@@ -1,4 +1,4 @@
-# RAG Retriever Usage Guide
+# RAG Retriever User Guide
 
 RAG Retriever is a command-line tool for searching and retrieving information from a knowledge base built from both web documentation and local documents.
 
