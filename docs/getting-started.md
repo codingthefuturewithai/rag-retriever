@@ -41,10 +41,10 @@ This guide will walk you through installing RAG Retriever, loading your first do
 
 ## Loading Your First Documentation
 
-Let's load some documentation about Angular 18.1's new features to test the setup. Open a new terminal and run:
+Let's load some documentation about Java 23's new features to test the setup. Open a new terminal and run:
 
 ```bash
-rag-retriever --fetch https://blog.ninja-squad.com/2024/07/10/what-is-new-angular-18.1 --max-depth 0
+rag-retriever --fetch https://www.happycoders.eu/java/java-23-features --max-depth 0
 ```
 
 You should see output similar to this:
@@ -53,13 +53,13 @@ You should see output similar to this:
 INFO:rag_retriever.main:
 Starting content fetch and indexing process...
 INFO:rag_retriever.main:Starting crawl operation...
-INFO:rag_retriever.crawling.playwright_crawler:Starting crawl of https://blog.ninja-squad.com/2024/07/10/what-is-new-angular-18.1
-INFO:rag_retriever.crawling.playwright_crawler:Processed document: https://blog.ninja-squad.com/2024/07/10/what-is-new-angular-18.1
+INFO:rag_retriever.crawling.playwright_crawler:Starting crawl of https://www.happycoders.eu/java/java-23-features
+INFO:rag_retriever.crawling.playwright_crawler:Processed document: https://www.happycoders.eu/java/java-23-features
 INFO:rag_retriever.crawling.playwright_crawler:Completed crawl: processed 1 documents
 INFO:rag_retriever.main:
 Indexing documents...
 INFO:rag_retriever.vectorstore.store:Processing 1 documents (total size: 11268 chars) into 10 chunks (total size: 11847 chars)
-INFO:rag_retriever.vectorstore.store:Successfully added 10 chunks to vector store
+INFO:rag_retriever.vectorstore.store:Successfully added 39 chunks to vector store
 INFO:rag_retriever.main:Indexing complete.
 ```
 
@@ -70,7 +70,7 @@ This indicates that the content was successfully fetched, processed into chunks,
 Let's verify that the content was properly indexed by running a search query:
 
 ```bash
-rag-retriever --query "Angular 18.1 @let syntax template usage" --score-threshold 0.5
+rag-retriever --query "Java 23 Markdown Documentation Comments JavaDoc syntax" --score-threshold 0.5
 ```
 
 You should see output similar to this:
@@ -79,18 +79,16 @@ You should see output similar to this:
 INFO:rag_retriever.main:
 Starting content search...
 1.
-Source: https://blog.ninja-squad.com/2024/07/10/what-is-new-angular-18.1
-Relevance Score: 0.7260
-Content: ## @let syntax
+Source: https://www.happycoders.eu/java/java-23-features
+Relevance Score: 0.6636
+Content: ## Markdown Documentation Comments – JEP 467
 
-The main feature of this release is undoubtedly the new
-@let
- syntax in Angular templates.
-This new syntax (in developer preview) allows you to define a template variable in the template itself,
-without having to declare it in the component class.
+To format JavaDoc comments, we have always had to use HTML. This was undoubtedly a good choice in 1995, but nowadays, Markdown is much more popular than HTML for writing documentation.
+
+JDK Enhancement Proposal 467 allows us to write JavaDoc comments in Markdown from Java 23 onwards.
 ```
 
-The high relevance score (0.7260) indicates that the content was successfully indexed and is highly relevant to our query.
+The high relevance score (0.6636) indicates that the content was successfully indexed and is highly relevant to our query.
 
 > **💡 TIP**: While these examples focus on new technology features, RAG Retriever is valuable for any knowledge that isn't part of the LLM's training data. This includes:
 >
@@ -123,7 +121,7 @@ Now let's set up your AI coding assistants to use RAG Retriever. You can use eit
 
 4. Test the integration with this prompt:
    ```
-   Create an Angular 18.1 component using the new @let syntax
+   Show me how to write a class documentation comment using Java 23's new Markdown syntax
    ```
 
 ### Option 2: Setting up Cursor
@@ -134,19 +132,19 @@ Now let's set up your AI coding assistants to use RAG Retriever. You can use eit
 
 3. Open a new project in Cursor and test the integration with the same prompt:
    ```
-   Create an Angular 18.1 component using the new @let syntax
+   Show me how to write a class documentation comment using Java 23's new Markdown syntax
    ```
 
 ## What to Expect
 
 When you run the test prompt, your AI assistant should:
 
-1. Recognize that it needs to verify its knowledge about Angular 18.1's @let syntax
+1. Recognize that it needs to verify its knowledge about Java 23's Markdown documentation syntax
 2. Use RAG Retriever to search the documentation you loaded
 3. Find relevant information about the feature
 4. Provide an accurate response based on the retrieved documentation
 
-> **Note about LLM Training Data**: If you're using an LLM trained on data after April 2024, it may already have knowledge of Angular 18.1 and Java 23 features. In this case, you'll need to find documentation about even newer technologies or features to properly test the RAG Retriever integration. Look for announcements, beta features, or release candidates that were published after your LLM's training cutoff date.
+> **Note about LLM Training Data**: If you're using an LLM trained on data after September 2023, it may already have knowledge of Java 23 features. In this case, you'll need to find documentation about even newer technologies or features to properly test the RAG Retriever integration. Look for announcements, beta features, or release candidates that were published after your LLM's training cutoff date.
 
 If the assistant doesn't automatically use RAG Retriever, you can:
 
