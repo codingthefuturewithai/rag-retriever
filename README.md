@@ -97,7 +97,9 @@ OPENAI_API_KEY=your-api-key-here
 
 ### Customizing Configuration
 
-All settings are in `config.yaml`. Key configuration sections include:
+All settings are in `config.yaml`. For detailed information about all configuration options, best practices, and example configurations, see our [Configuration Guide](docs/configuration-guide.md).
+
+Key configuration sections include:
 
 ```yaml
 # Vector store settings

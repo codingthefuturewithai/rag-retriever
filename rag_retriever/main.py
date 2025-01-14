@@ -129,6 +129,13 @@ def process_url(url: str, max_depth: int = 2, verbose: bool = True) -> int:
                 logger.info("Starting crawl operation...")
                 documents = crawler.run_crawl(url, max_depth=max_depth)
 
+                # Check if we got any documents
+                if not documents:
+                    logger.error(
+                        "No documents were retrieved. The crawl operation failed to fetch any content."
+                    )
+                    return 1
+
                 # Update statistics
                 crawl_stats["pages_successful"] = len(documents)
                 crawl_stats["total_content_size"] = sum(
