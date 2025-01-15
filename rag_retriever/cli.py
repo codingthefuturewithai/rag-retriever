@@ -6,6 +6,7 @@ import os
 import logging
 from pathlib import Path
 import argparse
+import json
 
 # Configure logging first, before any other imports
 log_level = os.environ.get("RAG_RETRIEVER_LOG_LEVEL", "INFO").upper()
@@ -25,6 +26,7 @@ from rag_retriever.main import process_url, search_content
 from rag_retriever.vectorstore.store import clean_vectorstore, VectorStore
 from rag_retriever.document_processor import LocalDocumentLoader
 from rag_retriever.utils.config import initialize_user_files, config
+from rag_retriever.search.web_search import web_search
 
 logger = logging.getLogger(__name__)
 logger.debug("Log level set to: %s", log_level)
@@ -109,6 +111,19 @@ def create_parser() -> argparse.ArgumentParser:
         help="Path to a directory containing markdown and text files to ingest",
     )
 
+    parser.add_argument(
+        "--web-search",
+        type=str,
+        help="Perform a web search using DuckDuckGo",
+    )
+
+    parser.add_argument(
+        "--results",
+        type=int,
+        default=5,
+        help="Number of results to return for web search (default: 5)",
+    )
+
     return parser
 
 
@@ -135,6 +150,14 @@ def main():
 
     if args.clean:
         clean_vectorstore()
+        sys.exit(0)
+
+    if args.web_search:
+        results = web_search(args.web_search, args.results)
+        for i, result in enumerate(results, 1):
+            print(f"\n{i}. {result.title}")
+            print(f"   URL: {result.url}")
+            print(f"   {result.snippet}")
         sys.exit(0)
 
     # Handle local document ingestion
