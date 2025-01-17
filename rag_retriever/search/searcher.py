@@ -1,11 +1,15 @@
 """Search functionality for the RAG retriever."""
 
 import json
+import logging
 from typing import List, Tuple, Dict, Any
 from dataclasses import dataclass
+from statistics import mean
 
 from rag_retriever.utils.config import config
 from rag_retriever.vectorstore.store import VectorStore
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -54,12 +58,23 @@ class Searcher:
             self.default_score_threshold if score_threshold is None else score_threshold
         )
 
+        logger.debug(f"Search query: {query}")
+        logger.debug(f"Result limit: {limit}")
+        logger.debug(f"Score threshold: {score_threshold}")
+
         # Get raw results from vector store
         raw_results = self.vector_store.search(
             query,
             limit=limit,
             score_threshold=score_threshold,
         )
+
+        scores = [score for _, score in raw_results]
+        logger.debug(f"Number of results found: {len(raw_results)}")
+        if scores:
+            logger.debug(f"Average relevance score: {mean(scores):.4f}")
+            logger.debug(f"Max relevance score: {max(scores):.4f}")
+            logger.debug(f"Min relevance score: {min(scores):.4f}")
 
         # Convert to SearchResult objects
         results = []
@@ -71,6 +86,8 @@ class Searcher:
                 metadata=doc.metadata,
             )
             results.append(result)
+            logger.debug(f"Result from source: {result.source}")
+            logger.debug(f"Content length: {len(result.content)} chars")
 
         return results
 
