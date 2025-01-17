@@ -26,42 +26,25 @@ jobs:
       - name: Install Visual C++ Build Tools
         uses: microsoft/setup-msbuild@v2
 
-      - name: Install pipx
-        run: |
-          python -m pip install --user pipx
-          python -m pipx ensurepath
-
-      - name: Install rag-retriever
+      - name: Install in development mode
         shell: pwsh
         run: |
-          refreshenv
-          pipx install .
-
-      - name: Verify installation
-        shell: pwsh
-        run: |
-          refreshenv
-          # Check if command is available
-          if (!(Get-Command rag-retriever -ErrorAction SilentlyContinue)) {
-            Write-Error "rag-retriever command not found in PATH"
-            exit 1
-          }
-          # Check version
-          rag-retriever --version
+          # Install in development mode with all dependencies
+          python -m pip install -e .[dev]
 
       - name: Test basic functionality
         shell: pwsh
         run: |
           # Initialize configuration
-          rag-retriever --init
+          python -m rag_retriever --init
 
-          # Test basic PDF processing (no OCR/advanced features)
+          # Create test content
           $testDir = "test-docs"
           mkdir $testDir
           Set-Content -Path "$testDir\test.txt" -Value "Test content for indexing"
 
           # Try ingesting the text file
-          rag-retriever --ingest-file "$testDir\test.txt"
+          python -m rag_retriever --ingest-file "$testDir\test.txt"
 
           # Try a basic search query
-          rag-retriever --query "test content"
+          python -m rag_retriever --query "test content"
