@@ -1,0 +1,45 @@
+name: Test Windows Installation
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  # Allow manual trigger
+  workflow_dispatch:
+
+jobs:
+  test-windows-install:
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        python-version: ["3.10", "3.11", "3.12"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install Visual C++ Build Tools
+        uses: microsoft/setup-msbuild@v2
+
+      - name: Install Tesseract
+        run: |
+          choco install tesseract
+          echo "$((Get-Command tesseract).Path | Split-Path -Parent)" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+
+      - name: Install Poppler
+        run: |
+          choco install poppler
+          echo "$((Get-Command pdftoppm).Path | Split-Path -Parent)" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+
+      - name: Install pipx
+        run: python -m pip install --user pipx
+
+      - name: Install rag-retriever
+        run: |
+          python -m pipx ensurepath
+          pipx install .
