@@ -1,6 +1,6 @@
 # RAG Retriever
 
-A Python application that loads and processes both web pages and local documents, indexing their content using embeddings, and enabling semantic search queries. Built with a modular architecture using OpenAI embeddings and Chroma vector store.
+A Python application that loads and processes web pages, local documents, and Confluence spaces, indexing their content using embeddings, and enabling semantic search queries. Built with a modular architecture using OpenAI embeddings and Chroma vector store.
 
 ## What It Does
 
@@ -9,6 +9,7 @@ RAG Retriever enhances your AI coding assistant (like aider or Cursor) by giving
 - Documentation about new technologies and features
 - Your organization's architecture decisions and coding standards
 - Internal APIs and tools documentation
+- Confluence spaces and documentation
 - Any other knowledge that isn't part of the LLM's training data
 
 This helps prevent hallucinations and ensures your AI assistant follows your team's practices.
