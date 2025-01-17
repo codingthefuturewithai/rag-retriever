@@ -16,22 +16,26 @@ This guide will walk you through installing RAG Retriever, loading your first do
    pipx install rag-retriever
    ```
 
-   > **Note for MacOS Users**: You may need:
+   > **Core Features**: The basic installation includes everything needed for:
    >
-   > - Xcode Command Line Tools (includes C++ compiler): `xcode-select --install`
-   > - For advanced features: `brew install tesseract poppler`
+   > - Web content crawling
+   > - Basic PDF text extraction
+   > - Markdown processing
+   > - Vector storage and search
 
-   > **Note for Windows Users**: Before installation, you'll need Microsoft C++ Build Tools:
+   > **Optional Features**: If you need advanced features, install additional dependencies:
    >
-   > 1. Download from: [Visual Studio Build Tools](https://visualstudio.microsoft.com/visual-cpp-build-tools/)
-   > 2. During installation, select "Desktop development with C++"
-   > 3. This is a one-time requirement for some Python packages
+   > **For OCR Support** (scanned documents & image text extraction):
    >
-   > Optional dependencies for advanced features:
+   > - MacOS: `brew install tesseract`
+   > - Windows: [Install Tesseract](https://github.com/UB-Mannheim/tesseract/wiki)
    >
-   > - For OCR functionality: Install [Tesseract OCR](https://github.com/UB-Mannheim/tesseract/wiki)
-   > - For advanced PDF processing: Install [Poppler](https://github.com/oschwartz10612/poppler-windows/releases/)
-   > - Add both to your PATH environment variable if installed
+   > **For Advanced PDF Processing** (complex layouts & tables):
+   >
+   > - MacOS: `brew install poppler`
+   > - Windows: [Install Poppler](https://github.com/oschwartz10612/poppler-windows/releases/)
+   >
+   > Note: Install these only if you need their specific features. The core functionality works without them.
 
 2. Initialize the configuration:
 

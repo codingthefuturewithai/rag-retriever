@@ -17,50 +17,51 @@ This helps prevent hallucinations and ensures your AI assistant follows your tea
 
 ## Prerequisites
 
+### Core Requirements
+
 - Python 3.10-3.12 (Download from [python.org](https://python.org))
 - pipx (Install with one of these commands):
 
   ```bash
+  # On MacOS
+  brew install pipx
+
   # On Windows/Linux
   python -m pip install --user pipx
   ```
 
-### MacOS Requirements
+### Optional Dependencies
 
-If you're installing on MacOS, you'll need:
+The following dependencies are only required for specific advanced features:
 
-- Xcode Command Line Tools (includes C++ compiler)
-  - Usually installed automatically when needed
-  - Or install manually: `xcode-select --install`
+#### OCR Support (Optional)
 
-For advanced features:
+Required only for:
 
-```bash
-# Install optional dependencies
-brew install tesseract  # Required for OCR functionality
-brew install poppler   # Required for advanced PDF processing
-```
+- Processing scanned documents
+- Extracting text from images in PDFs
+- Converting images to searchable text
 
-### Windows-Specific Requirements
+**MacOS**: `brew install tesseract`
+**Windows**: Install [Tesseract](https://github.com/UB-Mannheim/tesseract/wiki)
 
-If you're installing on Windows, you'll need:
+#### Advanced PDF Processing (Optional)
 
-- Microsoft C++ Build Tools (Required for some dependencies)
+Required only for:
 
-  - Download from: [Visual Studio Build Tools](https://visualstudio.microsoft.com/visual-cpp-build-tools/)
-  - During installation, select "Desktop development with C++"
-  - This is a one-time installation requirement
+- Complex PDF layouts
+- Better table extraction
+- Technical document processing
 
-- Tesseract OCR (Required for OCR functionality)
+**MacOS**: `brew install poppler`
+**Windows**: Install [Poppler](https://github.com/oschwartz10612/poppler-windows/releases/)
 
-  - Download from: [Tesseract at UB Mannheim](https://github.com/UB-Mannheim/tesseract/wiki)
-  - Add the installation directory to your PATH environment variable
-  - Only needed if you plan to use OCR features
+The core functionality works without these dependencies, including:
 
-- Poppler (Required for advanced PDF processing)
-  - Download from: [Poppler for Windows](https://github.com/oschwartz10612/poppler-windows/releases/)
-  - Add the bin directory to your PATH environment variable
-  - Only needed for advanced PDF processing features
+- Basic PDF text extraction
+- Markdown and text file processing
+- Web content crawling
+- Vector storage and search
 
 ### System Requirements
 
@@ -377,15 +378,30 @@ Search results include relevance scores based on cosine similarity:
 
 ## Features
 
-- **Local Document Loading**: Load markdown, text, and PDF files from local directories.
+### Core Features (No Additional Dependencies)
 
-  - **Single File and Directory Loading**: Easily load individual files or entire directories with support for multithreading and progress indication.
-  - **PDF Processing**: Extract text and images from PDFs using multiple loaders, with optional OCR for scanned documents.
-  - **Configurable Settings**: Customize supported file types, PDF processing options, and more through configuration files.
+- Web crawling and content extraction
+- Basic PDF text extraction
+- Markdown and text file processing
+- Vector storage and semantic search
+- Configuration management
+- Basic document chunking and processing
 
-- **Error Handling**: Robust error handling for unsupported file types and missing files, with detailed logging for troubleshooting.
+### Advanced Features (Optional Dependencies Required)
 
-- **Configuration**: Flexible configuration options for document processing, including supported extensions and PDF settings.
+- **OCR Processing** (Requires Tesseract):
+
+  - Scanned document processing
+  - Image text extraction
+  - PDF image text extraction
+
+- **Enhanced PDF Processing** (Requires Poppler):
+  - Complex layout handling
+  - Table extraction
+  - Technical document processing
+  - Better handling of multi-column layouts
+
+All core features work without installing optional dependencies. Install optional dependencies only if you need their specific features.
 
 For more detailed usage instructions and examples, please refer to the [local-document-loading.md](docs/local-document-loading.md) documentation.
 
