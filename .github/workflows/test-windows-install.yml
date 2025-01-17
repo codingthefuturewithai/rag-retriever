@@ -29,31 +29,66 @@ jobs:
       - name: Install Tesseract
         shell: pwsh
         run: |
-          # Download and install Tesseract
-          $tesseractUrl = "https://github.com/UB-Mannheim/tesseract/releases/download/v5.3.3.20231214/tesseract-ocr-w64-setup-5.3.3.20231214.exe"
+          Write-Host "Downloading Tesseract..."
           $tesseractInstaller = "$env:TEMP\tesseract-installer.exe"
-          Invoke-WebRequest -Uri $tesseractUrl -OutFile $tesseractInstaller
+          curl.exe -L -o $tesseractInstaller `
+            "https://digi.bib.uni-mannheim.de/tesseract/tesseract-ocr-w64-setup-v5.3.3.20231214.exe"
+
+          if (!(Test-Path $tesseractInstaller)) {
+            Write-Error "Failed to download Tesseract installer"
+            exit 1
+          }
+
+          Write-Host "Installing Tesseract..."
           Start-Process -FilePath $tesseractInstaller -ArgumentList "/S" -Wait
+
           $tesseractPath = "C:\Program Files\Tesseract-OCR"
+          if (!(Test-Path $tesseractPath)) {
+            Write-Error "Tesseract installation failed - directory not found"
+            exit 1
+          }
+
           $env:Path += ";$tesseractPath"
           echo "$tesseractPath" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
-          # Verify installation
+
+          Write-Host "Verifying Tesseract installation..."
           tesseract --version
+          if ($LASTEXITCODE -ne 0) {
+            Write-Error "Tesseract verification failed"
+            exit 1
+          }
 
       - name: Install Poppler
         shell: pwsh
         run: |
-          # Download and extract Poppler
-          $popplerUrl = "https://github.com/oschwartz10612/poppler-windows/releases/download/v23.11.0-0/Release-23.11.0-0.zip"
+          Write-Host "Downloading Poppler..."
           $popplerZip = "$env:TEMP\poppler.zip"
+          curl.exe -L -o $popplerZip `
+            "https://github.com/oschwartz10612/poppler-windows/releases/download/v23.11.0-0/Release-23.11.0-0.zip"
+
+          if (!(Test-Path $popplerZip)) {
+            Write-Error "Failed to download Poppler"
+            exit 1
+          }
+
+          Write-Host "Extracting Poppler..."
           $popplerDir = "C:\poppler"
-          Invoke-WebRequest -Uri $popplerUrl -OutFile $popplerZip
-          Expand-Archive -Path $popplerZip -DestinationPath $popplerDir
+          Expand-Archive -Path $popplerZip -DestinationPath $popplerDir -Force
+
+          if (!(Test-Path "$popplerDir\Library\bin")) {
+            Write-Error "Poppler extraction failed - bin directory not found"
+            exit 1
+          }
+
           $env:Path += ";$popplerDir\Library\bin"
           echo "$popplerDir\Library\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
-          # Verify installation
-          Get-Command pdftoppm
+
+          Write-Host "Verifying Poppler installation..."
           pdftoppm -v
+          if ($LASTEXITCODE -ne 0) {
+            Write-Error "Poppler verification failed"
+            exit 1
+          }
 
       - name: Install pipx
         run: python -m pip install --user pipx
