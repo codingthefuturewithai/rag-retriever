@@ -29,7 +29,11 @@ jobs:
       - name: Install Tesseract
         shell: pwsh
         run: |
-          choco install tesseract
+          # Download and install Tesseract
+          $tesseractUrl = "https://github.com/UB-Mannheim/tesseract/releases/download/v5.3.3.20231214/tesseract-ocr-w64-setup-5.3.3.20231214.exe"
+          $tesseractInstaller = "$env:TEMP\tesseract-installer.exe"
+          Invoke-WebRequest -Uri $tesseractUrl -OutFile $tesseractInstaller
+          Start-Process -FilePath $tesseractInstaller -ArgumentList "/S" -Wait
           $tesseractPath = "C:\Program Files\Tesseract-OCR"
           $env:Path += ";$tesseractPath"
           echo "$tesseractPath" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
@@ -39,14 +43,14 @@ jobs:
       - name: Install Poppler
         shell: pwsh
         run: |
-          choco install poppler
-          # Wait for installation to complete
-          Start-Sleep -Seconds 5
-          $popplerBase = "C:\ProgramData\chocolatey\lib\poppler\tools"
-          Write-Host "Checking Poppler installation..."
-          Get-ChildItem $popplerBase -Recurse
-          $env:Path += ";$popplerBase"
-          echo "$popplerBase" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+          # Download and extract Poppler
+          $popplerUrl = "https://github.com/oschwartz10612/poppler-windows/releases/download/v23.11.0-0/Release-23.11.0-0.zip"
+          $popplerZip = "$env:TEMP\poppler.zip"
+          $popplerDir = "C:\poppler"
+          Invoke-WebRequest -Uri $popplerUrl -OutFile $popplerZip
+          Expand-Archive -Path $popplerZip -DestinationPath $popplerDir
+          $env:Path += ";$popplerDir\Library\bin"
+          echo "$popplerDir\Library\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
           # Verify installation
           Get-Command pdftoppm
           pdftoppm -v
