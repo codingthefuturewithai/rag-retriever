@@ -16,6 +16,12 @@ This guide will walk you through installing RAG Retriever, loading your first do
    pipx install rag-retriever
    ```
 
+   > **Note for Windows Users**: Before installation, you'll need Microsoft C++ Build Tools:
+   >
+   > 1. Download from: [Visual Studio Build Tools](https://visualstudio.microsoft.com/visual-cpp-build-tools/)
+   > 2. During installation, select "Desktop development with C++"
+   > 3. This is a one-time requirement for some Python packages
+
 2. Initialize the configuration:
 
    ```bash

@@ -28,6 +28,15 @@ This helps prevent hallucinations and ensures your AI assistant follows your tea
   python -m pip install --user pipx
   ```
 
+### Windows-Specific Requirements
+
+If you're installing on Windows, you'll need:
+
+- Microsoft C++ Build Tools (Required for some dependencies)
+  - Download from: [Visual Studio Build Tools](https://visualstudio.microsoft.com/visual-cpp-build-tools/)
+  - During installation, select "Desktop development with C++"
+  - This is a one-time installation requirement
+
 ### System Requirements
 
 The application uses Playwright with Chromium for web crawling:
