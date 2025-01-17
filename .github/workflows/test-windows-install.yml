@@ -1,11 +1,7 @@
 name: Test Windows Installation
 
 on:
-  push:
-    branches: [main]
-  pull_request:
-    branches: [main]
-  # Allow manual trigger
+  # Manual trigger only
   workflow_dispatch:
 
 jobs:
@@ -14,6 +10,8 @@ jobs:
     strategy:
       matrix:
         python-version: ["3.10", "3.11", "3.12"]
+    # Add global timeout
+    timeout-minutes: 10
 
     steps:
       - uses: actions/checkout@v4
@@ -32,19 +30,26 @@ jobs:
           # Install in development mode with all dependencies
           python -m pip install -e .[dev]
 
+          # Print installed version and location
+          python -c "import rag_retriever; print(f'Version: {rag_retriever.__version__}'); print(f'Location: {rag_retriever.__file__}')"
+
       - name: Test basic functionality
         shell: pwsh
         run: |
-          # Initialize configuration
-          python -m rag_retriever --init
+          # Enable verbose output
+          $env:RAG_RETRIEVER_DEBUG = "1"
 
-          # Create test content
+          Write-Host "Starting initialization..."
+          # Initialize with default config (non-interactive)
+          python -m rag_retriever --init --non-interactive
+
+          Write-Host "Creating test content..."
           $testDir = "test-docs"
           mkdir $testDir
           Set-Content -Path "$testDir\test.txt" -Value "Test content for indexing"
 
-          # Try ingesting the text file
-          python -m rag_retriever --ingest-file "$testDir\test.txt"
+          Write-Host "Testing file ingestion..."
+          python -m rag_retriever --ingest-file "$testDir\test.txt" --verbose
 
-          # Try a basic search query
-          python -m rag_retriever --query "test content"
+          Write-Host "Testing search..."
+          python -m rag_retriever --query "test content" --verbose
