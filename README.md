@@ -21,21 +21,46 @@ This helps prevent hallucinations and ensures your AI assistant follows your tea
 - pipx (Install with one of these commands):
 
   ```bash
-  # On MacOS
-  brew install pipx
-
   # On Windows/Linux
   python -m pip install --user pipx
   ```
+
+### MacOS Requirements
+
+If you're installing on MacOS, you'll need:
+
+- Xcode Command Line Tools (includes C++ compiler)
+  - Usually installed automatically when needed
+  - Or install manually: `xcode-select --install`
+
+For advanced features:
+
+```bash
+# Install optional dependencies
+brew install tesseract  # Required for OCR functionality
+brew install poppler   # Required for advanced PDF processing
+```
 
 ### Windows-Specific Requirements
 
 If you're installing on Windows, you'll need:
 
 - Microsoft C++ Build Tools (Required for some dependencies)
+
   - Download from: [Visual Studio Build Tools](https://visualstudio.microsoft.com/visual-cpp-build-tools/)
   - During installation, select "Desktop development with C++"
   - This is a one-time installation requirement
+
+- Tesseract OCR (Required for OCR functionality)
+
+  - Download from: [Tesseract at UB Mannheim](https://github.com/UB-Mannheim/tesseract/wiki)
+  - Add the installation directory to your PATH environment variable
+  - Only needed if you plan to use OCR features
+
+- Poppler (Required for advanced PDF processing)
+  - Download from: [Poppler for Windows](https://github.com/oschwartz10612/poppler-windows/releases/)
+  - Add the bin directory to your PATH environment variable
+  - Only needed for advanced PDF processing features
 
 ### System Requirements
 
