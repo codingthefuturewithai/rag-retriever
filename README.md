@@ -249,23 +249,65 @@ rag-retriever --fetch https://example.com --max-depth 2
 rag-retriever --fetch https://example.com --verbose false
 ```
 
+### Confluence Integration
+
+RAG Retriever can load and index content directly from your Confluence spaces. To use this feature:
+
+1. Configure your Confluence credentials in `~/.config/rag-retriever/config.yaml`:
+
+```yaml
+api:
+  confluence:
+    url: "https://your-domain.atlassian.net" # Your Confluence instance URL
+    username: "your-email@example.com" # Your Confluence username/email
+    api_token: "your-api-token" # API token from https://id.atlassian.com/manage-profile/security/api-tokens
+    space_key: null # Optional: Default space to load from
+    parent_id: null # Optional: Default parent page ID
+    include_attachments: false # Whether to include attachments
+    limit: 50 # Max pages per request
+    max_pages: 1000 # Maximum total pages to load
+```
+
+2. Load content from Confluence:
+
+```bash
+# Load from configured default space
+rag-retriever --confluence
+
+# Load from specific space
+rag-retriever --confluence --space-key TEAM
+
+# Load from specific parent page
+rag-retriever --confluence --parent-id 123456
+
+# Load from specific space and parent
+rag-retriever --confluence --space-key TEAM --parent-id 123456
+```
+
+The loaded content will be:
+
+- Converted to markdown format
+- Split into appropriate chunks
+- Embedded and stored in your vector store
+- Available for semantic search just like any other content
+
 ### Searching Content
 
 ```bash
 # Basic search
-rag-retriever --query "How do I get started?"
+rag-retriever --query "How do I configure logging?"
 
-# With truncated content
-rag-retriever --query "How do I get started?" --truncate
+# Limit results
+rag-retriever --query "deployment steps" --limit 5
 
-# With custom result limit
-rag-retriever --query "deployment options" --limit 5
+# Set minimum relevance score
+rag-retriever --query "error handling" --score-threshold 0.7
 
-# With minimum relevance score
-rag-retriever --query "advanced configuration" --score-threshold 0.5
+# Get full content (default) or truncated
+rag-retriever --query "database setup" --truncate
 
-# JSON output format
-rag-retriever --query "API reference" --json
+# Output in JSON format
+rag-retriever --query "API endpoints" --json
 ```
 
 ## Configuration Options

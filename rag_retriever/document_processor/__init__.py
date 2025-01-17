@@ -1,5 +1,6 @@
-"""Document processor package for loading and processing local documents."""
+"""Document processor package for loading and processing various document types."""
 
-from rag_retriever.document_processor.local_loader import LocalDocumentLoader
+from .local_loader import LocalDocumentLoader
+from .confluence_loader import ConfluenceDocumentLoader
 
-__all__ = ["LocalDocumentLoader"]
+__all__ = ["LocalDocumentLoader", "ConfluenceDocumentLoader"]

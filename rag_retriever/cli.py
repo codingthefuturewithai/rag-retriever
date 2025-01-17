@@ -24,7 +24,10 @@ logging.getLogger("urllib3").setLevel(logging.WARNING)
 # Now import the rest
 from rag_retriever.main import process_url, search_content
 from rag_retriever.vectorstore.store import clean_vectorstore, VectorStore
-from rag_retriever.document_processor import LocalDocumentLoader
+from rag_retriever.document_processor import (
+    LocalDocumentLoader,
+    ConfluenceDocumentLoader,
+)
 from rag_retriever.utils.config import initialize_user_files, config
 from rag_retriever.search.web_search import web_search
 
@@ -124,6 +127,24 @@ def create_parser() -> argparse.ArgumentParser:
         help="Number of results to return for web search (default: 5)",
     )
 
+    parser.add_argument(
+        "--confluence",
+        action="store_true",
+        help="Load content from Confluence using configured settings",
+    )
+
+    parser.add_argument(
+        "--space-key",
+        type=str,
+        help="Confluence space key to load content from",
+    )
+
+    parser.add_argument(
+        "--parent-id",
+        type=str,
+        help="Confluence parent page ID to start loading from",
+    )
+
     return parser
 
 
@@ -181,6 +202,25 @@ def main():
 
         except Exception as e:
             logger.error(f"Error ingesting documents: {str(e)}")
+            sys.exit(1)
+
+    # Handle Confluence content loading
+    if args.confluence:
+        try:
+            loader = ConfluenceDocumentLoader(config=config._config)
+            store = VectorStore()
+
+            logger.info("Loading content from Confluence...")
+            documents = loader.load_pages(
+                space_key=args.space_key, parent_id=args.parent_id
+            )
+
+            store.add_documents(documents)
+            logger.info(f"Successfully loaded {len(documents)} pages from Confluence")
+            sys.exit(0)
+
+        except Exception as e:
+            logger.error(f"Error loading from Confluence: {str(e)}")
             sys.exit(1)
 
     try:

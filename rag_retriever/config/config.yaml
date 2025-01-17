@@ -89,4 +89,14 @@ browser:
 # API settings
 api:
   openai_api_key: null # Set this in your user config file
+  confluence:
+    url: null # Your Confluence instance URL (e.g., https://your-domain.atlassian.net)
+    username: null # Your Confluence username/email
+    api_token: null # Your Confluence API token
+    parent_id: null # Optional: Specific parent page ID to start from
+    space_key: null # Optional: Specific space key to search in
+    include_attachments: false # Whether to include attachments
+    limit: 50 # Maximum number of pages to retrieve per request
+    max_pages: 1000 # Maximum total number of pages to retrieve
+    batch_size: 50 # Number of pages to process in parallel
   # You can add other API settings here in the future

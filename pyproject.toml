@@ -42,7 +42,9 @@ dependencies = [
     "unstructured[pdf]>=0.12.0",
     "pillow>=10.2.0",
     "pymupdf>=1.23.8",
-    "pytesseract>=0.3.10"
+    "pytesseract>=0.3.10",
+    "atlassian-python-api>=3.41.4",
+    "markdownify>=0.11.6"
 ]
 
 [project.scripts]
