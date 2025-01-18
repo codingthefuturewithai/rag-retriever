@@ -96,22 +96,21 @@ def create_user_config() -> None:
     """Create a new user config file by copying the default."""
     config_path = get_user_config_path()
 
-    # Don't overwrite existing config
-    if config_path.exists():
-        logger.info("User config already exists at: %s", config_path)
-        return
+    try:
+        # Ensure parent directory exists
+        config_path.parent.mkdir(parents=True, exist_ok=True)
 
-    # Copy the default config file
-    with files("rag_retriever.config").joinpath("config.yaml").open("r") as src:
-        with open(config_path, "w") as dst:
-            dst.write(src.read())
+        # Copy the default config file
+        with files("rag_retriever.config").joinpath("config.yaml").open("r") as src:
+            with open(config_path, "w", encoding="utf-8") as dst:
+                dst.write(src.read())
 
-    # Set secure permissions on the config file
-    secure_file_permissions(config_path)
-
-    logger.info("Created user config file at: %s", config_path)
-    logger.info("Please edit this file to add your OpenAI API key")
-    logger.info("File permissions have been set to be readable only by the owner")
+        logger.info("Created user config file at: %s", config_path)
+    except Exception as e:
+        raise RuntimeError(
+            f"Failed to create configuration file at {config_path}. "
+            f"Please ensure you have write permissions to this location. Error: {e}"
+        )
 
 
 def initialize_user_files() -> None:
@@ -177,61 +176,39 @@ class Config:
         user_config_path = get_user_config_path()
         logger.debug("Config directory resolved to: %s", config_dir)
         logger.debug("User config path resolved to: %s", user_config_path)
-        logger.debug("User config exists: %s", user_config_path.exists())
-        if user_config_path.exists():
-            logger.debug(
-                "User config is readable: %s", os.access(user_config_path, os.R_OK)
-            )
-            logger.debug(
-                "User config file permissions: %o", user_config_path.stat().st_mode
-            )
 
-        # Load default config first
-        with files("rag_retriever.config").joinpath("config.yaml").open("r") as f:
-            self._config = yaml.safe_load(f)
-            logger.debug(
-                "Loaded default config with keys: %s", list(self._config.keys())
-            )
-
-        # Try to load user config if it exists
-        user_config_path = get_user_config_path()
-        logger.debug("Looking for user config at: %s", user_config_path)
-        if user_config_path.exists():
-            try:
-                with open(user_config_path, "r") as f:
-                    user_config = yaml.safe_load(f)
-                    logger.debug(
-                        "Loaded user config with keys: %s", list(user_config.keys())
-                    )
-                    if "api" in user_config:
-                        logger.debug(
-                            "Found api section with keys: %s",
-                            list(user_config["api"].keys()),
-                        )
-                # Merge user config with default config
-                self._merge_configs(user_config)
-                self._config_path = str(user_config_path)
-                logger.debug(
-                    "After merge, config has keys: %s", list(self._config.keys())
+        # First ensure user config exists
+        if not user_config_path.exists():
+            logger.debug("User config not found - creating it")
+            create_user_config()
+            # Verify creation
+            if not user_config_path.exists():
+                raise RuntimeError(
+                    f"Installation failed: Could not create configuration file at {user_config_path}. "
+                    "Please check your permissions and try again."
                 )
-                if "api" in self._config:
-                    logger.debug(
-                        "After merge, api section has keys: %s",
-                        list(self._config["api"].keys()),
-                    )
-            except Exception as e:
-                logger.warning("Failed to load user config: %s", str(e))
+
+        # Load user config first
+        try:
+            with open(user_config_path, "r", encoding="utf-8") as f:
+                self._config = yaml.safe_load(f)
+                self._config_path = str(user_config_path)
+                logger.debug("Loaded user config from: %s", user_config_path)
+        except Exception as e:
+            logger.error("Failed to load user config: %s", e)
+            raise
 
         # If explicit config path provided, load and merge it
         if config_path:
             try:
-                with open(config_path, "r") as f:
+                with open(config_path, "r", encoding="utf-8") as f:
                     explicit_config = yaml.safe_load(f)
                 self._merge_configs(explicit_config)
                 self._config_path = config_path
-                logger.debug("Loaded explicit config from %s", config_path)
+                logger.debug("Merged explicit config from %s", config_path)
             except Exception as e:
-                logger.warning("Failed to load explicit config: %s", str(e))
+                logger.error("Failed to load explicit config: %s", e)
+                raise
 
         # Apply environment variable overrides
         self._apply_env_overrides()
