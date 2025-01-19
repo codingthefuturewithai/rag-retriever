@@ -16,7 +16,7 @@ vector_store:
   chunk_overlap: 200 # Overlap between chunks
 ```
 
-⚠️ **Critical**: Neither `embedding_model` nor `embedding_dimensions` can be changed after documents have been indexed. Also the selected `embedding_dimensions` value is important and must match values allowed by the chosen embedding model. For example, while text-embedding-3-large can be used with values of 1024 or even 256, you'll likely get better results using 3072 dimensions). In any case, changing EITHER value would make existing embeddings incompatible with new ones. If you need to switch embedding models or change dimensions, you must first delete the existing vector store and reindex all documents.
+⚠️ **Critical**: Neither `embedding_model` nor `embedding_dimensions` can be changed after documents have been indexed. The selected `embedding_dimensions` value must match values allowed by the chosen embedding model. For example, while text-embedding-3-large supports 1024 or 256 dimensions, 3072 is recommended for optimal results. Changing EITHER value requires deleting the existing vector store and reindexing all documents.
 
 ⚠️ **Important**: Changing `chunk_size` or `chunk_overlap` after ingesting content may lead to inconsistent search results. Consider reprocessing existing content if these settings must be changed.
 
@@ -46,10 +46,10 @@ document_processing:
 
   # PDF processing settings
   pdf_settings:
-    max_file_size_mb: 50
-    extract_images: false # Enable image extraction from PDFs
-    ocr_enabled: false # Enable OCR for scanned documents
-    languages: ["eng"] # OCR language support
+    max_file_size_mb: 50 # Maximum PDF file size in megabytes
+    extract_images: false # Whether to extract images from PDFs
+    ocr_enabled: false # NOT YET SUPPORTED
+    languages: ["eng"] # Languages for text extraction (future OCR support)
     password: null # For password-protected PDFs
     strategy: "fast" # Options: fast, accurate
     mode: "elements" # Options: single_page, paged, elements
@@ -59,8 +59,8 @@ document_processing:
 
 ```yaml
 content:
-  chunk_size: 2000 # Size of text chunks
-  chunk_overlap: 400 # Overlap between chunks
+  chunk_size: 2000
+  chunk_overlap: 400
   # Text splitting separators (in order of preference)
   separators:
     - "\n## " # h2 headers (strongest break)
@@ -70,6 +70,14 @@ content:
     - "\n• " # alternative bullet points
     - "\n\n" # paragraphs
     - ". " # sentences (weakest break)
+  # UI cleanup patterns
+  ui_patterns:
+    - "Theme\\s+Auto\\s+Light\\s+Dark"
+    - "Previous\\s+topic|Next\\s+topic"
+    - "Navigation"
+    - "Jump\\s+to"
+    - "Search"
+    - "Skip\\s+to\\s+content"
 ```
 
 ## Search Settings
@@ -88,47 +96,44 @@ browser:
   viewport:
     width: 1920
     height: 1080
+  # Random delays to appear more human-like
   delays:
     before_request: [1, 3] # Min and max seconds
     after_load: [2, 4]
     after_dynamic: [1, 2]
+  # Browser launch options
   launch_options:
     headless: true
-    channel: "chrome"
+    channel: "chromium" # Uses Chromium by default (installed automatically)
+  # Context options for stealth
   context_options:
-    bypass_csp: true
+    bypass_csp: true # Bypass Content Security Policy
     java_script_enabled: true
+    user_agent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+  # Additional stealth settings
+  stealth:
+    languages: ["en-US", "en"]
+    platform: "MacIntel" # Automatically set based on OS
+    vendor: "Google Inc."
+    webgl_vendor: "Intel Inc." # Automatically set based on OS
 ```
 
-## Configuration Tips
+## API Settings
 
-1. **Vector Store**
-
-   - Higher `chunk_size` captures more context but may reduce precision
-   - Higher `chunk_overlap` improves context continuity but increases storage/processing
-   - Consider your use case when adjusting these settings
-
-2. **Document Processing**
-
-   - Add file extensions as needed for your documentation
-   - Adjust excluded patterns based on your repository structure
-   - Enable OCR only if needed (increases processing time)
-
-3. **Content Processing**
-
-   - Adjust separators based on your document structure
-   - Order separators from strongest to weakest breaks
-   - Consider document formatting when customizing
-
-4. **Search Settings**
-
-   - Lower score threshold includes more results but may reduce relevance
-   - Adjust limit based on your typical usage patterns
-
-5. **Browser Settings**
-   - Adjust delays based on target site performance
-   - Modify viewport for different screen sizes
-   - Enable/disable JavaScript based on site requirements
+```yaml
+api:
+  openai_api_key: null # Set this in your user config or environment
+  confluence:
+    url: null # Your Confluence instance URL (e.g., https://your-domain.atlassian.net)
+    username: null # Your Confluence username/email
+    api_token: null # Your Confluence API token
+    space_key: null # Optional: Specific space to search in
+    parent_id: null # Optional: Specific parent page ID to start from
+    include_attachments: false # Whether to include attachments
+    limit: 50 # Max pages per request
+    max_pages: 1000 # Maximum total pages to retrieve
+    batch_size: 50 # Number of pages to process in parallel
+```
 
 ## Environment Variables
 
@@ -139,6 +144,17 @@ OPENAI_API_KEY=your-api-key-here
 RAG_RETRIEVER_CONFIG_DIR=/custom/config/path
 RAG_RETRIEVER_DATA_DIR=/custom/data/path
 ```
+
+## Dependencies
+
+RAG Retriever requires Python 3.10-3.12 and uses the following key dependencies:
+
+- OpenAI 1.59.4 for embeddings and API integration
+- ChromaDB 0.5.23 for vector storage
+- Langchain 0.3.14 for document processing
+- Playwright 1.42.0 for web crawling
+- PyMuPDF and Unstructured for PDF processing
+- Atlassian Python API for Confluence integration
 
 ## Example Configurations
 
@@ -161,9 +177,8 @@ search:
 document_processing:
   pdf_settings:
     extract_images: true
-    ocr_enabled: true
-    languages: ["eng", "fra"]
     strategy: "accurate"
+    mode: "elements"
 ```
 
 ### Web Crawling Configuration
@@ -175,4 +190,7 @@ browser:
     after_load: [3, 5]
   launch_options:
     headless: false
+  stealth:
+    languages: ["en-US", "en"]
+    platform: "MacIntel"
 ```
