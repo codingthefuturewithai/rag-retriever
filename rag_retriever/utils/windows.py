@@ -18,9 +18,27 @@ def suppress_asyncio_warnings():
             # For Python 3.8-3.11, use WindowsSelectorEventLoopPolicy
             asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
+        # Suppress all ResourceWarnings about unclosed resources
         warnings.filterwarnings(
-            "ignore", message=".*unclosed.*", category=ResourceWarning
+            "ignore",
+            category=ResourceWarning,
         )
+        # Suppress RuntimeWarnings about sockets
         warnings.filterwarnings(
-            "ignore", message=".*socket.*closed.*", category=RuntimeWarning
+            "ignore",
+            category=RuntimeWarning,
         )
+
+        # Patch the warning display for asyncio
+        def custom_showwarning(
+            message, category, filename, lineno, file=None, line=None
+        ):
+            # Skip warnings about pipes, transports, and unclosed resources
+            if isinstance(message, Warning) and any(
+                x in str(message).lower() for x in ["pipe", "transport", "unclosed"]
+            ):
+                return
+            original_showwarning(message, category, filename, lineno, file, line)
+
+        original_showwarning = warnings.showwarning
+        warnings.showwarning = custom_showwarning

@@ -70,7 +70,7 @@ def get_openai_client() -> OpenAI:
 
 def process_url(url: str, max_depth: int = 2, verbose: bool = True) -> int:
     """Process a URL, extracting and indexing its content."""
-    # Suppress asyncio warnings on Windows at the start
+    # Suppress asyncio warnings on Windows at the start of async operations
     suppress_asyncio_warnings()
 
     start_time = time.time()

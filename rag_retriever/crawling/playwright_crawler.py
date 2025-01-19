@@ -356,4 +356,11 @@ class PlaywrightCrawler:
         """Synchronous wrapper for the async crawl method."""
         # Suppress asyncio warnings on Windows
         suppress_asyncio_warnings()
-        return asyncio.run(self.crawl(url, max_depth))
+        try:
+            return asyncio.run(self.crawl(url, max_depth))
+        finally:
+            # Clean up any remaining event loop
+            if platform.system().lower() == "windows":
+                loop = asyncio.get_event_loop()
+                if not loop.is_closed():
+                    loop.close()

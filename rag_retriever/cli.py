@@ -159,9 +159,6 @@ def confirm_max_depth(depth: int) -> bool:
 
 def main():
     """Main entry point."""
-    # Suppress asyncio warnings on Windows at the start
-    suppress_asyncio_warnings()
-
     parser = create_parser()
     args = parser.parse_args()
 
