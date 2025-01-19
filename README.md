@@ -243,11 +243,21 @@ rag-retriever --ingest-file document-with-images.pdf
 # Basic fetch
 rag-retriever --fetch https://example.com
 
-# With depth control
+# With depth control (default: 2)
 rag-retriever --fetch https://example.com --max-depth 2
 
-# Minimal output mode
-rag-retriever --fetch https://example.com --verbose false
+# Enable verbose output
+rag-retriever --fetch https://example.com --verbose
+```
+
+### Web Search
+
+```bash
+# Search the web using DuckDuckGo
+rag-retriever --web-search "your search query"
+
+# Control number of results
+rag-retriever --web-search "your search query" --results 10
 ```
 
 ### Confluence Integration
@@ -500,3 +510,25 @@ Please read CONTRIBUTING.md for details on our code of conduct and the process f
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+### Command Line Options
+
+Core options:
+
+- `--init`: Initialize user configuration files
+- `--fetch URL`: Fetch and index web content
+- `--max-depth N`: Maximum depth for recursive URL loading (default: 2)
+- `--query STRING`: Search query to find relevant content
+- `--limit N`: Maximum number of results to return
+- `--score-threshold N`: Minimum relevance score threshold
+- `--truncate`: Truncate content in search results
+- `--json`: Output results in JSON format
+- `--clean`: Clean (delete) the vector store
+- `--verbose`: Enable verbose output for troubleshooting
+- `--ingest-file PATH`: Ingest a local file
+- `--ingest-directory PATH`: Ingest a directory of files
+- `--web-search STRING`: Perform DuckDuckGo web search
+- `--results N`: Number of web search results (default: 5)
+- `--confluence`: Load from Confluence
+- `--space-key STRING`: Confluence space key
+- `--parent-id STRING`: Confluence parent page ID

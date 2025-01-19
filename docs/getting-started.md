@@ -184,11 +184,38 @@ If the assistant doesn't automatically use RAG Retriever, you can:
    # Local files
    rag-retriever --ingest-file PATH
    rag-retriever --ingest-directory PATH
+
+   # Web search (using DuckDuckGo)
+   rag-retriever --web-search "your search query" --results 5
+
+   # Clean up vector store if needed
+   rag-retriever --clean
    ```
 
-2. Review the [full configuration guide](./coding-assistants/configuring-ai-assistants.md) for detailed setup options
+2. Explore all available options:
 
-3. Check out the [main README](../README.md) for advanced features and configuration options
+   ```bash
+   # Core options
+   --init                 Initialize user configuration files
+   --fetch URL           Fetch and index web content
+   --max-depth N         Maximum depth for recursive URL loading (default: 2)
+   --query STRING        Search query to find relevant content
+   --limit N             Maximum number of results to return
+   --score-threshold N   Minimum relevance score threshold
+   --truncate            Truncate content in search results
+   --json               Output results in JSON format
+   --clean              Clean (delete) the vector store
+   --verbose            Enable verbose output for troubleshooting
+   --ingest-file PATH   Ingest a local file
+   --ingest-directory PATH  Ingest a directory of files
+   --web-search STRING  Perform DuckDuckGo web search
+   --results N          Number of web search results (default: 5)
+   --confluence         Load from Confluence
+   --space-key STRING   Confluence space key
+   --parent-id STRING   Confluence parent page ID
+   ```
+
+3. Review the [full configuration guide](./configuration-guide.md) for detailed setup options
 
 ## Troubleshooting
 
