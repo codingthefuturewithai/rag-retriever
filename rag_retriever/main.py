@@ -8,6 +8,8 @@ import time
 import platform
 from pathlib import Path
 from datetime import datetime
+import asyncio
+import warnings
 
 from playwright.async_api import Error as PlaywrightError
 from rag_retriever.crawling.playwright_crawler import PlaywrightCrawler
@@ -15,7 +17,7 @@ from rag_retriever.crawling.exceptions import PageLoadError, ContentExtractionEr
 from rag_retriever.search.searcher import Searcher
 from rag_retriever.vectorstore.store import VectorStore, get_vectorstore_path
 from rag_retriever.utils.config import config, mask_api_key
-from rag_retriever.utils.windows import suppress_asyncio_warnings
+from rag_retriever.utils.windows import suppress_asyncio_warnings, windows_event_loop
 from openai import OpenAI
 
 logger = logging.getLogger(__name__)
@@ -70,177 +72,200 @@ def get_openai_client() -> OpenAI:
 
 def process_url(url: str, max_depth: int = 2, verbose: bool = True) -> int:
     """Process a URL, extracting and indexing its content."""
-    # Suppress asyncio warnings on Windows at the start of async operations
-    suppress_asyncio_warnings()
+    # Configure asyncio debug mode and logging
+    logging.getLogger("asyncio").setLevel(logging.DEBUG)
+    warnings.resetwarnings()  # Reset any warning filters
+    warnings.filterwarnings(
+        "default", category=ResourceWarning
+    )  # Show resource warnings
 
-    start_time = time.time()
-    crawl_stats = {
-        "pages_attempted": 0,
-        "pages_successful": 0,
-        "pages_failed": 0,
-        "total_content_size": 0,
-        "retry_count": 0,
-        "errors": {},
-    }
+    @windows_event_loop
+    def _process():
+        # Enable asyncio debug mode
+        loop = asyncio.get_event_loop()
+        loop.set_debug(True)
+        loop.slow_callback_duration = 0.1  # Log callbacks taking > 100ms
 
-    # Set third-party logging levels based on verbose mode
-    if verbose:
-        logging.getLogger("chromadb").setLevel(logging.INFO)
-        logging.getLogger("httpx").setLevel(logging.INFO)
-        logging.getLogger("urllib3").setLevel(logging.INFO)
+        start_time = time.time()
+        crawl_stats = {
+            "pages_attempted": 0,
+            "pages_successful": 0,
+            "pages_failed": 0,
+            "total_content_size": 0,
+            "retry_count": 0,
+            "errors": {},
+        }
 
-    # System diagnostics
-    sys_info = get_system_info()
-    logger.debug("\nSystem Information:")
-    for key, value in sys_info.items():
-        logger.debug(f"- {key}: {value}")
+        # Set third-party logging levels based on verbose mode
+        if verbose:
+            logging.getLogger("chromadb").setLevel(logging.INFO)
+            logging.getLogger("httpx").setLevel(logging.INFO)
+            logging.getLogger("urllib3").setLevel(logging.INFO)
 
-    # Log configuration
-    logger.debug("\nConfiguration:")
-    logger.debug("- URL: %s", url)
-    logger.debug("- Max depth: %d", max_depth)
-    logger.debug("- Vector store: %s", get_vectorstore_path())
-    logger.debug("- Model: %s", config.vector_store["embedding_model"])
-    api_key = config.get_openai_api_key()
-    logger.debug("- API key: %s", mask_api_key(api_key if api_key else ""))
-    logger.debug("- Config file: %s", config.config_path)
-    logger.debug("- Environment file: %s", config.env_path)
+        # System diagnostics
+        sys_info = get_system_info()
+        logger.debug("\nSystem Information:")
+        for key, value in sys_info.items():
+            logger.debug(f"- {key}: {value}")
 
-    # Browser configuration
-    logger.debug("\nBrowser configuration:")
-    logger.debug("- Headless mode: %s", config.browser["launch_options"]["headless"])
-    logger.debug(
-        "- Browser channel: %s",
-        config.browser["launch_options"].get("channel", "default"),
-    )
-    logger.debug("- Wait time: %d seconds", config.browser["wait_time"])
-    logger.debug(
-        "- Viewport: %dx%d",
-        config.browser["viewport"]["width"],
-        config.browser["viewport"]["height"],
-    )
+        # Log configuration
+        logger.debug("\nConfiguration:")
+        logger.debug("- URL: %s", url)
+        logger.debug("- Max depth: %d", max_depth)
+        logger.debug("- Vector store: %s", get_vectorstore_path())
+        logger.debug("- Model: %s", config.vector_store["embedding_model"])
+        api_key = config.get_openai_api_key()
+        logger.debug("- API key: %s", mask_api_key(api_key if api_key else ""))
+        logger.debug("- Config file: %s", config.config_path)
+        logger.debug("- Environment file: %s", config.env_path)
 
-    try:
-        logger.info("\nStarting content fetch and indexing process...")
-        logger.debug("Initializing browser...")
-        crawler = PlaywrightCrawler()
-        store = VectorStore()
+        # Browser configuration
+        logger.debug("\nBrowser configuration:")
+        logger.debug(
+            "- Headless mode: %s", config.browser["launch_options"]["headless"]
+        )
+        logger.debug(
+            "- Browser channel: %s",
+            config.browser["launch_options"].get("channel", "default"),
+        )
+        logger.debug("- Wait time: %d seconds", config.browser["wait_time"])
+        logger.debug(
+            "- Viewport: %dx%d",
+            config.browser["viewport"]["width"],
+            config.browser["viewport"]["height"],
+        )
 
-        retry_count = 0
-        while retry_count < MAX_RETRIES:
-            try:
-                # Use the synchronous wrapper for the async crawler
-                logger.info("Starting crawl operation...")
-                documents = crawler.run_crawl(url, max_depth=max_depth)
+        try:
+            logger.info("\nStarting content fetch and indexing process...")
+            logger.debug("Initializing browser...")
+            crawler = PlaywrightCrawler()
+            store = VectorStore()
 
-                # Check if we got any documents
-                if not documents:
-                    logger.error(
-                        "No documents were retrieved. The crawl operation failed to fetch any content."
+            retry_count = 0
+            while retry_count < MAX_RETRIES:
+                try:
+                    # Use the synchronous wrapper for the async crawler
+                    logger.info("Starting crawl operation...")
+                    documents = crawler.run_crawl(url, max_depth=max_depth)
+
+                    # Check if we got any documents
+                    if not documents:
+                        logger.error(
+                            "No documents were retrieved. The crawl operation failed to fetch any content."
+                        )
+                        return 1
+
+                    # Update statistics
+                    crawl_stats["pages_successful"] = len(documents)
+                    crawl_stats["total_content_size"] = sum(
+                        len(doc.page_content) for doc in documents
+                    )
+
+                    if verbose:
+                        logger.info("\nCrawl statistics:")
+                        logger.info(
+                            "- Pages processed successfully: %d",
+                            crawl_stats["pages_successful"],
+                        )
+                        logger.info(
+                            "- Total content size: %.2f KB",
+                            crawl_stats["total_content_size"] / 1024,
+                        )
+                        logger.info(
+                            "- Average content size: %.2f KB",
+                            (
+                                crawl_stats["total_content_size"]
+                                / len(documents)
+                                / 1024
+                                if documents
+                                else 0
+                            ),
+                        )
+                        logger.info(
+                            "- Crawl duration: %.2f seconds", time.time() - start_time
+                        )
+                        logger.info(
+                            "- Pages/second: %.2f",
+                            (
+                                len(documents) / (time.time() - start_time)
+                                if documents
+                                else 0
+                            ),
+                        )
+                        if crawl_stats["retry_count"]:
+                            logger.info(
+                                "- Retry attempts: %d", crawl_stats["retry_count"]
+                            )
+                            logger.info(
+                                "- Error types encountered: %s",
+                                ", ".join(crawl_stats["errors"].keys()),
+                            )
+
+                    logger.info("\nIndexing documents...")
+                    store.add_documents(documents)
+                    logger.info("Indexing complete.")
+
+                    return 0
+
+                except (PageLoadError, PlaywrightError) as e:
+                    retry_count += 1
+                    crawl_stats["retry_count"] += 1
+                    error_type = e.__class__.__name__
+                    crawl_stats["errors"][error_type] = (
+                        crawl_stats["errors"].get(error_type, 0) + 1
+                    )
+
+                    if retry_count < MAX_RETRIES:
+                        logger.warning(f"Attempt {retry_count} failed: {str(e)}")
+                        logger.info(f"Retrying in {RETRY_DELAY} seconds...")
+                        time.sleep(RETRY_DELAY * retry_count)  # Exponential backoff
+                        continue
+                    else:
+                        logger.error(f"Failed after {MAX_RETRIES} attempts: {str(e)}")
+                        if isinstance(
+                            e, PlaywrightError
+                        ) and "Chromium revision is not downloaded" in str(e):
+                            logger.error(
+                                "Try running 'playwright install chromium' to install required browser."
+                            )
+                        return 1
+
+                except ContentExtractionError as e:
+                    logger.error("Failed to extract content: %s", str(e))
+                    crawl_stats["errors"]["ContentExtractionError"] = (
+                        crawl_stats["errors"].get("ContentExtractionError", 0) + 1
                     )
                     return 1
 
-                # Update statistics
-                crawl_stats["pages_successful"] = len(documents)
-                crawl_stats["total_content_size"] = sum(
-                    len(doc.page_content) for doc in documents
-                )
+        except Exception as e:
+            logger.error("Unexpected error: %s", str(e))
+            crawl_stats["errors"]["UnexpectedError"] = (
+                crawl_stats["errors"].get("UnexpectedError", 0) + 1
+            )
+            return 1
 
+        finally:
+            if "crawler" in locals():
+                logger.debug("Cleaning up browser resources...")
                 if verbose:
-                    logger.info("\nCrawl statistics:")
+                    logger.info("\nFinal Statistics:")
                     logger.info(
-                        "- Pages processed successfully: %d",
-                        crawl_stats["pages_successful"],
+                        "- Total execution time: %.2f seconds", time.time() - start_time
                     )
                     logger.info(
-                        "- Total content size: %.2f KB",
-                        crawl_stats["total_content_size"] / 1024,
-                    )
-                    logger.info(
-                        "- Average content size: %.2f KB",
+                        "- Memory usage: %s",
                         (
-                            crawl_stats["total_content_size"] / len(documents) / 1024
-                            if documents
-                            else 0
+                            os.popen("ps -o rss= -p %d" % os.getpid()).read().strip()
+                            if platform.system() != "Windows"
+                            else "N/A"
                         ),
                     )
-                    logger.info(
-                        "- Crawl duration: %.2f seconds", time.time() - start_time
-                    )
-                    logger.info(
-                        "- Pages/second: %.2f",
-                        len(documents) / (time.time() - start_time) if documents else 0,
-                    )
-                    if crawl_stats["retry_count"]:
-                        logger.info("- Retry attempts: %d", crawl_stats["retry_count"])
-                        logger.info(
-                            "- Error types encountered: %s",
-                            ", ".join(crawl_stats["errors"].keys()),
-                        )
+                    if crawl_stats["errors"]:
+                        logger.info("- Error summary:")
+                        for error_type, count in crawl_stats["errors"].items():
+                            logger.info(f"  - {error_type}: {count} occurrences")
 
-                logger.info("\nIndexing documents...")
-                store.add_documents(documents)
-                logger.info("Indexing complete.")
-
-                return 0
-
-            except (PageLoadError, PlaywrightError) as e:
-                retry_count += 1
-                crawl_stats["retry_count"] += 1
-                error_type = e.__class__.__name__
-                crawl_stats["errors"][error_type] = (
-                    crawl_stats["errors"].get(error_type, 0) + 1
-                )
-
-                if retry_count < MAX_RETRIES:
-                    logger.warning(f"Attempt {retry_count} failed: {str(e)}")
-                    logger.info(f"Retrying in {RETRY_DELAY} seconds...")
-                    time.sleep(RETRY_DELAY * retry_count)  # Exponential backoff
-                    continue
-                else:
-                    logger.error(f"Failed after {MAX_RETRIES} attempts: {str(e)}")
-                    if isinstance(
-                        e, PlaywrightError
-                    ) and "Chromium revision is not downloaded" in str(e):
-                        logger.error(
-                            "Try running 'playwright install chromium' to install required browser."
-                        )
-                    return 1
-
-            except ContentExtractionError as e:
-                logger.error("Failed to extract content: %s", str(e))
-                crawl_stats["errors"]["ContentExtractionError"] = (
-                    crawl_stats["errors"].get("ContentExtractionError", 0) + 1
-                )
-                return 1
-
-    except Exception as e:
-        logger.error("Unexpected error: %s", str(e))
-        crawl_stats["errors"]["UnexpectedError"] = (
-            crawl_stats["errors"].get("UnexpectedError", 0) + 1
-        )
-        return 1
-
-    finally:
-        if "crawler" in locals():
-            logger.debug("Cleaning up browser resources...")
-            if verbose:
-                logger.info("\nFinal Statistics:")
-                logger.info(
-                    "- Total execution time: %.2f seconds", time.time() - start_time
-                )
-                logger.info(
-                    "- Memory usage: %s",
-                    (
-                        os.popen("ps -o rss= -p %d" % os.getpid()).read().strip()
-                        if platform.system() != "Windows"
-                        else "N/A"
-                    ),
-                )
-                if crawl_stats["errors"]:
-                    logger.info("- Error summary:")
-                    for error_type, count in crawl_stats["errors"].items():
-                        logger.info(f"  - {error_type}: {count} occurrences")
+    return _process()
 
 
 def search_content(

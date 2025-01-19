@@ -13,7 +13,7 @@ from playwright.async_api import async_playwright, Browser, Page
 from langchain_core.documents import Document
 
 from rag_retriever.utils.config import config
-from rag_retriever.utils.windows import suppress_asyncio_warnings
+from rag_retriever.utils.windows import suppress_asyncio_warnings, windows_event_loop
 from rag_retriever.crawling.exceptions import (
     PageLoadError,
     ContentExtractionError,
@@ -356,11 +356,9 @@ class PlaywrightCrawler:
         """Synchronous wrapper for the async crawl method."""
         # Suppress asyncio warnings on Windows
         suppress_asyncio_warnings()
-        try:
+
+        @windows_event_loop
+        def _run():
             return asyncio.run(self.crawl(url, max_depth))
-        finally:
-            # Clean up any remaining event loop
-            if platform.system().lower() == "windows":
-                loop = asyncio.get_event_loop()
-                if not loop.is_closed():
-                    loop.close()
+
+        return _run()

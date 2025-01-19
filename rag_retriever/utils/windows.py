@@ -4,41 +4,64 @@ import sys
 import warnings
 import asyncio
 import platform
+import functools
+
+
+def custom_unraisable_hook(unraisable):
+    """Custom hook to handle unraisable exceptions during shutdown."""
+    # Suppress ResourceWarnings and ValueError from closed pipes
+    if (
+        isinstance(unraisable.exc_value, (ResourceWarning, ValueError))
+        and "closed pipe" in str(unraisable.exc_value).lower()
+    ):
+        return
+    # For other exceptions, call the default handler
+    sys.__unraisablehook__(unraisable)
 
 
 def suppress_asyncio_warnings():
     """Suppress asyncio-related warnings on Windows."""
     if platform.system().lower() == "windows":
-        # Handle Python 3.12+ asyncio changes
-        if sys.version_info >= (3, 12):
-            # Use ProactorEventLoop as the default event loop
-            loop = asyncio.ProactorEventLoop()
-            asyncio.set_event_loop(loop)
-        elif sys.version_info >= (3, 8):
-            # For Python 3.8-3.11, use WindowsSelectorEventLoopPolicy
-            asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+        # Set up custom hook for handling shutdown warnings
+        sys.unraisablehook = custom_unraisable_hook
+        # Suppress all ResourceWarnings from asyncio
+        warnings.filterwarnings("ignore", category=ResourceWarning, module="asyncio")
 
-        # Suppress all ResourceWarnings about unclosed resources
-        warnings.filterwarnings(
-            "ignore",
-            category=ResourceWarning,
-        )
-        # Suppress RuntimeWarnings about sockets
-        warnings.filterwarnings(
-            "ignore",
-            category=RuntimeWarning,
-        )
 
-        # Patch the warning display for asyncio
-        def custom_showwarning(
-            message, category, filename, lineno, file=None, line=None
-        ):
-            # Skip warnings about pipes, transports, and unclosed resources
-            if isinstance(message, Warning) and any(
-                x in str(message).lower() for x in ["pipe", "transport", "unclosed"]
-            ):
-                return
-            original_showwarning(message, category, filename, lineno, file, line)
+def windows_event_loop(func):
+    """Decorator to handle Windows event loop properly."""
 
-        original_showwarning = warnings.showwarning
-        warnings.showwarning = custom_showwarning
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        if platform.system().lower() == "windows":
+            try:
+                loop = asyncio.get_event_loop()
+                if not isinstance(loop, asyncio.ProactorEventLoop):
+                    loop = asyncio.ProactorEventLoop()
+                    asyncio.set_event_loop(loop)
+            except RuntimeError:
+                loop = asyncio.ProactorEventLoop()
+                asyncio.set_event_loop(loop)
+
+            try:
+                return func(*args, **kwargs)
+            finally:
+                try:
+                    # Cancel all pending tasks
+                    pending = asyncio.all_tasks(loop)
+                    for task in pending:
+                        task.cancel()
+                    if not loop.is_closed():
+                        # Run the loop to complete all cancellations
+                        loop.run_until_complete(
+                            asyncio.gather(*pending, return_exceptions=True)
+                        )
+                        # Clean up async generators
+                        loop.run_until_complete(loop.shutdown_asyncgens())
+                        loop.close()
+                except Exception:
+                    pass  # Ignore cleanup errors
+        else:
+            return func(*args, **kwargs)
+
+    return wrapper
