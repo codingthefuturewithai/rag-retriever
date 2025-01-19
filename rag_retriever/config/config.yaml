@@ -73,7 +73,7 @@ browser:
   # Browser launch options
   launch_options:
     headless: true
-    channel: "chrome" # Use system Chrome if available
+    channel: "chromium" # Use Chromium by default since we install it
   # Context options for stealth
   context_options:
     bypass_csp: true # Bypass Content Security Policy
