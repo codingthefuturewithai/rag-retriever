@@ -15,6 +15,7 @@ from rag_retriever.crawling.exceptions import PageLoadError, ContentExtractionEr
 from rag_retriever.search.searcher import Searcher
 from rag_retriever.vectorstore.store import VectorStore, get_vectorstore_path
 from rag_retriever.utils.config import config, mask_api_key
+from rag_retriever.utils.windows import suppress_asyncio_warnings
 from openai import OpenAI
 
 logger = logging.getLogger(__name__)
@@ -69,6 +70,9 @@ def get_openai_client() -> OpenAI:
 
 def process_url(url: str, max_depth: int = 2, verbose: bool = True) -> int:
     """Process a URL, extracting and indexing its content."""
+    # Suppress asyncio warnings on Windows at the start
+    suppress_asyncio_warnings()
+
     start_time = time.time()
     crawl_stats = {
         "pages_attempted": 0,

@@ -29,6 +29,7 @@ from rag_retriever.document_processor import (
     ConfluenceDocumentLoader,
 )
 from rag_retriever.utils.config import initialize_user_files, config
+from rag_retriever.utils.windows import suppress_asyncio_warnings
 from rag_retriever.search.web_search import web_search
 
 logger = logging.getLogger(__name__)
@@ -158,6 +159,9 @@ def confirm_max_depth(depth: int) -> bool:
 
 def main():
     """Main entry point."""
+    # Suppress asyncio warnings on Windows at the start
+    suppress_asyncio_warnings()
+
     parser = create_parser()
     args = parser.parse_args()
 

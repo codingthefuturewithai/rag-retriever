@@ -13,6 +13,7 @@ from playwright.async_api import async_playwright, Browser, Page
 from langchain_core.documents import Document
 
 from rag_retriever.utils.config import config
+from rag_retriever.utils.windows import suppress_asyncio_warnings
 from rag_retriever.crawling.exceptions import (
     PageLoadError,
     ContentExtractionError,
@@ -100,7 +101,36 @@ class PlaywrightCrawler:
         """Set up Playwright browser with stealth configuration."""
         try:
             playwright = await async_playwright().start()
-            browser = await playwright.chromium.launch(**self.config["launch_options"])
+            try:
+                browser = await playwright.chromium.launch(
+                    **self.config["launch_options"]
+                )
+            except Exception as e:
+                if "Executable doesn't exist" in str(e):
+                    logger.warning(
+                        "Chromium browser not found, attempting to install..."
+                    )
+                    import subprocess
+                    import sys
+
+                    try:
+                        # Install chromium using the current Python executable
+                        subprocess.run(
+                            [sys.executable, "-m", "playwright", "install", "chromium"],
+                            check=True,
+                            capture_output=True,
+                            text=True,
+                        )
+                        # Try launching again after installation
+                        browser = await playwright.chromium.launch(
+                            **self.config["launch_options"]
+                        )
+                    except subprocess.CalledProcessError as install_error:
+                        raise PageLoadError(
+                            f"Failed to install Chromium browser. Please run '{sys.executable} -m playwright install chromium' manually."
+                        ) from install_error
+                else:
+                    raise
 
             # Create a new context with specific configurations
             context = await browser.new_context(
@@ -324,4 +354,6 @@ class PlaywrightCrawler:
 
     def run_crawl(self, url: str, max_depth: int = 2) -> List[Document]:
         """Synchronous wrapper for the async crawl method."""
+        # Suppress asyncio warnings on Windows
+        suppress_asyncio_warnings()
         return asyncio.run(self.crawl(url, max_depth))
