@@ -25,7 +25,7 @@ document_processing:
   pdf_settings:
     max_file_size_mb: 50 # Maximum PDF file size in megabytes
     extract_images: false # Whether to extract and process images from PDFs
-    ocr_enabled: false # Whether to use OCR for scanned documents
+    ocr_enabled: false # NOT YET SUPPORTED!!! Whether to use OCR for scanned documents
     languages: ["eng"] # Languages to use for text extraction and OCR
     password: null # Default password for encrypted PDFs (null for none)
     strategy: "fast" # PDF processing strategy: fast or accurate
