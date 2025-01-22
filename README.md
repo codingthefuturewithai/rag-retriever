@@ -47,6 +47,10 @@ RAG Retriever solves these challenges by:
   python -m pip install --user pipx
   ```
 
+### 🚀 Ready to Try It?
+
+Head over to our [Getting Started Guide](docs/getting-started.md) for a quick setup that will get your AI assistant using the RAG Retriever in 10 minutes!
+
 ### Optional Dependencies
 
 The following dependencies are only required for specific advanced features:
@@ -89,14 +93,6 @@ The application uses Playwright with Chromium for web crawling:
 - Internet connection for initial setup and crawling
 
 Note: The application will automatically download and manage Chromium installation.
-
----
-
-### 🚀 Ready to Try It?
-
-Head over to our [Getting Started Guide](docs/getting-started.md) for a quick setup that will get your AI assistant using the RAG Retriever in 5 minutes!
-
----
 
 ## Installation
 
