@@ -4,7 +4,7 @@ A Python application that loads and processes web pages, local documents, and Co
 
 ## What It Does
 
-RAG Retriever enhances your AI coding assistant (like aider or Cursor) by giving it access to:
+RAG Retriever enhances your AI coding assistant (like aider, Cursor, or Windsurf) by giving it access to:
 
 - Documentation about new technologies and features
 - Your organization's architecture decisions and coding standards
