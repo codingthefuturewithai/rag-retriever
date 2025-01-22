@@ -22,6 +22,8 @@ This guide will walk you through installing RAG Retriever, loading your first do
    > - Basic PDF text extraction
    > - Markdown processing
    > - Vector storage and search
+   > - Confluence space integration
+   > - DuckDuckGo web search
 
    > **Optional Features**: If you need advanced features, install additional dependencies:
    >
