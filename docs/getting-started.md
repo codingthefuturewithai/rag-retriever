@@ -201,6 +201,12 @@ If the assistant doesn't automatically use RAG Retriever, you can:
    # Web search (using DuckDuckGo)
    rag-retriever --web-search "your search query" --results 5
 
+   # You can then fetch content from the web search results using --fetch
+   rag-retriever --fetch https://found-url-from-search.com --max-depth 0
+
+   # Load from Confluence (requires configuration in ~/.config/rag-retriever/config.yaml)
+   rag-retriever --confluence --space-key TEAM
+
    # Clean up vector store if needed
    rag-retriever --clean
    ```
