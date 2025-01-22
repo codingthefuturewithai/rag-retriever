@@ -122,7 +122,7 @@ browser:
 
 ```yaml
 api:
-  openai_api_key: null # Set this in your user config or environment
+  openai_api_key: "sk-your-api-key-here" # Required: Set your OpenAI API key here
   confluence:
     url: null # Your Confluence instance URL (e.g., https://your-domain.atlassian.net)
     username: null # Your Confluence username/email
@@ -133,16 +133,6 @@ api:
     limit: 50 # Max pages per request
     max_pages: 1000 # Maximum total pages to retrieve
     batch_size: 50 # Number of pages to process in parallel
-```
-
-## Environment Variables
-
-Some settings can be overridden with environment variables:
-
-```bash
-OPENAI_API_KEY=your-api-key-here
-RAG_RETRIEVER_CONFIG_DIR=/custom/config/path
-RAG_RETRIEVER_DATA_DIR=/custom/data/path
 ```
 
 ## Dependencies

@@ -47,9 +47,15 @@ RAG Retriever solves these challenges by:
   python -m pip install --user pipx
   ```
 
-### 🚀 Ready to Try It?
+---
 
-Head over to our [Getting Started Guide](docs/getting-started.md) for a quick setup that will get your AI assistant using the RAG Retriever in 10 minutes!
+> ### 🚀 Ready to Try It? Let's Go!
+>
+> **Get up and running in 10 minutes!** Head over to our [Getting Started Guide](docs/getting-started.md) for a quick setup that will have your AI assistant using RAG Retriever right away.
+>
+> ⚡ Quick install: `pipx install rag-retriever`
+
+---
 
 ### Optional Dependencies
 
@@ -130,18 +136,18 @@ After installation, initialize the configuration:
 rag-retriever --init
 ```
 
-This creates:
-
-- A configuration file at `~/.config/rag-retriever/config.yaml` (Unix/Mac) or `%APPDATA%\rag-retriever\config.yaml` (Windows)
-- A `.env` file in the same directory for your OpenAI API key
+This creates a configuration file at `~/.config/rag-retriever/config.yaml` (Unix/Mac) or `%APPDATA%\rag-retriever\config.yaml` (Windows)
 
 ### Setting up your API Key
 
-Add your OpenAI API key to the `.env` file:
+Add your OpenAI API key to your configuration file:
 
-```bash
-OPENAI_API_KEY=your-api-key-here
+```yaml
+api:
+  openai_api_key: "sk-your-api-key-here"
 ```
+
+> **Security Note**: During installation, RAG Retriever automatically sets strict file permissions (600) on `config.yaml` to ensure it's only readable by you. This helps protect your API key.
 
 ### Customizing Configuration
 
@@ -544,3 +550,24 @@ Core options:
 - `--confluence`: Load from Confluence
 - `--space-key STRING`: Confluence space key
 - `--parent-id STRING`: Confluence parent page ID
+
+# Web search (using DuckDuckGo)
+
+rag-retriever --web-search "your search query" --results 5
+
+# You can then fetch content from the web search results using --fetch
+
+rag-retriever --fetch https://found-url-from-search.com --max-depth 0
+
+# For example, to learn about new Java features:
+
+rag-retriever --web-search "Java 23 new features guide" --results 3
+rag-retriever --fetch https://www.happycoders.eu/java/java-23-features --max-depth 0
+
+# Load from Confluence (requires configuration in ~/.config/rag-retriever/config.yaml)
+
+rag-retriever --confluence --space-key TEAM
+
+# Clean up vector store if needed
+
+rag-retriever --clean

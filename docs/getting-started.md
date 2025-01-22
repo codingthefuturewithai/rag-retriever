@@ -54,14 +54,6 @@ This guide will walk you through installing RAG Retriever, loading your first do
 
    > **Security Note**: During installation, RAG Retriever automatically sets strict file permissions (600) on `config.yaml` to ensure it's only readable by you. This helps protect your API key.
 
-   Alternatively, you can set it as an environment variable:
-
-   ```bash
-   export OPENAI_API_KEY="sk-your-api-key-here"
-   ```
-
-   Note: When using with Cursor, adding the key to `config.yaml` is the most reliable method.
-
 ## Loading Your First Documentation
 
 Let's load some documentation about Java 23's new features to test the setup. Open a new terminal and run:
