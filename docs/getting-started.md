@@ -1,6 +1,6 @@
 # Getting Started with RAG Retriever
 
-This guide will walk you through installing RAG Retriever, loading your first documentation, and testing it with two different AI coding assistants.
+This guide will walk you through installing RAG Retriever, loading your first documentation, and testing it with AI coding assistants.
 
 ## Installation
 
@@ -122,7 +122,7 @@ The high relevance score (0.6636) indicates that the content was successfully in
 
 ## Configuring AI Assistants
 
-Now let's set up your AI coding assistants to use RAG Retriever. You can use either aider or Cursor (or both).
+Now let's set up your AI coding assistants to use RAG Retriever. You can use aider, Cursor, Windsurf, or any combination of these tools.
 
 ### Option 1: Setting up Aider
 
@@ -152,6 +152,17 @@ Now let's set up your AI coding assistants to use RAG Retriever. You can use eit
 2. Follow the [Configuring Cursor](./coding-assistants/configuring-ai-assistants.md#configuring-cursor) instructions to set up the RAG Retriever integration.
 
 3. Open a new project in Cursor and test the integration with the same prompt:
+   ```
+   Show me how to write a class documentation comment using Java 23's new Markdown syntax
+   ```
+
+### Option 3: Setting up Windsurf
+
+1. Download and install [Windsurf](https://codeium.com/windsurf)
+
+2. Follow the [Configuring Windsurf](./coding-assistants/configuring-ai-assistants.md#configuring-windsurf) instructions to set up the RAG Retriever integration.
+
+3. Open a new project in Windsurf and test the integration with the same prompt:
    ```
    Show me how to write a class documentation comment using Java 23's new Markdown syntax
    ```
