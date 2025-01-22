@@ -1,6 +1,8 @@
 # Configuring AI Assistants with RAG Retriever
 
-This guide explains how to configure AI coding assistants (aider and Cursor) to use RAG Retriever for knowledge verification.
+This guide explains how to configure AI coding assistants (aider, Cursor, and Windsurf) to use RAG Retriever for knowledge augmentation.
+
+> **⚠️ Important Note:** The RAG Retriever and these configuration instructions have only been tested with the Claude 3.5 Sonnet LLM to date. Compatibility with other LLMs has not been verified.
 
 ## ⚠️ Important Note About LLM Behavior
 
@@ -16,9 +18,16 @@ Due to the nondeterministic nature of Large Language Models (LLMs), AI coding as
 ## Prerequisites
 
 - RAG Retriever installed and configured (see main [README.md](../../README.md))
-- Either [aider](https://github.com/paul-gauthier/aider) or [Cursor](https://cursor.sh/) installed
+- [aider](https://github.com/paul-gauthier/aider), [Cursor](https://cursor.sh/) and/or [Windsurf](https://codeium.com/windsurf) installed
+
+## About the Zero Hallucination Protocol
+
+The Zero Hallucination Protocol (contained in `hallucination-prevention-instructions.md`) is optional but HIGHLY recommended for all coding assistants. These instructions have proven highly effective at preventing hallucinations by enforcing strict knowledge verification requirements. While optional, they work particularly well in combination with the RAG Retriever instructions to ensure accurate and verified responses.
 
 ## Configuring Aider
+
+NOTE: The below instructions show commands for Mac/Linux. Windows users will need to adjust the paths and commands accordingly.
+REMEMBER you can always upload these instructions to an AI chatbot (e.g. ChatGPT) and ask it to generate the Windows equivalent commands for you!
 
 1. Create or edit `~/.aider.conf.yml`:
 
@@ -27,11 +36,12 @@ Due to the nondeterministic nature of Large Language Models (LLMs), AI coding as
    touch ~/.aider.conf.yml
    ```
 
-2. Copy the RAG Retriever instructions file to your aider configuration directory:
+2. Copy the RAG Retriever AND anti-hallucination instructions file to your aider configuration directory:
 
    ```bash
    mkdir -p ~/.aider/custom-instructions
    cp retriever-coding-assistant-instructions.md ~/.aider/custom-instructions/
+   cp hallucination-prevention-instructions.md ~/.aider/custom-instructions/
    ```
 
 3. Add the RAG Retriever instructions file to the `read` section of your config file:
@@ -39,42 +49,68 @@ Due to the nondeterministic nature of Large Language Models (LLMs), AI coding as
    ```yaml
    read:
      - ~/.aider/custom-instructions/retriever-coding-assistant-instructions.md
+     - ~/.aider/custom-instructions/hallucination-prevention-instructions.md
    ```
 
    See the [aider configuration documentation](https://aider.chat/docs/config/aider_conf.html) for more details about the config file format.
 
    ![Aider Configuration Example](../images/aider-settings-with-retriever-instructions.png)
 
-4. Start aider normally - it will now use the RAG Retriever instructions
+4. Start aider normally - it will now use the Zero Hallucination Protocol and RAG Retriever instructions
 
 ## Configuring Cursor
 
-1. Open Command Palette (Shift+Cmd+P)
-2. Select "Cursor Settings"
-3. Click on "General" in the left sidebar
-4. Under "Rules for AI", paste the contents of [RAG Retriever Usage Instructions](./retriever-coding-assistant-instructions.md)
+1. Open Cursor IDE
+2. Open Command Palette (Shift+Cmd+P)
+3. Select "Cursor Settings"
+4. Click on "General" in the left sidebar
+5. Under "Rules for AI":
+   - First paste the contents of [Zero Hallucination Protocol](./hallucination-prevention-instructions.md)
+   - Then paste the contents of [RAG Retriever Usage Instructions](./retriever-coding-assistant-instructions.md)
 
 ![Cursor Settings Configuration](../images/cursor-settings-with-retriever-instructions.png)
 
+Note: As of this writing, the maximum limit per rule file is 6000 characters.
+
+## Configuring Windsurf
+
+1. Open Windsurf IDE
+2. Click on "Windsurf - Settings" in the bottom navigation bar
+3. Under "Set Global AI Rules", select "Edit Rules":
+   - First paste the contents of [Zero Hallucination Protocol](./hallucination-prevention-instructions.md)
+   - Then paste the contents of [RAG Retriever Usage Instructions](./retriever-coding-assistant-instructions.md)
+
+![Windsurf Settings Configuration](../images/windsurf-settings-with-retriever-instructions.png)
+
 ## Populating the Vector Store
 
-Before the AI assistants can use RAG Retriever effectively, you need to populate its vector store with relevant documentation. The vector store will be empty initially, and queries won't return results until you've loaded documents using the `--fetch` or `--ingest` commands.
+Before the AI assistants can use RAG Retriever effectively, you need to populate its vector store with relevant documentation. The vector store will be empty initially, and queries won't return results until you've loaded documents using the `--fetch` or `--ingest-file/--ingest-directory` commands.
 
 For example, to load documentation for testing the configuration with recent framework features:
 
 ```bash
-# Load Angular 18.1 documentation
+# Load Angular 18.1 documentation from web
 rag-retriever --fetch https://blog.ninja-squad.com/2024/07/10/what-is-new-angular-18.1 --max-depth 0
 
-# Load Java 23 documentation
+# Load Java 23 documentation from web
 rag-retriever --fetch https://www.happycoders.eu/java/java-23-features --max-depth 0
+
+# Load local project documentation file
+rag-retriever --ingest-file ./docs/api-reference.md
+
+# Load all documentation files in a directory
+rag-retriever --ingest-directory ./docs --include "*.md,*.rst"
+
+# Load documentation from a Confluence space
+rag-retriever --confluence --space-key MYSPACEKEY
 ```
 
 You can load additional documentation based on your project's needs using either:
 
 - `rag-retriever --fetch URL` for web documentation
-- `rag-retriever --ingest-file FILE` for local documentation
-- `rag-retriever --ingest-directory DIR` for directories of local documentation
+- `rag-retriever --ingest-file FILE` for local documentation files (supports .md, .rst, .txt, .pdf)
+- `rag-retriever --ingest-directory DIR` for directories of local documentation (use --include to specify file types)
+- `rag-retriever --confluence` for ingesting Confluence content (requires configuring Confluence credentials in ~/.config/rag-retriever/config.yaml)
 
 ## Verifying the Configuration
 
@@ -95,11 +131,18 @@ The AI assistant should recognize these as scenarios requiring knowledge verific
 
 Here are examples of properly configured assistants using RAG Retriever:
 
-**Example 1: Aider using RAG Retriever to verify knowledge about Angular 18.1**
+**Example 1: Aider enforcing Zero Hallucination Protocol and Using RAG Retriever**
 ![Aider Using RAG Retriever for Angular 18.1 Knowledge](../images/aider-example-using-retriever.png)
 
-**Example 2: Cursor using RAG Retriever to verify Java 23 features**
+**Example 2: Cursor enforcing Zero Hallucination Protocol and Using RAG Retriever**
 ![Cursor Using RAG Retriever for Java 23 Features](../images/cursor-example-using-retriever.png)
+
+Note: Cursor sometimes insists on running commands in a separate terminal window. Unfortunately, when it does this, you'll still need to manually share the results from the RAG Retriever with the Cursor session.
+
+**Example 3: Windsurf enforcing Zero Hallucination Protocol and Using RAG Retriever**
+![Windsurf Using RAG Retriever for Java 23 Features](../images/windsurf-example-using-retriever.png)
+
+In the above examples, the coding assistants correctly enforce the Zero Hallucination Protocol by refusing to proceed without verified knowledge of Java 23's Markdown Documentation Comments feature, and suggest using RAG Retriever to gather accurate information.
 
 ## Expected Behavior
 
