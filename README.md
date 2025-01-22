@@ -16,6 +16,22 @@ This helps prevent hallucinations and ensures your AI assistant follows your tea
 
 > **💡 Note**: While our examples focus on AI coding assistants, RAG Retriever can enhance any AI-powered development environment or tool that can execute command-line applications. Use it to augment IDEs, CLI tools, or any development workflow that needs reliable, up-to-date information.
 
+## Why Do We Need Such Tools?
+
+Modern AI coding assistants each implement their own way of loading external context from files and web sources. However, this creates several challenges:
+
+- Knowledge remains siloed within each tool's ecosystem
+- Support for different document types and sources varies widely
+- Integration with enterprise knowledge bases (Confluence, Notion, etc.) is limited
+- Each tool requires learning its unique context-loading mechanisms
+
+RAG Retriever solves these challenges by:
+
+1. Providing a unified knowledge repository that can ingest content from diverse sources
+2. Offering a simple command-line interface that works with any AI tool supporting shell commands
+
+> **💡 For a detailed discussion** of why centralized knowledge retrieval tools are crucial for AI-driven development, see our [Why RAG Retriever](docs/why-rag-retriever.md) guide.
+
 ## Prerequisites
 
 ### Core Requirements
