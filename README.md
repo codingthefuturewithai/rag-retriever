@@ -21,7 +21,7 @@ This helps prevent hallucinations and ensures your AI assistant follows your tea
 Modern AI coding assistants each implement their own way of loading external context from files and web sources. However, this creates several challenges:
 
 - Knowledge remains siloed within each tool's ecosystem
-- Support for different document types and sources varies widely
+- Support for different document types and sources varies widely, so we're completely limited to the knowledge sources and document types each tool's creator has chosen to support
 - Integration with enterprise knowledge bases (Confluence, Notion, etc.) is limited
 - Each tool requires learning its unique context-loading mechanisms
 
