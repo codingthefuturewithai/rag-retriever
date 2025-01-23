@@ -14,6 +14,9 @@ RAG Retriever enhances your AI coding assistant (like aider, Cursor, or Windsurf
 
 This helps prevent hallucinations and ensures your AI assistant follows your team's practices.
 
+![RAG Retriever in action with various AI coding assistants](docs/images/rag-retriever-animated-gif-aider.gif)
+_RAG Retriever seamlessly integrating with aider, Cursor, and Windsurf to provide accurate, up-to-date information during development._
+
 > **💡 Note**: While our examples focus on AI coding assistants, RAG Retriever can enhance any AI-powered development environment or tool that can execute command-line applications. Use it to augment IDEs, CLI tools, or any development workflow that needs reliable, up-to-date information.
 
 ## Why Do We Need Such Tools?
@@ -21,7 +24,7 @@ This helps prevent hallucinations and ensures your AI assistant follows your tea
 Modern AI coding assistants each implement their own way of loading external context from files and web sources. However, this creates several challenges:
 
 - Knowledge remains siloed within each tool's ecosystem
-- Support for different document types and sources varies widely, so we're completely limited to the knowledge sources and document types each tool's creator has chosen to support
+- Support for different document types and sources varies widely
 - Integration with enterprise knowledge bases (Confluence, Notion, etc.) is limited
 - Each tool requires learning its unique context-loading mechanisms
 
