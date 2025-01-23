@@ -14,11 +14,11 @@ RAG Retriever enhances your AI coding assistant (like aider, Cursor, or Windsurf
 
 This helps prevent hallucinations and ensures your AI assistant follows your team's practices.
 
-<iframe width="560" height="315" 
-src="https://www.youtube.com/embed/oQ6fSWUZYh0?autoplay=1" 
-title="YouTube video player" frameborder="0" 
-allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-allowfullscreen></iframe>
+## Watch a Short Demo Video (not all RAG Retriever features are shown)
+
+[![Watch the video](https://img.youtube.com/vi/oQ6fSWUZYh0/0.jpg)](https://youtu.be/oQ6fSWUZYh0)
+
+_RAG Retriever seamlessly integrates with aider, Cursor, and Windsurf to provide accurate, up-to-date information during development._
 _RAG Retriever seamlessly integrating with aider, Cursor, and Windsurf to provide accurate, up-to-date information during development._
 
 > **💡 Note**: While our examples focus on AI coding assistants, RAG Retriever can enhance any AI-powered development environment or tool that can execute command-line applications. Use it to augment IDEs, CLI tools, or any development workflow that needs reliable, up-to-date information.
