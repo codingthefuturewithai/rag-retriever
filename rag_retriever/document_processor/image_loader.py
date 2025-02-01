@@ -121,14 +121,8 @@ class ImageLoader:
         Returns:
             str: Markdown formatted analysis
         """
-        # Extract the filename or URL for the title
-        title = os.path.basename(source) if not self._is_valid_url(source) else source
-
-        # Build markdown content with title and content together, ensuring they stay as one unit
-        return f"""# Image Analysis: {title}
-This is a detailed analysis of the image at {source}:
-
-{content}"""
+        # Return the raw content without any added formatting
+        return content
 
     def load_image(self, source: str) -> Optional[Document]:
         """Load image from file path or URL.

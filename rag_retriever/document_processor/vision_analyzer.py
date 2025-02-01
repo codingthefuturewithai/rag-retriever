@@ -17,13 +17,13 @@ logger = logging.getLogger(__name__)
 class VisionAnalyzer:
     """Handles image analysis using OpenAI's vision models."""
 
-    DEFAULT_SYSTEM_PROMPT = """Analyze this image and explain its purpose and key concepts as if you were presenting it to an audience. Focus on:
-        1.      The purpose of the system illustrated in the diagram.
-        2.      The role of each major component and how they contribute to the system's functionality.
-        3.      The overall workflow and how data flows through the system.
-        4.      The intended outcomes or benefits of the system.
+    DEFAULT_SYSTEM_PROMPT = """Analyze this image and describe what you observe. Focus on:
+        1.      The main subject or focus
+        2.      Key elements and their significance
+        3.      Important details and their context
+        4.      Overall meaning or purpose
 
-Avoid simply describing the relationships between elements; instead, explain the meaning and context conveyed by the diagram."""
+Provide a clear, detailed description that captures both what is shown and its significance."""
 
     def __init__(self, config: Dict[str, Any]):
         """Initialize the vision analyzer.
