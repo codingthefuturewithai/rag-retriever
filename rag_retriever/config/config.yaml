@@ -86,9 +86,17 @@ browser:
     vendor: "Google Inc."
     webgl_vendor: "Intel Inc." # Will be overridden based on OS
 
+# Image Processing Configuration
+image_processing:
+  vision_enabled: true # Must be true for image processing to work
+  vision_model: "gpt-4o-mini" # Default model, can be overridden
+  vision_max_tokens: 1000
+  max_file_size_mb: 10 # Maximum image file size in MB
+
 # API settings
 api:
-  openai_api_key: null # Set this in your user config file
+  openai_api_key: null # OpenAI API key to be used for ALL OpenAI calls
+
   confluence:
     url: null # Your Confluence instance URL (e.g., https://your-domain.atlassian.net)
     username: null # Your Confluence username/email
