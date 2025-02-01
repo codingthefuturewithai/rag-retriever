@@ -115,6 +115,9 @@ Avoid simply describing the relationships between elements; instead, explain the
                 return None
 
             # Get analysis from the model
+            logger.debug(f"Sending image to vision model: {image_path}")
+            logger.debug(f"Image data: {image_data[:50]}... [truncated]")
+
             response = self.chain.invoke({"image_data": image_data})
 
             # Structure the response

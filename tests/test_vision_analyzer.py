@@ -5,8 +5,10 @@ from unittest.mock import patch, MagicMock
 import base64
 import os
 from pathlib import Path
+import json
 
 from rag_retriever.document_processor.vision_analyzer import VisionAnalyzer
+from rag_retriever.utils.config import config
 
 # Test configuration
 TEST_CONFIG = {
@@ -14,7 +16,16 @@ TEST_CONFIG = {
         "vision_enabled": True,
         "vision_model": "gpt-4o-mini",
         "vision_max_tokens": 1000,
-        "system_prompt": "Analyze this image and describe what you see.",
+    }
+}
+
+# Test configuration with custom prompt
+TEST_CONFIG_WITH_CUSTOM_PROMPT = {
+    "image_processing": {
+        "vision_enabled": True,
+        "vision_model": "gpt-4o-mini",
+        "vision_max_tokens": 1000,
+        "system_prompt": "Custom prompt for testing",
     }
 }
 
@@ -104,10 +115,38 @@ def test_analyze_invalid_image(mock_chat, vision_analyzer):
 
 
 def test_default_system_prompt():
-    """Test that the default system prompt is comprehensive."""
-    analyzer = VisionAnalyzer({})
-    assert "Visual elements" in analyzer.DEFAULT_SYSTEM_PROMPT
-    assert "Text content" in analyzer.DEFAULT_SYSTEM_PROMPT
-    assert "Spatial relationships" in analyzer.DEFAULT_SYSTEM_PROMPT
-    assert "Notable features" in analyzer.DEFAULT_SYSTEM_PROMPT
-    assert "Overall context" in analyzer.DEFAULT_SYSTEM_PROMPT
+    """Test that the default system prompt is used when no custom prompt is provided."""
+    analyzer = VisionAnalyzer(TEST_CONFIG)
+    # The first message in the prompt template should be our system message
+    system_message = analyzer.prompt.messages[0]
+    assert system_message.prompt.template == analyzer.DEFAULT_SYSTEM_PROMPT
+
+
+def test_custom_system_prompt():
+    """Test that custom system prompt from config overrides the default."""
+    analyzer = VisionAnalyzer(TEST_CONFIG_WITH_CUSTOM_PROMPT)
+    system_message = analyzer.prompt.messages[0]
+    assert system_message.prompt.template == "Custom prompt for testing"
+    assert system_message.prompt.template != analyzer.DEFAULT_SYSTEM_PROMPT
+
+
+def test_analyze_real_image():
+    """Test analyzing a real image from the test data directory."""
+    # Initialize the analyzer with the actual config
+    analyzer = VisionAnalyzer(config._config)
+
+    # Use a real test image
+    test_image = "./tests/data/images/post-scaffolding-sprint-workflow.png"
+
+    # Analyze the image
+    result = analyzer.analyze_image(test_image)
+
+    # Verify the result structure
+    assert result is not None
+    assert "source" in result
+    assert "content" in result
+    assert "type" in result
+    assert result["source"] == test_image
+    assert result["type"] == "vision_analysis"
+    assert isinstance(result["content"], str)
+    assert len(result["content"]) > 0

@@ -92,6 +92,7 @@ image_processing:
   vision_model: "gpt-4o-mini" # Default model, can be overridden
   vision_max_tokens: 1000
   max_file_size_mb: 10 # Maximum image file size in MB
+  # system_prompt: null # Override the default system prompt for image analysis
 
 # API settings
 api:

@@ -26,7 +26,8 @@ from rag_retriever.main import process_url, search_content
 from rag_retriever.vectorstore.store import clean_vectorstore, VectorStore
 from rag_retriever.document_processor import (
     LocalDocumentLoader,
-    ConfluenceDocumentLoader,
+    ImageLoader,
+    ConfluenceLoader,
 )
 from rag_retriever.utils.config import initialize_user_files, config
 from rag_retriever.utils.windows import suppress_asyncio_warnings
@@ -146,6 +147,19 @@ def create_parser() -> argparse.ArgumentParser:
         help="Confluence parent page ID to start loading from",
     )
 
+    # Add image ingestion arguments
+    parser.add_argument(
+        "--ingest-image",
+        type=str,
+        help="Path to an image file or URL to analyze and ingest",
+    )
+
+    parser.add_argument(
+        "--ingest-image-directory",
+        type=str,
+        help="Path to a directory containing images to analyze and ingest",
+    )
+
     return parser
 
 
@@ -163,7 +177,10 @@ def main():
     args = parser.parse_args()
 
     if args.verbose:
+        # Set root logger to INFO
         logging.getLogger().setLevel(logging.INFO)
+        # Set rag_retriever logger to DEBUG for detailed output
+        logging.getLogger("rag_retriever").setLevel(logging.DEBUG)
         logger.debug("Verbose logging enabled")
 
     if args.init:
@@ -181,6 +198,37 @@ def main():
             print(f"   URL: {result.url}")
             print(f"   {result.snippet}")
         sys.exit(0)
+
+    # Handle image ingestion
+    if args.ingest_image or args.ingest_image_directory:
+        try:
+            image_loader = ImageLoader(config=config._config, show_progress=True)
+            store = VectorStore()
+
+            if args.ingest_image:
+                logger.info(f"Loading image: {args.ingest_image}")
+                document = image_loader.load_image(args.ingest_image)
+                if document:
+                    documents = [document]
+                else:
+                    logger.error("Failed to load image")
+                    sys.exit(1)
+            else:
+                logger.info(
+                    f"Loading images from directory: {args.ingest_image_directory}"
+                )
+                documents = image_loader.load_directory(args.ingest_image_directory)
+                if not documents:
+                    logger.error("No valid images found in directory")
+                    sys.exit(1)
+
+            store.add_documents(documents)
+            logger.info(f"Successfully ingested {len(documents)} image(s)")
+            sys.exit(0)
+
+        except Exception as e:
+            logger.error(f"Error ingesting images: {str(e)}")
+            sys.exit(1)
 
     # Handle local document ingestion
     if args.ingest_file or args.ingest_directory:
@@ -208,20 +256,19 @@ def main():
     # Handle Confluence content loading
     if args.confluence:
         try:
-            loader = ConfluenceDocumentLoader(config=config._config)
-            store = VectorStore()
-
-            logger.info("Loading content from Confluence...")
-            documents = loader.load_pages(
-                space_key=args.space_key, parent_id=args.parent_id
+            loader = ConfluenceLoader(
+                config=config._config,
+                space_key=args.space_key,
+                parent_id=args.parent_id,
             )
-
+            store = VectorStore()
+            documents = loader.load_content()
             store.add_documents(documents)
-            logger.info(f"Successfully loaded {len(documents)} pages from Confluence")
+            logger.info("Successfully loaded Confluence content")
             sys.exit(0)
 
         except Exception as e:
-            logger.error(f"Error loading from Confluence: {str(e)}")
+            logger.error(f"Error loading Confluence content: {str(e)}")
             sys.exit(1)
 
     try:

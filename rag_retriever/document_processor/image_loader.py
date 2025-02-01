@@ -111,13 +111,11 @@ class ImageLoader:
             logger.error(f"Image validation failed for {file_path}: {str(e)}")
             return False
 
-    def _convert_analysis_to_markdown(
-        self, analysis: Dict[str, Any], source: str
-    ) -> str:
+    def _convert_analysis_to_markdown(self, content: str, source: str) -> str:
         """Convert vision analysis to markdown format.
 
         Args:
-            analysis: Vision analysis result dictionary
+            content: Vision analysis text
             source: Source of the image (path or URL)
 
         Returns:
@@ -130,87 +128,10 @@ class ImageLoader:
         md_parts = []
 
         # Title and source
-        md_parts.append(f"# Image Analysis: {title}\n")
+        md_parts.append(f"# Image Analysis: {title}\n\n")
 
-        # Core Message section
-        core = analysis["core_message"]
-        md_parts.extend(
-            [
-                "## Core Message\n",
-                f"**Main Purpose**: {core['main_purpose']}\n",
-                f"**Key Message**: {core['key_message']}\n",
-                f"**Domain**: {core['domain']}\n",
-            ]
-        )
-
-        # Content Analysis section
-        content = analysis["content"]
-        md_parts.append("\n## Content Analysis\n")
-
-        if content["key_elements"]:
-            md_parts.append("\n### Key Elements\n")
-            for element in content["key_elements"]:
-                md_parts.append(f"- {element}\n")
-
-        if content["relationships"]:
-            md_parts.append("\n### Relationships\n")
-            for rel in content["relationships"]:
-                md_parts.append(f"- {rel}\n")
-
-        if content["patterns"]:
-            md_parts.append("\n### Patterns\n")
-            for pattern in content["patterns"]:
-                md_parts.append(f"- {pattern}\n")
-
-        if content["presentation_method"]:
-            md_parts.append(
-                f"\n**Presentation Method**: {content['presentation_method']}\n"
-            )
-
-        # Context section
-        context = analysis["context"]
-        md_parts.append("\n## Context\n")
-        md_parts.append(f"**Intended Audience**: {context['intended_audience']}\n")
-
-        if context["addressed_needs"]:
-            md_parts.append("\n### Addressed Needs\n")
-            for need in context["addressed_needs"]:
-                md_parts.append(f"- {need}\n")
-
-        if context["key_insights"]:
-            md_parts.append("\n### Key Insights\n")
-            for insight in context["key_insights"]:
-                md_parts.append(f"- {insight}\n")
-
-        if context["implications"]:
-            md_parts.append("\n### Implications\n")
-            for impl in context["implications"]:
-                md_parts.append(f"- {impl}\n")
-
-        # Technical Details section (if present and relevant)
-        tech = analysis.get("technical_details")
-        if tech and any(tech.values()):
-            md_parts.append("\n## Technical Details\n")
-
-            if tech.get("specifications"):
-                md_parts.append("\n### Specifications\n")
-                for spec in tech["specifications"]:
-                    md_parts.append(f"- {spec}\n")
-
-            if tech.get("structure"):
-                md_parts.append(f"\n**Structure**: {tech['structure']}\n")
-
-            if tech.get("methodology"):
-                md_parts.append(f"\n**Methodology**: {tech['methodology']}\n")
-
-            if tech.get("requirements"):
-                md_parts.append("\n### Requirements\n")
-                for req in tech["requirements"]:
-                    md_parts.append(f"- {req}\n")
-
-        # Summary section
-        if analysis.get("summary"):
-            md_parts.extend(["\n## Summary\n", f"{analysis['summary']}\n"])
+        # Analysis content
+        md_parts.append(content)
 
         return "".join(md_parts)
 
@@ -270,7 +191,7 @@ class ImageLoader:
 
             # Convert analysis to markdown
             markdown_content = self._convert_analysis_to_markdown(
-                analysis["analysis"], source
+                analysis["content"], source
             )
 
             # Create document with metadata
@@ -281,7 +202,16 @@ class ImageLoader:
                 "analysis_type": "vision",
             }
 
-            return Document(page_content=markdown_content, metadata=metadata)
+            document = Document(page_content=markdown_content, metadata=metadata)
+
+            # Log the document that will be stored
+            logger.debug("Generated document for vector store:")
+            logger.debug("-" * 80)
+            logger.debug(f"Source: {source}")
+            logger.debug(f"Content:\n{markdown_content}")
+            logger.debug("-" * 80)
+
+            return document
 
         except Exception as e:
             logger.error(f"Failed to load image from {source}: {str(e)}")
