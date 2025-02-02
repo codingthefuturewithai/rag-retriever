@@ -1,6 +1,6 @@
 # RAG Retriever
 
-A Python application that loads and processes web pages, local documents, and Confluence spaces, indexing their content using embeddings, and enabling semantic search queries. Built with a modular architecture using OpenAI embeddings and Chroma vector store.
+A Python application that loads and processes web pages, local documents, images, and Confluence spaces, indexing their content using embeddings, and enabling semantic search queries. Built with a modular architecture using OpenAI embeddings and Chroma vector store.
 
 ## What It Does
 
@@ -10,9 +10,21 @@ RAG Retriever enhances your AI coding assistant (like aider, Cursor, or Windsurf
 - Your organization's architecture decisions and coding standards
 - Internal APIs and tools documentation
 - Confluence spaces and documentation
+- Visual content like architecture diagrams, UI mockups, and technical illustrations
 - Any other knowledge that isn't part of the LLM's training data
 
 This helps prevent hallucinations and ensures your AI assistant follows your team's practices.
+
+## How It Works
+
+RAG Retriever processes various types of content:
+
+- Text documents are chunked and embedded for semantic search
+- Images are analyzed using AI vision models to generate detailed textual descriptions
+- Web pages are crawled and their content is extracted
+- Confluence spaces are indexed with their full content hierarchy
+
+When you search, the system finds semantically relevant content across all sources. For images, instead of returning the images themselves, it returns their AI-generated descriptions, making visual content searchable alongside your documentation.
 
 ## Watch a Short Demo Video (not all RAG Retriever features are shown)
 
@@ -187,6 +199,18 @@ document_processing:
 search:
   default_limit: 8
   default_score_threshold: 0.3
+
+# Image processing
+image_processing:
+  vision_model: "gpt-4-vision-preview"
+  vision_max_tokens: 1000
+  supported_formats:
+    - ".png"
+    - ".jpg"
+    - ".jpeg"
+    - ".gif"
+    - ".webp"
+  max_file_size_mb: 20
 ```
 
 ### Data Storage
@@ -273,6 +297,25 @@ rag-retriever --fetch https://example.com --max-depth 2
 # Enable verbose output
 rag-retriever --fetch https://example.com --verbose
 ```
+
+### Image Analysis
+
+```bash
+# Analyze and index a single image
+rag-retriever --ingest-image diagrams/RAG-Retriever-architecture.png
+
+# Process all images in a directory
+rag-retriever --ingest-image-directory diagrams/system-design/
+
+# Search for specific architectural details
+rag-retriever --query "How does RAG Retriever handle different types of document processing in its architecture?"
+rag-retriever --query "What components are responsible for vector storage in the RAG Retriever system?"
+
+# Combine with other content in searches
+rag-retriever --query "Compare the error handling approach shown in the RAG Retriever architecture with the approach used by the latest LangChain framework"
+```
+
+The image analysis feature uses AI vision models to create detailed descriptions of your visual content, making it searchable alongside your documentation. When you search, you'll receive relevant text descriptions of the images rather than the images themselves.
 
 ### Web Search
 
@@ -393,6 +436,21 @@ document_processing:
     password: null
     strategy: "fast" # Options: fast, accurate
     mode: "elements" # Options: single_page, paged, elements
+```
+
+### Image Processing Settings
+
+```yaml
+image_processing:
+  vision_model: "gpt-4o-mini" # OpenAI vision model to use
+  vision_max_tokens: 1000 # Maximum tokens for image analysis
+  supported_formats: # Supported image formats
+    - ".png"
+    - ".jpg"
+    - ".jpeg"
+    - ".gif"
+    - ".webp"
+  max_file_size_mb: 20 # Maximum image file size in MB
 ```
 
 ### Content Processing Settings
