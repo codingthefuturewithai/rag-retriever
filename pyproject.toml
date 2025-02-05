@@ -47,13 +47,25 @@ dependencies = [
     "markdownify>=0.11.6"
 ]
 
-[project.scripts]
-rag-retriever = "rag_retriever.cli:main"
-post-install = "scripts.install:install_browsers"
+[project.optional-dependencies]
+dev = [
+    "pytest==7.3.0"
+]
+
+[tool.pytest.ini_options]
+filterwarnings = [
+    "ignore::DeprecationWarning:_pytest.assertion.rewrite"
+]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
 
 [tool.setuptools.packages.find]
 include = ["rag_retriever*", "scripts*"]
 namespaces = true
 
 [tool.setuptools.package-data]
-rag_retriever = ["config/*.yaml", "config/.env.example"] 
+rag_retriever = ["config/*.yaml", "config/.env.example"]
+
+[project.scripts]
+rag-retriever = "rag_retriever.cli:main"
+post-install = "scripts.install:install_browsers" 
