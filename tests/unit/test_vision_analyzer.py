@@ -135,8 +135,15 @@ def test_analyze_real_image():
     # Initialize the analyzer with the actual config
     analyzer = VisionAnalyzer(config._config)
 
-    # Use a real test image
-    test_image = "./tests/data/images/post-scaffolding-sprint-workflow.png"
+    # Get project root and construct absolute path to test image
+    project_root = Path(__file__).parent.parent.parent
+    test_image = str(
+        project_root
+        / "tests"
+        / "data"
+        / "images"
+        / "post-scaffolding-sprint-workflow.png"
+    )
 
     # Analyze the image
     result = analyzer.analyze_image(test_image)
