@@ -49,7 +49,8 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = [
-    "pytest==7.3.0"
+    "pytest==7.3.0",
+    "pytest-cov>=4.1.0"
 ]
 
 [tool.pytest.ini_options]
@@ -58,6 +59,7 @@ filterwarnings = [
 ]
 testpaths = ["tests"]
 python_files = ["test_*.py"]
+addopts = "--cov=rag_retriever --cov-report=term-missing --cov-report=html"
 
 [tool.setuptools.packages.find]
 include = ["rag_retriever*", "scripts*"]
@@ -68,4 +70,18 @@ rag_retriever = ["config/*.yaml", "config/.env.example"]
 
 [project.scripts]
 rag-retriever = "rag_retriever.cli:main"
-post-install = "scripts.install:install_browsers" 
+post-install = "scripts.install:install_browsers"
+
+[tool.coverage.run]
+source = ["rag_retriever"]
+omit = ["*/__init__.py"]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "if __name__ == .__main__.:",
+    "raise NotImplementedError",
+    "pass",
+    "raise ImportError"
+] 
