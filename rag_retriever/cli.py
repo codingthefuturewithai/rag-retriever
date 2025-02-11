@@ -28,6 +28,7 @@ from rag_retriever.document_processor import (
     LocalDocumentLoader,
     ImageLoader,
     ConfluenceLoader,
+    GitHubLoader,
 )
 from rag_retriever.utils.config import initialize_user_files, config
 from rag_retriever.utils.windows import suppress_asyncio_warnings
@@ -160,6 +161,26 @@ def create_parser() -> argparse.ArgumentParser:
         help="Path to a directory containing images to analyze and ingest",
     )
 
+    # Add GitHub repository loading arguments
+    parser.add_argument(
+        "--github-repo",
+        type=str,
+        help="URL of the GitHub repository to load",
+    )
+
+    parser.add_argument(
+        "--branch",
+        type=str,
+        help="Specific branch to load from the repository",
+    )
+
+    parser.add_argument(
+        "--file-extensions",
+        type=str,
+        nargs="+",
+        help="Specific file extensions to load (e.g., .py .md .js)",
+    )
+
     return parser
 
 
@@ -269,6 +290,34 @@ def main():
 
         except Exception as e:
             logger.error(f"Error loading Confluence content: {str(e)}")
+            sys.exit(1)
+
+    # Handle GitHub repository loading
+    if args.github_repo:
+        try:
+            loader = GitHubLoader(config=config._config)
+            store = VectorStore()
+
+            # Create file filter if extensions specified
+            file_filter = None
+            if args.file_extensions:
+                file_filter = lambda x: any(
+                    x.endswith(ext) for ext in args.file_extensions
+                )
+
+            logger.info(f"Loading GitHub repository: {args.github_repo}")
+            documents = loader.load_repository(
+                repo_url=args.github_repo, branch=args.branch, file_filter=file_filter
+            )
+
+            store.add_documents(documents)
+            logger.info(
+                f"Successfully loaded {len(documents)} documents from repository"
+            )
+            sys.exit(0)
+
+        except Exception as e:
+            logger.error(f"Error loading GitHub repository: {str(e)}")
             sys.exit(1)
 
     try:
