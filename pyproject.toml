@@ -3,8 +3,9 @@ requires = ["setuptools>=45", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-you
-description = "A tool for crawling, indexing, and semantically searching web content"
+name = "rag-retriever"
+version = "0.2.0"
+description = "A tool for crawling, indexing, and semantically searching web content with RAG capabilities"
 readme = "README.md"
 authors = [
     {name = "Tim Kitchens", email = "codingthefuturewithai@gmail.com"}
