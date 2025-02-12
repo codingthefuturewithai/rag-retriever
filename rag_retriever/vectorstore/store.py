@@ -2,9 +2,11 @@
 
 import os
 import shutil
+import time
 from pathlib import Path
 import logging
 from typing import List, Tuple, Optional
+from tenacity import retry, stop_after_attempt, wait_exponential
 
 from langchain_openai import OpenAIEmbeddings
 from langchain_chroma import Chroma
@@ -119,10 +121,37 @@ class VectorStore:
         )
         return self._db
 
-    def add_documents(self, documents: List[Document]) -> int:
-        """Add documents to the vector store."""
+    def _process_batch(self, batch: List[Document], retry_count: int = 0) -> bool:
+        """Process a single batch of documents with retry logic."""
+        batch_settings = config.vector_store["batch_processing"]
+        max_retries = batch_settings["max_retries"]
+        retry_delay = batch_settings["retry_delay"]
+
         try:
-            # Split documents into chunks using configured values
+            db = self._get_or_create_db()
+            db.add_documents(batch)
+            return True
+        except Exception as e:
+            if "rate limit" in str(e).lower() or "quota" in str(e).lower():
+                if retry_count < max_retries:
+                    delay = retry_delay * (2 ** retry_count)  # Exponential backoff
+                    logger.warning(
+                        "Rate limit hit, retrying batch after %.1f seconds (attempt %d/%d)",
+                        delay, retry_count + 1, max_retries
+                    )
+                    time.sleep(delay)
+                    return self._process_batch(batch, retry_count + 1)
+                else:
+                    logger.error("Max retries exceeded for batch")
+                    return False
+            else:
+                logger.error("Error processing batch: %s", str(e))
+                return False
+
+    def add_documents(self, documents: List[Document]) -> int:
+        """Add documents to the vector store using batch processing."""
+        try:
+            # Split documents into chunks
             text_splitter = RecursiveCharacterTextSplitter(
                 chunk_size=config.content["chunk_size"],
                 chunk_overlap=config.content["chunk_overlap"],
@@ -138,7 +167,7 @@ class VectorStore:
 
             total_content_size = sum(len(doc.page_content) for doc in documents)
             total_chunk_size = sum(len(split.page_content) for split in splits)
-
+            
             logger.info(
                 "Processing %d documents (total size: %d chars) into %d chunks (total size: %d chars)",
                 len(documents),
@@ -147,20 +176,64 @@ class VectorStore:
                 total_chunk_size,
             )
 
-            # Try to get existing DB
-            logger.debug("Attempting to add %d chunks", len(splits))
-            db = self._get_or_create_db()
-            db.add_documents(splits)
-            logger.info("Successfully added %d chunks to vector store", len(splits))
-            return len(splits)
-        except ValueError:
-            # No existing DB, create new one with documents
-            logger.debug("Creating new database with documents")
-            db = self._get_or_create_db(splits)
-            logger.info(
-                "Successfully created new vector store with %d chunks", len(splits)
-            )
-            return len(splits)
+            # Process in batches
+            batch_settings = config.vector_store["batch_processing"]
+            batch_size = batch_settings["batch_size"]
+            delay = batch_settings["delay_between_batches"]
+            
+            successful_chunks = 0
+            total_batches = (len(splits) + batch_size - 1) // batch_size
+            
+            for i in range(0, len(splits), batch_size):
+                batch = splits[i:i + batch_size]
+                batch_num = (i // batch_size) + 1
+                
+                logger.info(
+                    "Processing batch %d/%d (%d chunks)",
+                    batch_num,
+                    total_batches,
+                    len(batch)
+                )
+                
+                if self._process_batch(batch):
+                    successful_chunks += len(batch)
+                    logger.info(
+                        "Batch %d/%d completed successfully (%d/%d chunks processed)",
+                        batch_num,
+                        total_batches,
+                        successful_chunks,
+                        len(splits)
+                    )
+                else:
+                    logger.error(
+                        "Batch %d/%d failed (%d/%d chunks processed)",
+                        batch_num,
+                        total_batches,
+                        successful_chunks,
+                        len(splits)
+                    )
+                
+                if i + batch_size < len(splits):  # If not the last batch
+                    logger.debug("Waiting %.1f seconds before next batch", delay)
+                    time.sleep(delay)
+            
+            if successful_chunks < len(splits):
+                logger.warning(
+                    "Partial success: %d/%d chunks successfully processed",
+                    successful_chunks,
+                    len(splits)
+                )
+            else:
+                logger.info(
+                    "All %d chunks successfully processed",
+                    successful_chunks
+                )
+            
+            return successful_chunks
+            
+        except Exception as e:
+            logger.error("Error in document processing: %s", str(e))
+            raise
 
     def search(
         self,

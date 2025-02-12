@@ -242,7 +242,16 @@ class Config:
     @property
     def vector_store(self) -> Dict[str, Any]:
         """Get vector store configuration."""
-        return self._config["vector_store"]
+        config = self._config["vector_store"]
+        if "batch_processing" not in config:
+            # Add default batch processing settings if not present
+            config["batch_processing"] = {
+                "batch_size": 50,
+                "delay_between_batches": 1.0,
+                "max_retries": 3,
+                "retry_delay": 5.0
+            }
+        return config
 
     @property
     def content(self) -> Dict[str, Any]:

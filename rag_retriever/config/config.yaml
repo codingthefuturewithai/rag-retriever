@@ -5,6 +5,11 @@ vector_store:
   embedding_dimensions: 3072
   chunk_size: 1000 # Default chunk size for text splitting
   chunk_overlap: 200 # Default chunk overlap for text splitting
+  batch_processing:
+    batch_size: 50 # Number of chunks to process in each batch
+    delay_between_batches: 1.0 # Delay in seconds between batches
+    max_retries: 3 # Maximum number of retries per batch
+    retry_delay: 5.0 # Base delay between retries (will use exponential backoff)
 
 # Local document processing
 document_processing:
