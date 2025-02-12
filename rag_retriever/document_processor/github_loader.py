@@ -94,6 +94,7 @@ class GitHubLoader:
         try:
             # Create a temporary directory for the repository
             with tempfile.TemporaryDirectory() as temp_dir:
+                logger.info("Created temporary directory for repository: %s", temp_dir)
                 # Clone the repository
                 repo = Repo.clone_from(repo_url, temp_dir)
 
