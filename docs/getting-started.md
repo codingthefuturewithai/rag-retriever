@@ -56,51 +56,45 @@ This guide will walk you through installing RAG Retriever, loading your first do
 
 ## Loading Your First Documentation
 
-Let's load some documentation about Java 23's new features to test the setup. Open a new terminal and run:
+Let's load some documentation to test the setup. We'll try both web documentation and a GitHub repository:
+
+### Loading Web Documentation
 
 ```bash
 rag-retriever --fetch https://www.happycoders.eu/java/java-23-features --max-depth 0
 ```
 
+### Loading a GitHub Repository
+
+```bash
+# Load a popular open-source repository
+rag-retriever --github-repo https://github.com/openai/openai-quickstart-python.git
+
+# You can also specify a branch and file types
+rag-retriever --github-repo https://github.com/openai/openai-python.git --branch main --file-extensions .py .md
+
+# Example with a larger repository
+rag-retriever --github-repo https://github.com/langchain-ai/langchain.git --branch master --file-extensions .py .md
+```
+
 You should see output similar to this:
 
 ```
-INFO:rag_retriever.main:
-Starting content fetch and indexing process...
-INFO:rag_retriever.main:Starting crawl operation...
-INFO:rag_retriever.crawling.playwright_crawler:Starting crawl of https://www.happycoders.eu/java/java-23-features
-INFO:rag_retriever.crawling.playwright_crawler:Processed document: https://www.happycoders.eu/java/java-23-features
-INFO:rag_retriever.crawling.playwright_crawler:Completed crawl: processed 1 documents
-INFO:rag_retriever.main:
-Indexing documents...
-INFO:rag_retriever.vectorstore.store:Processing 1 documents (total size: 11268 chars) into 10 chunks (total size: 11847 chars)
-INFO:rag_retriever.vectorstore.store:Successfully added 39 chunks to vector store
-INFO:rag_retriever.main:Indexing complete.
+INFO:rag_retriever.document_processor.github_loader:Loading GitHub repository: https://github.com/openai/openai-quickstart-python.git
+INFO:rag_retriever.vectorstore.store:Processing 5 documents (total size: 17054 chars) into 12 chunks
+INFO:rag_retriever.vectorstore.store:Successfully added chunks to vector store
 ```
-
-This indicates that the content was successfully fetched, processed into chunks, and indexed in the vector store.
 
 ### Verifying the Content
 
-Let's verify that the content was properly indexed by running a search query:
+Let's verify that the content was properly indexed by running search queries:
 
 ```bash
+# Search web documentation
 rag-retriever --query "Java 23 Markdown Documentation Comments JavaDoc syntax" --score-threshold 0.5
-```
 
-You should see output similar to this:
-
-```
-INFO:rag_retriever.main:
-Starting content search...
-1.
-Source: https://www.happycoders.eu/java/java-23-features
-Relevance Score: 0.6636
-Content: ## Markdown Documentation Comments – JEP 467
-
-To format JavaDoc comments, we have always had to use HTML. This was undoubtedly a good choice in 1995, but nowadays, Markdown is much more popular than HTML for writing documentation.
-
-JDK Enhancement Proposal 467 allows us to write JavaDoc comments in Markdown from Java 23 onwards.
+# Search GitHub repository content
+rag-retriever --query "How to use the OpenAI API client" --score-threshold 0.5
 ```
 
 The high relevance score (0.6636) indicates that the content was successfully indexed and is highly relevant to our query.

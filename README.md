@@ -1,6 +1,6 @@
 # RAG Retriever
 
-A Python application that loads and processes web pages, local documents, images, and Confluence spaces, indexing their content using embeddings, and enabling semantic search queries. Built with a modular architecture using OpenAI embeddings and Chroma vector store.
+A Python application that loads and processes web pages, local documents, images, GitHub repositories, and Confluence spaces, indexing their content using embeddings, and enabling semantic search queries. Built with a modular architecture using OpenAI embeddings and Chroma vector store.
 
 ## What It Does
 
@@ -9,6 +9,7 @@ RAG Retriever enhances your AI coding assistant (like aider, Cursor, or Windsurf
 - Documentation about new technologies and features
 - Your organization's architecture decisions and coding standards
 - Internal APIs and tools documentation
+- GitHub repositories and their documentation
 - Confluence spaces and documentation
 - Visual content like architecture diagrams, UI mockups, and technical illustrations
 - Any other knowledge that isn't part of the LLM's training data
@@ -263,6 +264,65 @@ pip install -e .
 scripts\run-rag.bat --init   # Windows
 ```
 
+## Project Structure
+
+The project is organized into the following key directories:
+
+```
+rag_retriever/              # Main package directory
+├── cli.py                  # Command-line interface implementation
+├── main.py                 # Core application logic
+├── config/                 # Configuration management
+├── document_processor/     # Document processing modules
+├── vectorstore/           # Vector storage and embedding
+├── crawling/              # Web crawling functionality
+├── search/                # Search implementation
+└── utils/                 # Utility functions and helpers
+
+tests/                     # Test suite
+├── unit/                  # Unit tests
+├── integration/           # Integration tests
+├── data/                 # Test data files
+├── docs/                 # Test documentation
+└── results/              # Test results output
+
+docs/                     # Project documentation
+├── getting-started.md    # Quick start guide
+├── configuration-guide.md # Configuration details
+├── why-rag-retriever.md  # Project motivation and benefits
+└── coding-assistants/    # AI assistant integration guides
+
+scripts/                  # Utility scripts
+├── install.py           # Installation helper script
+├── test_pdf_processing.py # PDF processing test script
+└── test_github_loader.py # GitHub loader test script
+
+tools/                    # Development tools
+└── test_utils/          # Test utilities and helpers
+    ├── verify_categorization.py
+    ├── run_regression_tests.py
+    ├── ingest_samples.sh
+    └── categorize_pdfs.py
+```
+
+### Key Components
+
+- **document_processor/**: Handles different types of documents (PDF, Markdown, text), GitHub repositories, and Confluence content
+- **vectorstore/**: Manages document embeddings and vector storage using ChromaDB
+- **crawling/**: Implements web page crawling and content extraction
+- **search/**: Provides semantic search functionality
+- **config/**: Manages application configuration and settings
+- **utils/**: Contains shared utilities and helper functions
+
+### Supporting Directories
+
+- **tests/**: Comprehensive test suite with unit and integration tests
+- **docs/**: User and developer documentation
+- **scripts/**: Installation and testing utility scripts
+- **tools/**: Development and testing tools
+
+The test suite is organized into unit tests and integration tests, with separate directories for test data, documentation, and results. The `docs/` directory contains comprehensive guides for users and contributors, including specific instructions for AI assistant integration.
+
 ## Usage Examples
 
 ### Local Document Processing
@@ -386,6 +446,47 @@ rag-retriever --query "database setup" --truncate
 
 # Output in JSON format
 rag-retriever --query "API endpoints" --json
+```
+
+### GitHub Repository Integration
+
+```bash
+# Load a GitHub repository
+rag-retriever --github-repo https://github.com/username/repo.git
+
+# Load a specific branch
+rag-retriever --github-repo https://github.com/username/repo.git --branch main
+
+# Load only specific file types
+rag-retriever --github-repo https://github.com/username/repo.git --file-extensions .py .md .js
+```
+
+The GitHub loader:
+
+- Clones repositories to a temporary directory
+- Automatically cleans up after processing
+- Supports branch selection
+- Filters files by extension
+- Excludes common non-documentation paths (node_modules, **pycache**, etc.)
+- Enforces file size limits for better processing
+
+Configuration options in `config.yaml`:
+
+```yaml
+github_settings:
+  supported_extensions:
+    - ".py"
+    - ".js"
+    - ".md"
+    # ... more extensions
+  excluded_patterns:
+    - "node_modules/**"
+    - "__pycache__/**"
+    - "*.pyc"
+    - ".git/**"
+    # ... more patterns
+  max_file_size_mb: 10
+  default_branch: "main"
 ```
 
 ## Configuration Options

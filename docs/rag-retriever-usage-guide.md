@@ -1,6 +1,6 @@
 # RAG Retriever User Guide
 
-RAG Retriever is a command-line tool for searching and retrieving information from a knowledge base built from both web documentation and local documents.
+RAG Retriever is a command-line tool for searching and retrieving information from a knowledge base built from web documentation, local documents, and GitHub repositories.
 
 ## Basic Search
 
@@ -42,6 +42,48 @@ rag-retriever --query "API endpoints" --json
 ```
 
 ## Adding Documentation
+
+### GitHub Repositories
+
+Add GitHub repositories to your knowledge base:
+
+```bash
+# Add a repository with default settings
+rag-retriever --github-repo https://github.com/username/repo.git
+
+# Specify a branch
+rag-retriever --github-repo https://github.com/username/repo.git --branch main
+
+# Filter specific file types
+rag-retriever --github-repo https://github.com/username/repo.git --file-extensions .py .md .js
+
+# Examples with real repositories
+rag-retriever --github-repo https://github.com/openai/openai-python.git --branch main
+rag-retriever --github-repo https://github.com/langchain-ai/langchain.git --branch master --file-extensions .py .md
+```
+
+The GitHub loader supports:
+
+- Automatic temporary directory management
+- Branch selection
+- File type filtering
+- Size limits and pattern exclusions
+- Metadata preservation (source, branch, file path)
+
+Configure GitHub settings in your `config.yaml`:
+
+```yaml
+github_settings:
+  supported_extensions:
+    - ".py"
+    - ".js"
+    - ".md"
+  excluded_patterns:
+    - "node_modules/**"
+    - "__pycache__/**"
+  max_file_size_mb: 10
+  default_branch: "main"
+```
 
 ### Local Documents
 

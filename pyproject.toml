@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "rag-retriever"
-version = "0.2.0"
+version = "0.2.1"
 description = "A tool for crawling, indexing, and semantically searching web content"
 readme = "README.md"
 authors = [
