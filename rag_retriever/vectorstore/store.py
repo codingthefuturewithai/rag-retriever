@@ -121,32 +121,29 @@ class VectorStore:
         )
         return self._db
 
-    def _process_batch(self, batch: List[Document], retry_count: int = 0) -> bool:
+    @retry(
+        stop=stop_after_attempt(lambda: config.vector_store["batch_processing"]["max_retries"]),
+        wait=wait_exponential(
+            multiplier=lambda: config.vector_store["batch_processing"]["retry_delay"],
+            min=1,
+            max=60
+        ),
+        retry=lambda e: "rate limit" in str(e).lower() or "quota" in str(e).lower(),
+        before_sleep=lambda retry_state: logger.warning(
+            "Rate limit hit, retrying batch after %.1f seconds (attempt %d/%d)",
+            retry_state.next_action.sleep, retry_state.attempt_number + 1,
+            config.vector_store["batch_processing"]["max_retries"]
+        )
+    )
+    def _process_batch(self, batch: List[Document]) -> bool:
         """Process a single batch of documents with retry logic."""
-        batch_settings = config.vector_store["batch_processing"]
-        max_retries = batch_settings["max_retries"]
-        retry_delay = batch_settings["retry_delay"]
-
         try:
             db = self._get_or_create_db()
             db.add_documents(batch)
             return True
         except Exception as e:
-            if "rate limit" in str(e).lower() or "quota" in str(e).lower():
-                if retry_count < max_retries:
-                    delay = retry_delay * (2 ** retry_count)  # Exponential backoff
-                    logger.warning(
-                        "Rate limit hit, retrying batch after %.1f seconds (attempt %d/%d)",
-                        delay, retry_count + 1, max_retries
-                    )
-                    time.sleep(delay)
-                    return self._process_batch(batch, retry_count + 1)
-                else:
-                    logger.error("Max retries exceeded for batch")
-                    return False
-            else:
-                logger.error("Error processing batch: %s", str(e))
-                return False
+            logger.error("Error processing batch: %s", str(e))
+            raise
 
     def add_documents(self, documents: List[Document]) -> int:
         """Add documents to the vector store using batch processing."""
