@@ -129,10 +129,16 @@ class VectorStore:
             max=60
         ),
         retry=lambda e: "rate limit" in str(e).lower() or "quota" in str(e).lower(),
-        before_sleep=lambda retry_state: logger.warning(
-            "Rate limit hit, retrying batch after %.1f seconds (attempt %d/%d)",
-            retry_state.next_action.sleep, retry_state.attempt_number + 1,
-            config.vector_store["batch_processing"]["max_retries"]
+        before_sleep=lambda retry_state: logger.info(
+            "Rate limit error encountered. Using exponential backoff strategy:"
+            "\n  - Attempt: %d/%d"
+            "\n  - Next retry in: %.1f seconds"
+            "\n  - Base delay: %.1f seconds"
+            "\n  - Max delay: 60 seconds",
+            retry_state.attempt_number + 1,
+            config.vector_store["batch_processing"]["max_retries"],
+            retry_state.next_action.sleep,
+            config.vector_store["batch_processing"]["retry_delay"]
         )
     )
     def _process_batch(self, batch: List[Document]) -> bool:
@@ -144,7 +150,10 @@ class VectorStore:
             logger.info("Successfully stored batch to vector database")
             return True
         except Exception as e:
-            logger.error("Error processing batch: %s", str(e))
+            if "rate limit" in str(e).lower() or "quota" in str(e).lower():
+                logger.info("Rate limiting error details: %s", str(e))
+            else:
+                logger.error("Error processing batch: %s", str(e))
             raise
 
     def add_documents(self, documents: List[Document]) -> int:
