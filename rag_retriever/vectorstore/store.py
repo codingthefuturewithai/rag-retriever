@@ -139,7 +139,9 @@ class VectorStore:
         """Process a single batch of documents with retry logic."""
         try:
             db = self._get_or_create_db()
+            logger.info("Storing batch of %d chunks to vector database...", len(batch))
             db.add_documents(batch)
+            logger.info("Successfully stored batch to vector database")
             return True
         except Exception as e:
             logger.error("Error processing batch: %s", str(e))
