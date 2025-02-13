@@ -14,6 +14,11 @@ vector_store:
   embedding_dimensions: 3072
   chunk_size: 1000 # Size of text chunks for indexing
   chunk_overlap: 200 # Overlap between chunks
+  batch_processing:
+    batch_size: 50 # Number of chunks to process in each batch
+    delay_between_batches: 1.0 # Delay in seconds between batches
+    max_retries: 3 # Maximum number of retries per batch
+    retry_delay: 5.0 # Base delay between retries (will use exponential backoff)
 ```
 
 ⚠️ **Critical**: Neither `embedding_model` nor `embedding_dimensions` can be changed after documents have been indexed. The selected `embedding_dimensions` value must match values allowed by the chosen embedding model. For example, while text-embedding-3-large supports 1024 or 256 dimensions, 3072 is recommended for optimal results. Changing EITHER value requires deleting the existing vector store and reindexing all documents.
@@ -48,11 +53,52 @@ document_processing:
   pdf_settings:
     max_file_size_mb: 50 # Maximum PDF file size in megabytes
     extract_images: false # Whether to extract images from PDFs
-    ocr_enabled: false # NOT YET SUPPORTED
-    languages: ["eng"] # Languages for text extraction (future OCR support)
+    ocr_enabled: false # ⚠️ FUTURE FEATURE - OCR support is not yet implemented
+    languages: ["eng"] # Languages for text extraction (will be used for future OCR support)
     password: null # For password-protected PDFs
     strategy: "fast" # Options: fast, accurate
     mode: "elements" # Options: single_page, paged, elements
+    denoise_images: true # Apply denoising to images before OCR
+    min_ocr_confidence: 60 # Minimum confidence score for OCR text (will be used when OCR is implemented)
+    max_image_size: 4096 # Maximum dimension for image processing
+    min_image_size: 50 # Minimum dimension for image processing
+
+  # GitHub integration settings
+  github_settings:
+    supported_extensions:
+      - ".py"
+      - ".js"
+      - ".ts"
+      - ".java"
+      - ".cpp"
+      - ".c"
+      - ".h"
+      - ".hpp"
+      - ".cs"
+      - ".rb"
+      - ".go"
+      - ".rs"
+      - ".php"
+      - ".scala"
+      - ".kt"
+      - ".swift"
+      - ".md"
+      - ".rst"
+      - ".txt"
+      - ".json"
+      - ".yaml"
+      - ".yml"
+    excluded_patterns:
+      - "node_modules/**"
+      - "__pycache__/**"
+      - "*.pyc"
+      - ".git/**"
+      - "venv/**"
+      - "dist/**"
+      - "build/**"
+      - "*.egg-info/**"
+    max_file_size_mb: 10
+    default_branch: "main"
 ```
 
 ## Content Processing
@@ -118,11 +164,22 @@ browser:
     webgl_vendor: "Intel Inc." # Automatically set based on OS
 ```
 
+## Image Processing Settings
+
+```yaml
+image_processing:
+  vision_enabled: true # Must be true for image processing to work
+  vision_model: "gpt-4o-mini" # Default model for image analysis
+  vision_max_tokens: 1000 # Maximum tokens for image analysis
+  max_file_size_mb: 10 # Maximum image file size in MB
+  # system_prompt: null # Optional: Override default system prompt for image analysis
+```
+
 ## API Settings
 
 ```yaml
 api:
-  openai_api_key: "sk-your-api-key-here" # Required: Set your OpenAI API key here
+  openai_api_key: null # OpenAI API key to be used for ALL OpenAI calls
   confluence:
     url: null # Your Confluence instance URL (e.g., https://your-domain.atlassian.net)
     username: null # Your Confluence username/email
@@ -153,6 +210,7 @@ RAG Retriever requires Python 3.10-3.12 and uses the following key dependencies:
 ```yaml
 vector_store:
   embedding_model: "text-embedding-3-large"
+  embedding_dimensions: 3072
   chunk_size: 1000
   chunk_overlap: 200
 
@@ -169,6 +227,8 @@ document_processing:
     extract_images: true
     strategy: "accurate"
     mode: "elements"
+    denoise_images: true
+    min_ocr_confidence: 80
 ```
 
 ### Web Crawling Configuration
@@ -183,4 +243,20 @@ browser:
   stealth:
     languages: ["en-US", "en"]
     platform: "MacIntel"
+```
+
+### GitHub Integration Configuration
+
+```yaml
+document_processing:
+  github_settings:
+    supported_extensions:
+      - ".py"
+      - ".md"
+      - ".js"
+    excluded_patterns:
+      - "node_modules/**"
+      - "__pycache__/**"
+    max_file_size_mb: 10
+    default_branch: "main"
 ```

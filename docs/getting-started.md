@@ -1,6 +1,6 @@
 # Getting Started with RAG Retriever
 
-This guide will walk you through installing RAG Retriever, loading your first documentation, and testing it with AI coding assistants.
+This guide will walk you through installing RAG Retriever and loading your first documentation.
 
 ## Installation
 
@@ -18,12 +18,17 @@ This guide will walk you through installing RAG Retriever, loading your first do
 
    > **Core Features**: The basic installation includes everything needed for:
    >
-   > - Web content crawling
+   > - Web content crawling and indexing
    > - Basic PDF text extraction
-   > - Markdown processing
-   > - Vector storage and search
+   > - Markdown and text file processing
+   > - Vector storage and semantic search
    > - Confluence space integration
    > - DuckDuckGo web search
+   > - GitHub repository integration
+   > - Basic image analysis and indexing
+   > - JSON output formatting
+   > - Configurable relevance scoring
+   > - Local file and directory processing
 
    > **Optional Features**: If you need advanced features, install additional dependencies:
    >
@@ -77,6 +82,29 @@ rag-retriever --github-repo https://github.com/openai/openai-python.git --branch
 rag-retriever --github-repo https://github.com/langchain-ai/langchain.git --branch master --file-extensions .py .md
 ```
 
+### Processing Images
+
+```bash
+# Process a single image (e.g., architecture diagram)
+rag-retriever --ingest-image diagrams/system-architecture.png
+
+# Process all images in a directory
+rag-retriever --ingest-image-directory docs/diagrams/
+
+# Process an image from a URL
+rag-retriever --ingest-image https://example.com/images/diagram.png
+```
+
+When processing images, RAG Retriever:
+
+- Analyzes the image content using AI vision models
+- Generates detailed textual descriptions
+- Makes visual content searchable alongside your documentation
+- Supports common image formats (PNG, JPG, JPEG, GIF, WEBP)
+- Can process both local files and image URLs
+
+> **Note**: Image processing settings like the vision model and token limits are configured in your `config.yaml` file. See the [configuration guide](./configuration-guide.md) for details.
+
 You should see output similar to this:
 
 ```
@@ -108,69 +136,9 @@ The high relevance score (0.6636) indicates that the content was successfully in
 > - Private APIs or internal tools documentation
 > - Company-specific business logic and requirements
 
-## Configuring AI Assistants
+## Using with AI Coding Assistants
 
-Now let's set up your AI coding assistants to use RAG Retriever. You can use aider, Cursor, Windsurf, or any combination of these tools.
-
-### Option 1: Setting up Aider
-
-1. Install aider if you haven't already:
-
-   ```bash
-   pipx install aider-chat
-   ```
-
-2. Follow the [Configuring Aider](./coding-assistants/configuring-ai-assistants.md#configuring-aider) instructions to set up the RAG Retriever integration.
-
-3. Start a new aider session (the --no-stream flag is optional, but recommended for testing):
-
-   ```bash
-   aider --sonnet --no-stream
-   ```
-
-4. Test the integration with this prompt:
-   ```
-   Show me how to write a class documentation comment using Java 23's new Markdown syntax
-   ```
-
-### Option 2: Setting up Cursor
-
-1. Download and install [Cursor](https://cursor.sh/)
-
-2. Follow the [Configuring Cursor](./coding-assistants/configuring-ai-assistants.md#configuring-cursor) instructions to set up the RAG Retriever integration.
-
-3. Open a new project in Cursor and test the integration with the same prompt:
-   ```
-   Show me how to write a class documentation comment using Java 23's new Markdown syntax
-   ```
-
-### Option 3: Setting up Windsurf
-
-1. Download and install [Windsurf](https://codeium.com/windsurf)
-
-2. Follow the [Configuring Windsurf](./coding-assistants/configuring-ai-assistants.md#configuring-windsurf) instructions to set up the RAG Retriever integration.
-
-3. Open a new project in Windsurf and test the integration with the same prompt:
-   ```
-   Show me how to write a class documentation comment using Java 23's new Markdown syntax
-   ```
-
-## What to Expect
-
-When you run the test prompt, your AI assistant should:
-
-1. Recognize that it needs to verify its knowledge about Java 23's Markdown documentation syntax
-2. Use RAG Retriever to search the documentation you loaded
-3. Find relevant information about the feature
-4. Provide an accurate response based on the retrieved documentation
-
-> **Note about LLM Training Data**: If you're using an LLM trained on data after September 2023, it may already have knowledge of Java 23 features. In this case, you'll need to find documentation about even newer technologies or features to properly test the RAG Retriever integration. Look for announcements, beta features, or release candidates that were published after your LLM's training cutoff date.
-
-If the assistant doesn't automatically use RAG Retriever, you can:
-
-1. Remind it: "Please verify your knowledge about [feature/version] using RAG Retriever before proceeding."
-2. Try a different example using more recent technology features
-3. Ask about a very specific implementation detail that's only documented in your loaded content
+RAG Retriever is designed to work with various AI coding assistants. For detailed instructions on setting up and configuring your preferred AI coding assistant with RAG Retriever, please refer to our [AI Assistant Setup Guide](https://github.com/codingthefuturewithai/ai-assistant-instructions/blob/main/instructions/setup/ai-assistant-setup-guide.md).
 
 ## Next Steps
 
@@ -201,29 +169,48 @@ If the assistant doesn't automatically use RAG Retriever, you can:
 
    ```bash
    # Core options
-   --init                 Initialize user configuration files
-   --fetch URL           Fetch and index web content
-   --max-depth N         Maximum depth for recursive URL loading (default: 2)
-   --query STRING        Search query to find relevant content
-   --limit N             Maximum number of results to return
-   --score-threshold N   Minimum relevance score threshold
-   --truncate            Truncate content in search results
-   --json               Output results in JSON format
-   --clean              Clean (delete) the vector store
-   --verbose            Enable verbose output for troubleshooting
-   --ingest-file PATH   Ingest a local file
-   --ingest-directory PATH  Ingest a directory of files
-   --web-search STRING  Perform DuckDuckGo web search
-   --results N          Number of web search results (default: 5)
-   --confluence         Load from Confluence
-   --space-key STRING   Confluence space key
-   --parent-id STRING   Confluence parent page ID
+   --init                Initialize user configuration files in standard locations
+   --fetch URL          URL to fetch and index
+   --max-depth N        Maximum depth for recursive URL loading (default: 2)
+   --query STRING       Search query to find relevant content
+   --limit N            Maximum number of results to return
+   --score-threshold N  Minimum relevance score threshold
+   --truncate           Truncate content in search results (default: show full content)
+   --json              Output results in JSON format
+   --clean             Clean (delete) the vector store
+   --verbose           Enable verbose output for troubleshooting
+
+   # File ingestion options
+   --ingest-file PATH          Path to a local markdown or text file to ingest
+   --ingest-directory PATH     Path to a directory containing markdown and text files to ingest
+
+   # Image processing options
+   --ingest-image PATH         Path to an image file or URL to analyze and ingest
+   --ingest-image-directory PATH  Path to a directory containing images to analyze and ingest
+
+   # Web search options
+   --web-search STRING     Perform a web search using DuckDuckGo
+   --results N            Number of results to return for web search (default: 5)
+
+   # GitHub options
+   --github-repo URL     URL of the GitHub repository to load
+   --branch STRING       Specific branch to load from the repository
+   --file-extensions EXT [EXT ...]  Specific file extensions to load (e.g., .py .md .js)
+
+   # Confluence options
+   --confluence          Load content from Confluence using configured settings
+   --space-key STRING    Confluence space key to load content from
+   --parent-id STRING    Confluence parent page ID to start loading from
    ```
 
 3. Review the [full configuration guide](./configuration-guide.md) for detailed setup options
 
 ## Troubleshooting
 
-- If queries return no results, make sure you've successfully loaded documentation using `--fetch` or `--ingest` commands
-- If the AI assistant isn't using RAG Retriever, verify you've copied the complete instructions and restarted the assistant
-- For more help, see the [Expected Behavior](./coding-assistants/configuring-ai-assistants.md#expected-behavior) section of the configuration guide
+If you're experiencing issues:
+
+- Verify that content was successfully loaded using `--fetch` or `--ingest` commands
+- Check the [configuration guide](./configuration-guide.md) for proper setup
+- Use the `--verbose` flag for detailed logging output
+- Make sure your OpenAI API key is correctly configured
+- For AI assistant integration issues, refer to the [AI Assistant Setup Guide](https://github.com/codingthefuturewithai/ai-assistant-instructions/blob/main/instructions/setup/ai-assistant-setup-guide.md)

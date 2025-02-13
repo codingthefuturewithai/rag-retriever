@@ -16,6 +16,8 @@ RAG Retriever enhances your AI coding assistant (like aider, Cursor, or Windsurf
 
 This helps prevent hallucinations and ensures your AI assistant follows your team's practices.
 
+> **💡 Note**: For detailed instructions on setting up and configuring your AI coding assistant with RAG Retriever, see our [AI Assistant Setup Guide](https://github.com/codingthefuturewithai/ai-assistant-instructions/blob/main/instructions/setup/ai-assistant-setup-guide.md).
+
 ## How It Works
 
 RAG Retriever processes various types of content:
@@ -70,9 +72,13 @@ RAG Retriever solves these challenges by:
 
 > ### 🚀 Ready to Try It? Let's Go!
 >
-> **Get up and running in 10 minutes!** Head over to our [Getting Started Guide](docs/getting-started.md) for a quick setup that will have your AI assistant using RAG Retriever right away.
+> **Get up and running in 10 minutes!**
 >
-> ⚡ Quick install: `pipx install rag-retriever`
+> 1. Install RAG Retriever: `pipx install rag-retriever`
+> 2. Configure your AI coding assistant by following our [AI Assistant Setup Guide](https://github.com/codingthefuturewithai/ai-assistant-instructions/blob/main/instructions/setup/ai-assistant-setup-guide.md)
+> 3. Start using RAG Retriever with your configured AI assistant!
+>
+> For detailed installation and configuration steps, see our [Getting Started Guide](docs/getting-started.md).
 
 ---
 
