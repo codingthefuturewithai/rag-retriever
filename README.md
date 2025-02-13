@@ -153,48 +153,6 @@ api:
 
 All settings are in `config.yaml`. For detailed information about all configuration options, best practices, and example configurations, see our [Configuration Guide](docs/configuration-guide.md).
 
-Key configuration sections include:
-
-```yaml
-# Vector store settings
-vector_store:
-  embedding_model: "text-embedding-3-large"
-  embedding_dimensions: 3072
-  chunk_size: 1000
-  chunk_overlap: 200
-
-# Local document processing
-document_processing:
-  supported_extensions:
-    - ".md"
-    - ".txt"
-    - ".pdf"
-  pdf_settings:
-    max_file_size_mb: 50
-    extract_images: false
-    ocr_enabled: false
-    languages: ["eng"]
-    strategy: "fast"
-    mode: "elements"
-
-# Search settings
-search:
-  default_limit: 8
-  default_score_threshold: 0.3
-
-# Image processing
-image_processing:
-  vision_model: "gpt-4-vision-preview"
-  vision_max_tokens: 1000
-  supported_formats:
-    - ".png"
-    - ".jpg"
-    - ".jpeg"
-    - ".gif"
-    - ".webp"
-  max_file_size_mb: 20
-```
-
 ### Data Storage
 
 The vector store database is stored at:
