@@ -209,49 +209,58 @@ The project is organized into the following key directories:
 
 ```
 rag_retriever/              # Main package directory
-├── cli.py                  # Command-line interface implementation
-├── main.py                 # Core application logic
-├── config/                 # Configuration management
-├── document_processor/     # Document processing modules
-├── vectorstore/           # Vector storage and embedding
-├── crawling/              # Web crawling functionality
-├── search/                # Search implementation
-└── utils/                 # Utility functions and helpers
+├── main.py                # Core application logic
+├── cli.py                 # Command-line interface implementation
+├── config/               # Configuration management
+├── document_processor/   # Document processing modules
+├── vectorstore/         # Vector storage and embedding
+├── crawling/            # Web crawling functionality
+├── search/              # Search implementation
+└── utils/              # Utility functions and helpers
 
-tests/                     # Test suite
-├── unit/                  # Unit tests
-├── integration/           # Integration tests
-├── data/                 # Test data files
-├── docs/                 # Test documentation
-└── results/              # Test results output
+tests/                    # Test suite
+├── unit/               # Unit tests
+├── integration/        # Integration tests
+├── data/              # Test data files
+├── docs/              # Test documentation
+└── results/           # Test execution results
 
-docs/                     # Project documentation
-├── getting-started.md    # Quick start guide
-├── configuration-guide.md # Configuration details
-├── why-rag-retriever.md  # Project motivation and benefits
-└── coding-assistants/    # AI assistant integration guides
+docs/                    # Project documentation
+├── getting-started.md         # Quick start guide
+├── configuration-guide.md     # Configuration details
+├── why-rag-retriever.md      # Project motivation and benefits
+├── future-features.md        # Planned enhancements
+├── rag-retriever-usage-guide.md  # Usage instructions
+└── images/                   # Documentation images
 
-scripts/                  # Utility scripts
-├── install.py           # Installation helper script
-├── test_pdf_processing.py # PDF processing test script
-└── test_github_loader.py # GitHub loader test script
+scripts/                 # Utility scripts
+├── install.py          # Installation helper script
+├── test_github_loader.py    # GitHub integration tests
+├── test_pdf_processing.py   # PDF processing tests
+├── organize_pdfs.py         # PDF organization utility
+├── run-rag.sh              # Unix/Mac runner script
+└── run-rag.bat             # Windows runner script
 
-tools/                    # Development tools
-└── test_utils/          # Test utilities and helpers
-    ├── verify_categorization.py
-    ├── run_regression_tests.py
-    ├── ingest_samples.sh
-    └── categorize_pdfs.py
+tools/                   # Development tools
+└── test_utils/         # Test utilities
+    ├── verify_categorization.py   # Category verification
+    ├── categorize_pdfs.py        # PDF categorization
+    ├── run_regression_tests.py   # Regression testing
+    └── ingest_samples.sh         # Sample data ingestion
 ```
 
 ### Key Components
 
-- **document_processor/**: Handles different types of documents (PDF, Markdown, text), GitHub repositories, and Confluence content
+- **document_processor/**: Handles processing of various document types (PDF, text, etc.)
 - **vectorstore/**: Manages document embeddings and vector storage using ChromaDB
-- **crawling/**: Implements web page crawling and content extraction
+- **crawling/**: Implements web crawling and content extraction
 - **search/**: Provides semantic search functionality
 - **config/**: Manages application configuration and settings
-- **utils/**: Contains shared utilities and helper functions
+- **utils/**: Contains shared utility functions and helpers
+- **tests/**: Comprehensive test suite with unit and integration tests
+- **docs/**: User and developer documentation
+- **scripts/**: Installation and testing utility scripts
+- **tools/**: Development and testing utilities
 
 ### Supporting Directories
 
@@ -409,135 +418,6 @@ The GitHub loader:
 - Excludes common non-documentation paths (node_modules, **pycache**, etc.)
 - Enforces file size limits for better processing
 
-Configuration options in `config.yaml`:
-
-```yaml
-github_settings:
-  supported_extensions:
-    - ".py"
-    - ".js"
-    - ".md"
-    # ... more extensions
-  excluded_patterns:
-    - "node_modules/**"
-    - "__pycache__/**"
-    - "*.pyc"
-    - ".git/**"
-    # ... more patterns
-  max_file_size_mb: 10
-  default_branch: "main"
-```
-
-## Configuration Options
-
-The configuration file (`config.yaml`) is organized into several sections:
-
-### Vector Store Settings
-
-```yaml
-vector_store:
-  persist_directory: null # Set automatically to OS-specific path
-  embedding_model: "text-embedding-3-large"
-  embedding_dimensions: 3072
-  chunk_size: 1000 # Size of text chunks for indexing
-  chunk_overlap: 200 # Overlap between chunks
-```
-
-### Document Processing Settings
-
-```yaml
-document_processing:
-  # Supported file extensions
-  supported_extensions:
-    - ".md"
-    - ".txt"
-    - ".pdf"
-
-  # Patterns to exclude from processing
-  excluded_patterns:
-    - ".*"
-    - "node_modules/**"
-    - "__pycache__/**"
-    - "*.pyc"
-    - ".git/**"
-
-  # Fallback encodings for text files
-  encoding_fallbacks:
-    - "utf-8"
-    - "latin-1"
-    - "cp1252"
-
-  # PDF processing settings
-  pdf_settings:
-    max_file_size_mb: 50
-    extract_images: false
-    ocr_enabled: false
-    languages: ["eng"]
-    password: null
-    strategy: "fast" # Options: fast, accurate
-    mode: "elements" # Options: single_page, paged, elements
-```
-
-### Image Processing Settings
-
-```yaml
-image_processing:
-  vision_model: "gpt-4o-mini" # OpenAI vision model to use
-  vision_max_tokens: 1000 # Maximum tokens for image analysis
-  supported_formats: # Supported image formats
-    - ".png"
-    - ".jpg"
-    - ".jpeg"
-    - ".gif"
-    - ".webp"
-  max_file_size_mb: 20 # Maximum image file size in MB
-```
-
-### Content Processing Settings
-
-```yaml
-content:
-  chunk_size: 2000
-  chunk_overlap: 400
-  # Text splitting separators (in order of preference)
-  separators:
-    - "\n## " # h2 headers (strongest break)
-    - "\n### " # h3 headers
-    - "\n#### " # h4 headers
-    - "\n- " # bullet points
-    - "\n• " # alternative bullet points
-    - "\n\n" # paragraphs
-    - ". " # sentences (weakest break)
-```
-
-### Search Settings
-
-```yaml
-search:
-  default_limit: 8 # Default number of results
-  default_score_threshold: 0.3 # Minimum relevance score
-```
-
-### Browser Settings (Web Crawling)
-
-```yaml
-browser:
-  wait_time: 2 # Base wait time in seconds
-  viewport:
-    width: 1920
-    height: 1080
-  delays:
-    before_request: [1, 3] # Min and max seconds
-    after_load: [2, 4]
-    after_dynamic: [1, 2]
-  launch_options:
-    headless: true
-    channel: "chrome"
-  context_options:
-    bypass_csp: true
-    java_script_enabled: true
-```
-
 ## Understanding Search Results
 
 Search results include relevance scores based on cosine similarity:
@@ -551,51 +431,6 @@ Search results include relevance scores based on cosine similarity:
   - 0.3 - 0.5: Moderate relevance
   - Below 0.3: Lower relevance
 
-## Features
-
-### Core Features (No Additional Dependencies)
-
-- Web crawling and content extraction
-- Basic PDF text extraction
-- Markdown and text file processing
-- Vector storage and semantic search
-- Configuration management
-- Basic document chunking and processing
-
-### Advanced Features (Optional Dependencies Required)
-
-- **Enhanced PDF Processing** (Requires Poppler):
-  - Complex layout handling
-  - Table extraction
-  - Technical document processing
-  - Better handling of multi-column layouts
-
-All core features work without installing optional dependencies. Install optional dependencies only if you need their specific features.
-
-For more detailed usage instructions and examples, please refer to the [local-document-loading.md](docs/local-document-loading.md) documentation.
-
-## Project Structure
-
-```
-rag-retriever/
-├── rag_retriever/         # Main package directory
-│   ├── config/           # Configuration settings
-│   ├── crawling/         # Web crawling functionality
-│   ├── vectorstore/      # Vector storage operations
-│   ├── search/          # Search functionality
-│   └── utils/           # Utility functions
-```
-
-## Dependencies
-
-Key dependencies include:
-
-- openai: For embeddings generation (text-embedding-3-large model)
-- chromadb: Vector store implementation with cosine similarity
-- selenium: JavaScript content rendering
-- beautifulsoup4: HTML parsing
-- python-dotenv: Environment management
-
 ## Notes
 
 - Uses OpenAI's text-embedding-3-large model for generating embeddings by default
@@ -606,18 +441,6 @@ Key dependencies include:
 - Minimal output by default with `--verbose` flag for troubleshooting
 - Full content display by default with `--truncate` option for brevity
 - ⚠️ Changing chunk size/overlap settings after ingesting content may lead to inconsistent search results. Consider reprocessing existing content if these settings must be changed.
-
-## Future Development
-
-RAG Retriever is under active development with many planned improvements. We maintain a detailed roadmap of future enhancements in our [Future Features](docs/future-features.md) document, which outlines:
-
-- Document lifecycle management improvements
-- Integration with popular documentation platforms
-- Vector store analysis and visualization
-- Search quality enhancements
-- Performance optimizations
-
-While the current version is fully functional for core use cases, there are currently some limitations that will be addressed in future releases. Check the future features document for details on potential upcoming improvements.
 
 ## Contributing
 
@@ -632,40 +455,42 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 Core options:
 
 - `--init`: Initialize user configuration files
-- `--fetch URL`: Fetch and index web content
-- `--max-depth N`: Maximum depth for recursive URL loading (default: 2)
+- `--clean`: Clean (delete) the vector store
+- `--verbose`: Enable verbose output for troubleshooting
+- `--json`: Output results in JSON format
+
+Content Search:
+
 - `--query STRING`: Search query to find relevant content
 - `--limit N`: Maximum number of results to return
 - `--score-threshold N`: Minimum relevance score threshold
-- `--truncate`: Truncate content in search results
-- `--json`: Output results in JSON format
-- `--clean`: Clean (delete) the vector store
-- `--verbose`: Enable verbose output for troubleshooting
-- `--ingest-file PATH`: Ingest a local file
-- `--ingest-directory PATH`: Ingest a directory of files
+- `--truncate`: Truncate content in search results (default: show full content)
+
+Web Content:
+
+- `--fetch URL`: Fetch and index web content
+- `--max-depth N`: Maximum depth for recursive URL loading (default: 2)
 - `--web-search STRING`: Perform DuckDuckGo web search
 - `--results N`: Number of web search results (default: 5)
+
+File Processing:
+
+- `--ingest-file PATH`: Ingest a local file (supports .pdf, .md, .txt)
+- `--ingest-directory PATH`: Ingest a directory of files
+
+Image Processing:
+
+- `--ingest-image PATH`: Path to an image file or URL to analyze and ingest
+- `--ingest-image-directory PATH`: Path to a directory containing images to analyze and ingest
+
+GitHub Integration:
+
+- `--github-repo URL`: URL of the GitHub repository to load
+- `--branch STRING`: Specific branch to load from the repository (default: main)
+- `--file-extensions EXT [EXT ...]`: Specific file extensions to load (e.g., .py .md .js)
+
+Confluence Integration:
+
 - `--confluence`: Load from Confluence
 - `--space-key STRING`: Confluence space key
 - `--parent-id STRING`: Confluence parent page ID
-
-# Web search (using DuckDuckGo)
-
-rag-retriever --web-search "your search query" --results 5
-
-# You can then fetch content from the web search results using --fetch
-
-rag-retriever --fetch https://found-url-from-search.com --max-depth 0
-
-# For example, to learn about new Java features:
-
-rag-retriever --web-search "Java 23 new features guide" --results 3
-rag-retriever --fetch https://www.happycoders.eu/java/java-23-features --max-depth 0
-
-# Load from Confluence (requires configuration in ~/.config/rag-retriever/config.yaml)
-
-rag-retriever --confluence --space-key TEAM
-
-# Clean up vector store if needed
-
-rag-retriever --clean
