@@ -14,7 +14,7 @@ RAG Retriever enhances your AI coding assistant (like aider, Cursor, or Windsurf
 - Visual content like architecture diagrams, UI mockups, and technical illustrations
 - Any other knowledge that isn't part of the LLM's training data
 
-This helps prevent hallucinations and ensures your AI assistant follows your team's practices.
+This can help provide new knowledge to your AI tools, prevent hallucinations and ensure your AI assistant follows your team's practices.
 
 > **💡 Note**: For detailed instructions on setting up and configuring your AI coding assistant with RAG Retriever, see our [AI Assistant Setup Guide](https://github.com/codingthefuturewithai/ai-assistant-instructions/blob/main/instructions/setup/ai-assistant-setup-guide.md).
 
