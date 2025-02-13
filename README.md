@@ -25,6 +25,7 @@ RAG Retriever processes various types of content:
 - Text documents and PDFs are chunked and embedded for semantic search
 - Images are analyzed using AI vision models to generate detailed textual descriptions
 - Web pages are crawled and their content is extracted
+- GitHub repositories are indexed with their code and documentation
 - Confluence spaces are indexed with their full content hierarchy
 
 When you search, the system finds semantically relevant content across all sources. For images, instead of returning the images themselves, it returns their AI-generated descriptions, making visual content searchable alongside your documentation.
