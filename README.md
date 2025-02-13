@@ -22,7 +22,7 @@ This helps prevent hallucinations and ensures your AI assistant follows your tea
 
 RAG Retriever processes various types of content:
 
-- Text documents are chunked and embedded for semantic search
+- Text documents and PDFs are chunked and embedded for semantic search
 - Images are analyzed using AI vision models to generate detailed textual descriptions
 - Web pages are crawled and their content is extracted
 - Confluence spaces are indexed with their full content hierarchy
@@ -84,36 +84,10 @@ RAG Retriever solves these challenges by:
 
 ### Optional Dependencies
 
-The following dependencies are only required for specific advanced features:
-
-#### OCR Support (Optional)
-
-Required only for:
-
-- Processing scanned documents
-- Extracting text from images in PDFs
-- Converting images to searchable text
+The following dependencies are only required for specific advanced PDF processing features:
 
 **MacOS**: `brew install tesseract`
 **Windows**: Install [Tesseract](https://github.com/UB-Mannheim/tesseract/wiki)
-
-#### Advanced PDF Processing (Optional)
-
-Required only for:
-
-- Complex PDF layouts
-- Better table extraction
-- Technical document processing
-
-**MacOS**: `brew install poppler`
-**Windows**: Install [Poppler](https://github.com/oschwartz10612/poppler-windows/releases/)
-
-The core functionality works without these dependencies, including:
-
-- Basic PDF text extraction
-- Markdown and text file processing
-- Web content crawling
-- Vector storage and search
 
 ### System Requirements
 
@@ -630,12 +604,6 @@ Search results include relevance scores based on cosine similarity:
 - Basic document chunking and processing
 
 ### Advanced Features (Optional Dependencies Required)
-
-- **OCR Processing** (Requires Tesseract):
-
-  - Scanned document processing
-  - Image text extraction
-  - PDF image text extraction
 
 - **Enhanced PDF Processing** (Requires Poppler):
   - Complex layout handling
