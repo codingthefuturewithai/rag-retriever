@@ -27,7 +27,7 @@ from rag_retriever.vectorstore.store import clean_vectorstore, VectorStore
 from rag_retriever.document_processor import (
     LocalDocumentLoader,
     ImageLoader,
-    ConfluenceLoader,
+    ConfluenceDocumentLoader,
     GitHubLoader,
 )
 from rag_retriever.utils.config import initialize_user_files, config
@@ -277,13 +277,11 @@ def main():
     # Handle Confluence content loading
     if args.confluence:
         try:
-            loader = ConfluenceLoader(
-                config=config._config,
-                space_key=args.space_key,
-                parent_id=args.parent_id,
-            )
+            loader = ConfluenceDocumentLoader(config=config._config)
             store = VectorStore()
-            documents = loader.load_content()
+            documents = loader.load_pages(
+                space_key=args.space_key, parent_id=args.parent_id
+            )
             store.add_documents(documents)
             logger.info("Successfully loaded Confluence content")
             sys.exit(0)
