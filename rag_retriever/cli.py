@@ -192,6 +192,45 @@ def confirm_max_depth(depth: int) -> bool:
     return response in ["y", "yes"]
 
 
+def handle_mcp_requests():
+    """Handle MCP requests from stdin."""
+    server = MCPServer()
+
+    while True:
+        try:
+            # Read request from stdin
+            request = json.loads(input())
+
+            # Extract operation and parameters
+            operation = request.get("operation")
+            params = request.get("parameters", {})
+
+            # Handle the request
+            try:
+                result = server.handle_request(operation, **params)
+                print(json.dumps(result))
+                sys.stdout.flush()
+            except Exception as e:
+                error_response = {
+                    "content": [{"type": "error", "text": str(e)}],
+                    "isError": True,
+                }
+                print(json.dumps(error_response))
+                sys.stdout.flush()
+
+        except EOFError:
+            break
+        except json.JSONDecodeError as e:
+            error_response = {
+                "content": [
+                    {"type": "error", "text": f"Invalid JSON request: {str(e)}"}
+                ],
+                "isError": True,
+            }
+            print(json.dumps(error_response))
+            sys.stdout.flush()
+
+
 def main():
     """Main entry point."""
     parser = create_parser()
@@ -206,11 +245,11 @@ def main():
 
     if args.init:
         initialize_user_files()
-        sys.exit(0)
+        return
 
     if args.clean:
         clean_vectorstore()
-        sys.exit(0)
+        return
 
     if args.web_search:
         results = web_search(args.web_search, args.results)
@@ -218,7 +257,7 @@ def main():
             print(f"\n{i}. {result.title}")
             print(f"   URL: {result.url}")
             print(f"   {result.snippet}")
-        sys.exit(0)
+        return
 
     # Handle image ingestion
     if args.ingest_image or args.ingest_image_directory:
@@ -233,7 +272,7 @@ def main():
                     documents = [document]
                 else:
                     logger.error("Failed to load image")
-                    sys.exit(1)
+                    return 1
             else:
                 logger.info(
                     f"Loading images from directory: {args.ingest_image_directory}"
@@ -241,15 +280,15 @@ def main():
                 documents = image_loader.load_directory(args.ingest_image_directory)
                 if not documents:
                     logger.error("No valid images found in directory")
-                    sys.exit(1)
+                    return 1
 
             store.add_documents(documents)
             logger.info(f"Successfully ingested {len(documents)} image(s)")
-            sys.exit(0)
+            return 0
 
         except Exception as e:
             logger.error(f"Error ingesting images: {str(e)}")
-            sys.exit(1)
+            return 1
 
     # Handle local document ingestion
     if args.ingest_file or args.ingest_directory:
@@ -268,11 +307,11 @@ def main():
 
             store.add_documents(documents)
             logger.info("Successfully ingested local documents")
-            sys.exit(0)
+            return 0
 
         except Exception as e:
             logger.error(f"Error ingesting documents: {str(e)}")
-            sys.exit(1)
+            return 1
 
     # Handle Confluence content loading
     if args.confluence:
@@ -284,11 +323,11 @@ def main():
             )
             store.add_documents(documents)
             logger.info("Successfully loaded Confluence content")
-            sys.exit(0)
+            return 0
 
         except Exception as e:
             logger.error(f"Error loading Confluence content: {str(e)}")
-            sys.exit(1)
+            return 1
 
     # Handle GitHub repository loading
     if args.github_repo:
@@ -312,11 +351,11 @@ def main():
             logger.info(
                 f"Successfully loaded {len(documents)} documents from repository"
             )
-            sys.exit(0)
+            return 0
 
         except Exception as e:
             logger.error(f"Error loading GitHub repository: {str(e)}")
-            sys.exit(1)
+            return 1
 
     try:
         if args.fetch:
@@ -346,8 +385,6 @@ def main():
     except Exception as e:
         logger.error("Error: %s", str(e))
         return 1
-
-    return 0
 
 
 if __name__ == "__main__":

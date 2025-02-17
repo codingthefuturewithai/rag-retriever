@@ -1,6 +1,6 @@
 # RAG Retriever
 
-A Python application that loads and processes web pages, local documents, images, GitHub repositories, and Confluence spaces, indexing their content using embeddings, and enabling semantic search queries. Built with a modular architecture using OpenAI embeddings and Chroma vector store.
+A Python application that loads and processes web pages, local documents, images, GitHub repositories, and Confluence spaces, indexing their content using embeddings, and enabling semantic search queries. Built with a modular architecture using OpenAI embeddings and Chroma vector store. Now featuring support for Anthropic's Model Context Protocol (MCP), enabling direct integration with AI assistants like Cursor and Claude Desktop.
 
 ## What It Does
 
@@ -203,6 +203,85 @@ pip install -e .
 scripts\run-rag.bat --init   # Windows
 ```
 
+## MCP Integration (Experimental)
+
+RAG Retriever provides support for Anthropic's Model Context Protocol (MCP), enabling AI assistants to directly leverage its retrieval capabilities. The MCP integration currently offers a focused set of core features, with ongoing development to expand the available functionality.
+
+### Currently Supported MCP Features
+
+**Search Operations**
+
+- Web search using DuckDuckGo
+
+  - Customizable number of results
+  - Results include titles, URLs, and snippets
+  - Markdown-formatted output
+
+- Vector store search
+  - Semantic search across indexed content
+  - Configurable result limits
+  - Score threshold filtering
+  - Full or partial content retrieval
+  - Source attribution
+  - Markdown-formatted output with relevance scores
+
+### Current MCP Limitations
+
+- Limited to core search operations
+- Configuration changes must be done via CLI
+- Document ingestion and processing only available via CLI
+- Vector store management only available via CLI
+
+### Cursor Integration
+
+1. First install RAG Retriever following the installation instructions above.
+
+2. Get the full path to the MCP server:
+
+```bash
+which mcp-rag-retriever
+```
+
+This will output something like `/Users/<username>/.local/bin/mcp-rag-retriever`
+
+3. Configure Cursor:
+   - Open Cursor Settings > Features > MCP Servers
+   - Click "+ Add New MCP Server"
+   - Configure the server:
+     - Name: rag-retriever
+     - Type: stdio
+     - Command: [paste the full path from step 2]
+
+For more details about MCP configuration in Cursor, see the [Cursor MCP documentation](https://docs.cursor.com/context/model-context-protocol).
+
+### Claude Desktop Integration
+
+1. First install RAG Retriever following the installation instructions above.
+
+2. Get the full path to the MCP server:
+
+```bash
+which mcp-rag-retriever
+```
+
+This will output something like `/Users/<username>/.local/bin/mcp-rag-retriever`
+
+3. Configure Claude Desktop:
+   - Open Claude menu > Settings > Developer > Edit Config
+   - Add RAG Retriever to the MCP servers configuration:
+
+```json
+{
+  "mcpServers": {
+    "rag-retriever": {
+      "command": "/Users/<username>/.local/bin/mcp-rag-retriever"
+    }
+  }
+}
+```
+
+For more details, see the [Claude Desktop MCP documentation](https://modelcontextprotocol.io/quickstart/user#for-claude-desktop-users).
+
 ## Project Structure
 
 The project is organized into the following key directories:
@@ -216,6 +295,7 @@ rag_retriever/              # Main package directory
 ├── vectorstore/         # Vector storage and embedding
 ├── crawling/            # Web crawling functionality
 ├── search/              # Search implementation
+├── mcp/                # Model Context Protocol integration
 └── utils/              # Utility functions and helpers
 
 tests/                    # Test suite

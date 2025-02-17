@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "rag-retriever"
-version = "0.2.1"
+version = "0.2.2"
 description = "A tool for crawling, indexing, and semantically searching web content with RAG capabilities"
 readme = "README.md"
 authors = [
@@ -45,7 +45,12 @@ dependencies = [
     "pytesseract>=0.3.10",
     "atlassian-python-api>=3.41.4",
     "markdownify>=0.11.6",
-    "gitpython>=3.1.42"
+    "gitpython>=3.1.42",
+    "mcp>=1.0.0",
+    "mcp[cli]>=1.0.0",
+    "anyio>=4.5",
+    "starlette>=0.36.0",
+    "uvicorn>=0.27.0"
 ]
 
 [project.optional-dependencies]
@@ -71,6 +76,7 @@ rag_retriever = ["config/*.yaml", "config/.env.example"]
 
 [project.scripts]
 rag-retriever = "rag_retriever.cli:main"
+mcp-rag-retriever = "rag_retriever.mcp:main"
 post-install = "scripts.install:install_browsers"
 
 [tool.coverage.run]

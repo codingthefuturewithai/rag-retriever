@@ -2,8 +2,9 @@ import logging
 import pytest
 from rag_retriever.vectorstore.store import VectorStore
 from langchain_core.documents import Document
-from unittest.mock import patch
-from langchain_chroma import Chroma  # Ensure this is the correct import
+from unittest.mock import patch, MagicMock
+from langchain_chroma import Chroma
+import numpy as np
 
 logger = logging.getLogger(__name__)
 
@@ -15,27 +16,54 @@ def setup_logging():
 
 
 @pytest.fixture
-def in_memory_vectorstore():
-    """Fixture to create an in-memory VectorStore instance."""
-    store = VectorStore()
+def mock_embeddings():
+    """Create a mock embeddings instance that returns deterministic but different embeddings."""
+    mock = MagicMock()
 
-    # Patch _get_or_create_db to force an in-memory ChromaDB
-    def mock_get_or_create_db(documents=None):
-        if not hasattr(store, "_db") or store._db is None:
-            if documents is None:
-                documents = []
-            store._db = Chroma.from_documents(
-                documents=documents,
-                embedding=store.embeddings,
-                persist_directory=None,  # Forces in-memory mode
-                collection_metadata={"hnsw:space": "cosine"},
-            )
-        return store._db
+    def get_embedding_for_text(text):
+        # Use text length as a seed for reproducibility
+        np.random.seed(len(text))
+        return np.random.rand(3072).tolist()
 
-    store._get_or_create_db = (
-        mock_get_or_create_db  # Replace method with in-memory version
-    )
-    return store
+    def embed_documents(texts):
+        return [get_embedding_for_text(text) for text in texts]
+
+    def embed_query(text):
+        return get_embedding_for_text(text)
+
+    mock.embed_documents.side_effect = embed_documents
+    mock.embed_query.side_effect = embed_query
+    return mock
+
+
+@pytest.fixture
+def in_memory_vectorstore(mock_embeddings, request):
+    """Fixture to create an in-memory VectorStore instance with mocked embeddings."""
+    with patch(
+        "rag_retriever.vectorstore.store.OpenAIEmbeddings", return_value=mock_embeddings
+    ):
+        store = VectorStore()
+
+        # Create a unique collection name for this test
+        collection_name = f"test_collection_{request.node.name}"
+
+        # Patch _get_or_create_db to force in-memory ChromaDB with unique collection
+        def mock_get_or_create_db(documents=None):
+            if not hasattr(store, "_db") or store._db is None:
+                # Initialize an empty in-memory Chroma database
+                store._db = Chroma(
+                    embedding_function=store.embeddings,
+                    collection_name=collection_name,
+                    persist_directory=None,  # Forces in-memory mode
+                    collection_metadata={"hnsw:space": "cosine"},
+                )
+            if documents is not None:
+                # Add documents to the DB
+                store._db.add_documents(documents)
+            return store._db
+
+        store._get_or_create_db = mock_get_or_create_db
+        return store
 
 
 def test_add_and_search_documents(in_memory_vectorstore):
