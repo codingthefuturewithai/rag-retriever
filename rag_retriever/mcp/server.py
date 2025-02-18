@@ -12,6 +12,8 @@ import asyncio
 import anyio
 import click
 from pathlib import Path
+from pydantic import Field
+import os
 
 from rag_retriever.main import search_content, process_url
 from rag_retriever.vectorstore.store import VectorStore
@@ -19,10 +21,14 @@ from rag_retriever.search import web_search as search_module
 from rag_retriever.search.searcher import Searcher
 from rag_retriever.utils.config import config
 
+# Configure logging based on environment
+log_level = os.getenv("MCP_LOG_LEVEL", "INFO").upper()
+
 # Configure logging to write to stderr instead of a file
 logging.basicConfig(
     stream=sys.stderr,
-    level=logging.DEBUG,
+    force=True,  # Force override any existing handlers
+    level=log_level,
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
 )
 
@@ -38,15 +44,19 @@ for handler in root_logger.handlers[:]:
 
 # Add stderr handler to root logger
 stderr_handler = logging.StreamHandler(sys.stderr)
-stderr_handler.setLevel(logging.DEBUG)
+stderr_handler.setLevel(log_level)
 formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 stderr_handler.setFormatter(formatter)
 root_logger.addHandler(stderr_handler)
 
-# Enable debug logging for all relevant loggers
-logger.setLevel(logging.DEBUG)
-mcp_logger.setLevel(logging.DEBUG)
-uvicorn_logger.setLevel(logging.DEBUG)
+# Set log levels based on environment
+logger.setLevel(log_level)
+mcp_logger.setLevel(log_level)
+uvicorn_logger.setLevel(log_level)
+root_logger.setLevel(log_level)
+
+if log_level == "DEBUG":
+    logger.debug("RAG Retriever MCP Server starting with debug logging enabled")
 
 
 def create_mcp_server() -> FastMCP:
@@ -74,7 +84,10 @@ def register_tools(mcp_server: FastMCP) -> None:
 
     @mcp_server.tool()
     def web_search(
-        query: str, num_results: Optional[int] = 5
+        query: str = Field(description="Search query string"),
+        num_results: Optional[int] = Field(
+            description="Number of results to return", default=5, ge=1
+        ),
     ) -> list[types.TextContent]:
         """Perform a web search using DuckDuckGo.
 
@@ -83,12 +96,15 @@ def register_tools(mcp_server: FastMCP) -> None:
             num_results: Number of results to return (default: 5)
         """
         try:
+            # Ensure num_results has a value
+            actual_num_results = num_results if num_results is not None else 5
+
             logger.debug(
-                f"Executing web search with query: {query}, num_results: {num_results}"
+                f"Executing web search with query: {query}, num_results: {actual_num_results}"
             )
 
             # Get the raw search results from the imported module
-            raw_results = search_module.web_search(query, num_results)
+            raw_results = search_module.web_search(query, actual_num_results)
 
             if not raw_results:
                 return [types.TextContent(type="text", text="No results found.")]
@@ -108,39 +124,68 @@ def register_tools(mcp_server: FastMCP) -> None:
 
     @mcp_server.tool()
     async def query(
-        query_text: str,
-        limit: Optional[int] = None,
-        score_threshold: Optional[float] = None,
-        full_content: bool = True,
+        query_text: str = Field(description="The search query text"),
+        limit: Optional[int] = Field(
+            description="Maximum number of results to return", default=None, ge=1
+        ),
+        score_threshold: Optional[float] = Field(
+            description="Minimum score threshold for results",
+            default=None,
+            ge=0.0,
+            le=1.0,
+        ),
+        full_content: bool = Field(
+            description="Whether to return full content", default=True
+        ),
     ) -> list[types.TextContent]:
         """Search the vector store for relevant content."""
         try:
-            logger.debug(
-                f"Executing query tool with: query='{query_text}', limit={limit}, "
-                f"score_threshold={score_threshold}, full_content={full_content}"
+            # Direct prints to stderr to bypass logging
+            print("DIRECT PRINT: Query function entered", file=sys.stderr, flush=True)
+            print(
+                f"DIRECT PRINT: Arguments received - query_text: {query_text}, limit: {limit}",
+                file=sys.stderr,
+                flush=True,
             )
 
-            # Capture stdout to get the JSON output
+            logger.info("QUERY FUNCTION CALLED - INFO LEVEL")
+            logger.debug("QUERY FUNCTION CALLED - DEBUG LEVEL")
+
+            # Ensure proper handling of optional parameters
+            actual_limit = limit if limit is not None else None
+            actual_score_threshold = (
+                score_threshold if score_threshold is not None else None
+            )
+
+            logger.debug(
+                f"Query parameters: query='{query_text}', limit={actual_limit}, "
+                f"score_threshold={actual_score_threshold}, full_content={full_content}"
+            )
+
+            # Capture stdout using StringIO
             import io
-            import sys
 
             stdout = io.StringIO()
+            original_stdout = sys.stdout
             sys.stdout = stdout
 
-            # Call search_content which prints JSON to stdout
-            status = search_content(
-                query_text,
-                limit=limit,
-                score_threshold=score_threshold,
-                full_content=full_content,
-                json_output=True,
-                verbose=True,
-            )
-
-            # Restore stdout and get the captured output
-            sys.stdout = sys.__stdout__
-            output = stdout.getvalue()
-            logger.debug(f"Raw output from search_content: {output}")
+            try:
+                logger.debug("Calling search_content function")
+                # Call search_content which prints JSON to stdout
+                status = search_content(
+                    query_text,
+                    limit=actual_limit,
+                    score_threshold=actual_score_threshold,
+                    full_content=full_content,
+                    json_output=True,
+                    verbose=True,
+                )
+                logger.debug("search_content function completed")
+            finally:
+                # Restore stdout and get the captured output
+                sys.stdout = original_stdout
+                output = stdout.getvalue()
+                logger.debug(f"Raw search output: {output}")
 
             # If no results found in the output message
             if "No results found matching the query" in output:
