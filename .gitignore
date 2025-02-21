@@ -68,3 +68,6 @@ chromedriver*
 rag_retriever.egg-info/
 tests/results/
 .aider.tags.cache.v3/
+
+# UV package manager
+uv.lock
