@@ -329,22 +329,17 @@ def run_sse_server(port: int = 8000) -> None:
 
     # Create a new server instance for SSE
     sse_server = create_mcp_server()
+    sse_server.settings.port = port
 
-    # Create Starlette app with SSE routes
-    app = Starlette(
-        debug=True,
-        routes=[
-            Route("/sse", endpoint=sse_server.handle_sse_request),
-            Mount("/messages/", app=sse_server.handle_sse_messages),
-        ],
-    )
-
-    # Run the server
-    uvicorn.run(app, host="0.0.0.0", port=port)
+    # Run the server in SSE mode
+    asyncio.run(sse_server.run_sse_async())
 
 
 # Create a server instance that can be imported by the MCP CLI
 server = create_mcp_server()
+
+# Create stdio server for MCP clients
+app = stdio_server(server)
 
 # Only define these if running the file directly
 if __name__ == "__main__":
@@ -353,12 +348,6 @@ if __name__ == "__main__":
     @click.option("--port", default=3001, help="Port to listen on for SSE")
     def main(port: int) -> None:
         """Run the server directly in SSE mode."""
-        logger.info(f"Starting SSE server on port {port}")
-
-        # Update the server's port setting
-        server.settings.port = port
-
-        # Run the server in SSE mode using FastMCP's built-in support
-        asyncio.run(server.run_sse_async())
+        run_sse_server(port)
 
     main()
