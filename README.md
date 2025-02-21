@@ -225,12 +225,41 @@ RAG Retriever provides support for Anthropic's Model Context Protocol (MCP), ena
   - Source attribution
   - Markdown-formatted output with relevance scores
 
-### Current MCP Limitations
+**Content Processing**
 
-- Limited to core search operations
-- Configuration changes must be done via CLI
-- Document ingestion and processing only available via CLI
-- Vector store management only available via CLI
+- URL content processing
+  - Fetch and ingest web content
+  - Automatically extract and clean text content
+  - Store processed content in vector store for semantic search
+  - Support for recursive crawling with depth control
+
+### Server Modes
+
+RAG Retriever's MCP server supports multiple operation modes:
+
+1. **stdio Mode** (Default)
+
+   - Used by Cursor and Claude Desktop integrations
+   - Communicates via standard input/output
+   - Configure as shown in the integration guides below
+
+2. **SSE Mode**
+
+   - Runs as a web server with Server-Sent Events
+   - Useful for web-based integrations or development
+   - Start with:
+
+   ```bash
+   python rag_retriever/mcp/server.py --port 3001
+   ```
+
+3. **Debug Mode**
+   - Uses the MCP Inspector for testing and development
+   - Helpful for debugging tool implementations
+   - Start with:
+   ```bash
+   mcp dev rag_retriever/mcp/server.py
+   ```
 
 ### Cursor Integration
 

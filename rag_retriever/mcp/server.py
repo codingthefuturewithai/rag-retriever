@@ -14,6 +14,9 @@ import click
 from pathlib import Path
 from pydantic import Field
 import os
+from starlette.applications import Starlette
+from starlette.routing import Mount, Route
+import uvicorn
 
 from rag_retriever.main import search_content, process_url
 from rag_retriever.vectorstore.store import VectorStore
@@ -84,7 +87,7 @@ def register_tools(mcp_server: FastMCP) -> None:
 
     @mcp_server.tool()
     def web_search(
-        query: str = Field(description="Search query string"),
+        search_string: str = Field(description="Search query string"),
         num_results: Optional[int] = Field(
             description="Number of results to return", default=5, ge=1
         ),
@@ -92,7 +95,7 @@ def register_tools(mcp_server: FastMCP) -> None:
         """Perform a web search using DuckDuckGo.
 
         Args:
-            query: Search query string
+            search_string: Search query string
             num_results: Number of results to return (default: 5)
         """
         try:
@@ -100,11 +103,11 @@ def register_tools(mcp_server: FastMCP) -> None:
             actual_num_results = num_results if num_results is not None else 5
 
             logger.debug(
-                f"Executing web search with query: {query}, num_results: {actual_num_results}"
+                f"Executing web search with query: {search_string}, num_results: {actual_num_results}"
             )
 
             # Get the raw search results from the imported module
-            raw_results = search_module.web_search(query, actual_num_results)
+            raw_results = search_module.web_search(search_string, actual_num_results)
 
             if not raw_results:
                 return [types.TextContent(type="text", text="No results found.")]
@@ -250,34 +253,112 @@ def register_tools(mcp_server: FastMCP) -> None:
             logger.error(f"Error in query: {e}", exc_info=True)
             return [types.TextContent(type="text", text=f"Error: {str(e)}")]
 
+    @mcp_server.tool()
+    async def fetch_url(
+        url: str = Field(description="URL to fetch and process"),
+        max_depth: Optional[int] = Field(
+            description="Maximum depth for recursive URL loading", default=2, ge=0
+        ),
+    ) -> list[types.TextContent]:
+        """Fetch and process content from a URL, optionally crawling linked pages.
+
+        Uses the existing RAG Retriever web scraping functionality to fetch, process,
+        and store content in the vector store.
+        """
+        try:
+            logger.debug(f"Processing URL: {url} with max_depth: {max_depth}")
+
+            # Use exact same pattern as CLI's --fetch command
+            actual_max_depth = max_depth if max_depth is not None else 2
+
+            # Capture stdout to get progress information
+            import io
+            import sys
+
+            stdout = io.StringIO()
+            original_stdout = sys.stdout
+            sys.stdout = stdout
+
+            try:
+                # Call process_url with same parameters as CLI
+                status = await asyncio.to_thread(
+                    process_url,
+                    url,  # First positional arg like CLI
+                    max_depth=actual_max_depth,  # Named arg like CLI
+                    verbose=True,  # Always enable verbose for MCP feedback
+                )
+            finally:
+                # Restore stdout and get the captured output
+                sys.stdout = original_stdout
+                output = stdout.getvalue()
+                logger.debug(f"Captured output: {output}")
+
+            if status == 0:  # Success status from process_url
+                # Format the output as markdown, preserving progress information
+                progress_text = (
+                    output.strip() if output.strip() else "No progress output captured"
+                )
+                return [
+                    types.TextContent(
+                        type="text",
+                        text=f"# URL Processing Complete\n\n"
+                        f"Successfully processed URL: {url}\n\n"
+                        f"## Progress Details\n\n```\n{progress_text}\n```\n\n"
+                        f"Content has been stored in the vector store and is ready for querying.",
+                    )
+                ]
+            else:
+                return [
+                    types.TextContent(
+                        type="text",
+                        text=f"Failed to process URL: {url} (status: {status})\n\n"
+                        f"## Debug Output\n\n```\n{output}\n```",
+                    )
+                ]
+
+        except Exception as e:
+            logger.error(f"Error processing URL: {e}", exc_info=True)
+            return [
+                types.TextContent(type="text", text=f"Error processing URL: {str(e)}")
+            ]
+
+
+def run_sse_server(port: int = 8000) -> None:
+    """Run the server in SSE mode using FastMCP's built-in SSE support."""
+    logger.info(f"Starting SSE server on port {port}")
+
+    # Create a new server instance for SSE
+    sse_server = create_mcp_server()
+
+    # Create Starlette app with SSE routes
+    app = Starlette(
+        debug=True,
+        routes=[
+            Route("/sse", endpoint=sse_server.handle_sse_request),
+            Mount("/messages/", app=sse_server.handle_sse_messages),
+        ],
+    )
+
+    # Run the server
+    uvicorn.run(app, host="0.0.0.0", port=port)
+
 
 # Create a server instance that can be imported by the MCP CLI
 server = create_mcp_server()
 
-
-@click.command()
-@click.option("--port", default=8000, help="Port to listen on for SSE")
-@click.option(
-    "--transport",
-    type=click.Choice(["stdio", "sse"]),
-    default="stdio",
-    help="Transport type",
-)
-def main(port: int, transport: str) -> int:
-    """Entry point for the MCP server"""
-    try:
-        if transport == "stdio":
-            asyncio.run(server.run_stdio_async())
-        else:
-            asyncio.run(server.run_sse_async())
-        return 0
-    except KeyboardInterrupt:
-        logger.info("Server stopped by user")
-        return 0
-    except Exception as e:
-        logger.error(f"Failed to start MCP server: {e}", exc_info=True)
-        return 1
-
-
+# Only define these if running the file directly
 if __name__ == "__main__":
-    sys.exit(main())
+
+    @click.command()
+    @click.option("--port", default=3001, help="Port to listen on for SSE")
+    def main(port: int) -> None:
+        """Run the server directly in SSE mode."""
+        logger.info(f"Starting SSE server on port {port}")
+
+        # Update the server's port setting
+        server.settings.port = port
+
+        # Run the server in SSE mode using FastMCP's built-in support
+        asyncio.run(server.run_sse_async())
+
+    main()

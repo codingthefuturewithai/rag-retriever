@@ -105,28 +105,32 @@ class VectorStore:
                 self._db.add_documents(documents)
             return self._db
 
-        # Create new DB with documents
-        if documents is None:
-            logger.debug("No existing database found and no documents provided")
-            raise ValueError(
-                "No existing vector store found and no documents provided to create one."
-            )
-
-        logger.debug("Creating new database with %d documents", len(documents))
-        self._db = Chroma.from_documents(
-            documents=documents,
-            embedding=self.embeddings,
+        # Create new DB (empty or with documents)
+        logger.debug(
+            "Creating new %s database",
+            (
+                "empty"
+                if documents is None
+                else f"database with {len(documents)} documents"
+            ),
+        )
+        self._db = Chroma(
             persist_directory=self.persist_directory,
+            embedding_function=self.embeddings,
             collection_metadata={"hnsw:space": "cosine"},
         )
+        if documents is not None:
+            self._db.add_documents(documents)
         return self._db
 
     @retry(
-        stop=stop_after_attempt(lambda: config.vector_store["batch_processing"]["max_retries"]),
+        stop=stop_after_attempt(
+            lambda: config.vector_store["batch_processing"]["max_retries"]
+        ),
         wait=wait_exponential(
             multiplier=lambda: config.vector_store["batch_processing"]["retry_delay"],
             min=1,
-            max=60
+            max=60,
         ),
         retry=lambda e: "rate limit" in str(e).lower() or "quota" in str(e).lower(),
         before_sleep=lambda retry_state: logger.info(
@@ -138,8 +142,8 @@ class VectorStore:
             retry_state.attempt_number + 1,
             config.vector_store["batch_processing"]["max_retries"],
             retry_state.next_action.sleep,
-            config.vector_store["batch_processing"]["retry_delay"]
-        )
+            config.vector_store["batch_processing"]["retry_delay"],
+        ),
     )
     def _process_batch(self, batch: List[Document]) -> bool:
         """Process a single batch of documents with retry logic."""
@@ -175,7 +179,7 @@ class VectorStore:
 
             total_content_size = sum(len(doc.page_content) for doc in documents)
             total_chunk_size = sum(len(split.page_content) for split in splits)
-            
+
             logger.info(
                 "Processing %d documents (total size: %d chars) into %d chunks (total size: %d chars)",
                 len(documents),
@@ -188,21 +192,21 @@ class VectorStore:
             batch_settings = config.vector_store["batch_processing"]
             batch_size = batch_settings["batch_size"]
             delay = batch_settings["delay_between_batches"]
-            
+
             successful_chunks = 0
             total_batches = (len(splits) + batch_size - 1) // batch_size
-            
+
             for i in range(0, len(splits), batch_size):
-                batch = splits[i:i + batch_size]
+                batch = splits[i : i + batch_size]
                 batch_num = (i // batch_size) + 1
-                
+
                 logger.info(
                     "Processing batch %d/%d (%d chunks)",
                     batch_num,
                     total_batches,
-                    len(batch)
+                    len(batch),
                 )
-                
+
                 if self._process_batch(batch):
                     successful_chunks += len(batch)
                     logger.info(
@@ -210,7 +214,7 @@ class VectorStore:
                         batch_num,
                         total_batches,
                         successful_chunks,
-                        len(splits)
+                        len(splits),
                     )
                 else:
                     logger.error(
@@ -218,27 +222,24 @@ class VectorStore:
                         batch_num,
                         total_batches,
                         successful_chunks,
-                        len(splits)
+                        len(splits),
                     )
-                
+
                 if i + batch_size < len(splits):  # If not the last batch
                     logger.debug("Waiting %.1f seconds before next batch", delay)
                     time.sleep(delay)
-            
+
             if successful_chunks < len(splits):
                 logger.warning(
                     "Partial success: %d/%d chunks successfully processed",
                     successful_chunks,
-                    len(splits)
+                    len(splits),
                 )
             else:
-                logger.info(
-                    "All %d chunks successfully processed",
-                    successful_chunks
-                )
-            
+                logger.info("All %d chunks successfully processed", successful_chunks)
+
             return successful_chunks
-            
+
         except Exception as e:
             logger.error("Error in document processing: %s", str(e))
             raise
