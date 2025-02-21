@@ -271,53 +271,50 @@ def register_tools(mcp_server: FastMCP) -> None:
             # Use exact same pattern as CLI's --fetch command
             actual_max_depth = max_depth if max_depth is not None else 2
 
-            # Capture stdout to get progress information
-            import io
-            import sys
+            # Create a background task to handle the processing
+            async def process_url_task():
+                try:
+                    # Capture stdout to get progress information
+                    import io
+                    import sys
 
-            stdout = io.StringIO()
-            original_stdout = sys.stdout
-            sys.stdout = stdout
+                    stdout = io.StringIO()
+                    original_stdout = sys.stdout
+                    sys.stdout = stdout
 
-            try:
-                # Call process_url with same parameters as CLI
-                status = await asyncio.to_thread(
-                    process_url,
-                    url,  # First positional arg like CLI
-                    max_depth=actual_max_depth,  # Named arg like CLI
-                    verbose=True,  # Always enable verbose for MCP feedback
+                    try:
+                        # Call process_url with same parameters as CLI
+                        status = await asyncio.to_thread(
+                            process_url,
+                            url,  # First positional arg like CLI
+                            max_depth=actual_max_depth,  # Named arg like CLI
+                            verbose=True,  # Always enable verbose for MCP feedback
+                        )
+                    finally:
+                        # Restore stdout and get the captured output
+                        sys.stdout = original_stdout
+                        output = stdout.getvalue()
+                        logger.debug(f"Captured output: {output}")
+
+                except Exception as e:
+                    logger.error(f"Error in background task: {e}", exc_info=True)
+
+            # Start the background task
+            asyncio.create_task(process_url_task())
+
+            # Return immediately with a status message
+            return [
+                types.TextContent(
+                    type="text",
+                    text=f"# URL Processing Started\n\n"
+                    f"Started processing URL: {url} with max_depth={actual_max_depth}\n\n"
+                    f"The processing will continue in the background. You can proceed with other operations.\n\n"
+                    f"Note: The content will be available for querying once processing is complete.",
                 )
-            finally:
-                # Restore stdout and get the captured output
-                sys.stdout = original_stdout
-                output = stdout.getvalue()
-                logger.debug(f"Captured output: {output}")
-
-            if status == 0:  # Success status from process_url
-                # Format the output as markdown, preserving progress information
-                progress_text = (
-                    output.strip() if output.strip() else "No progress output captured"
-                )
-                return [
-                    types.TextContent(
-                        type="text",
-                        text=f"# URL Processing Complete\n\n"
-                        f"Successfully processed URL: {url}\n\n"
-                        f"## Progress Details\n\n```\n{progress_text}\n```\n\n"
-                        f"Content has been stored in the vector store and is ready for querying.",
-                    )
-                ]
-            else:
-                return [
-                    types.TextContent(
-                        type="text",
-                        text=f"Failed to process URL: {url} (status: {status})\n\n"
-                        f"## Debug Output\n\n```\n{output}\n```",
-                    )
-                ]
+            ]
 
         except Exception as e:
-            logger.error(f"Error processing URL: {e}", exc_info=True)
+            logger.error(f"Error initiating URL processing: {e}", exc_info=True)
             return [
                 types.TextContent(type="text", text=f"Error processing URL: {str(e)}")
             ]
