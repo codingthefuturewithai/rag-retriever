@@ -85,7 +85,10 @@ def create_mcp_server() -> FastMCP:
 def register_tools(mcp_server: FastMCP) -> None:
     """Register all MCP tools with the server"""
 
-    @mcp_server.tool()
+    @mcp_server.tool(
+        name="web_search",
+        description="Perform a web search using DuckDuckGo and return formatted results",
+    )
     def web_search(
         search_string: str = Field(description="Search query string"),
         num_results: Optional[int] = Field(
@@ -125,7 +128,10 @@ def register_tools(mcp_server: FastMCP) -> None:
             logger.error(f"Error in web_search: {e}", exc_info=True)
             return [types.TextContent(type="text", text=f"Error: {str(e)}")]
 
-    @mcp_server.tool()
+    @mcp_server.tool(
+        name="vector_search",
+        description="Search the vector store for semantically relevant content with configurable parameters",
+    )
     async def query(
         query_text: str = Field(description="The search query text"),
         limit: Optional[int] = Field(
@@ -253,7 +259,10 @@ def register_tools(mcp_server: FastMCP) -> None:
             logger.error(f"Error in query: {e}", exc_info=True)
             return [types.TextContent(type="text", text=f"Error: {str(e)}")]
 
-    @mcp_server.tool()
+    @mcp_server.tool(
+        name="crawl_and_index_url",
+        description="Fetch and process web content, recursively crawling linked pages and storing everything in the vector store for future semantic search",
+    )
     async def fetch_url(
         url: str = Field(description="URL to fetch and process"),
         max_depth: Optional[int] = Field(
