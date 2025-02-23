@@ -71,25 +71,13 @@ def get_vectorstore_path() -> str:
     return str(store_path)
 
 
-def clean_vectorstore(collection_name: Optional[str] = None) -> None:
-    """Delete the vector store database or a specific collection.
-
-    Args:
-        collection_name: Optional name of collection to delete.
-                       If None, deletes entire vector store.
-    """
+def _delete_collection_files(collection_name: Optional[str] = None) -> None:
+    """Internal function to delete collection files without confirmation."""
     vectorstore_path = Path(get_vectorstore_path())
 
     if collection_name:
         collection_path = vectorstore_path / collection_name
         if collection_path.exists():
-            # Prompt for confirmation
-            print(f"\nWARNING: This will delete the collection '{collection_name}'.")
-            response = input("Are you sure you want to proceed? (y/N): ")
-            if response.lower() != "y":
-                logger.info("Operation cancelled")
-                return
-
             logger.info("Deleting collection at %s", collection_path)
             shutil.rmtree(collection_path)
 
@@ -113,18 +101,36 @@ def clean_vectorstore(collection_name: Optional[str] = None) -> None:
             logger.info("Collection not found at %s", collection_path)
     else:
         if vectorstore_path.exists():
-            # Prompt for confirmation
-            print("\nWARNING: This will delete the entire vector store database.")
-            response = input("Are you sure you want to proceed? (y/N): ")
-            if response.lower() != "y":
-                logger.info("Operation cancelled")
-                return
-
             logger.info("Deleting vector store at %s", vectorstore_path)
             shutil.rmtree(vectorstore_path)
             logger.info("Vector store deleted successfully")
         else:
             logger.info("Vector store not found at %s", vectorstore_path)
+
+
+def clean_vectorstore(collection_name: Optional[str] = None) -> None:
+    """Delete the vector store database or a specific collection.
+
+    Args:
+        collection_name: Optional name of collection to delete.
+                       If None, deletes entire vector store.
+    """
+    if collection_name:
+        # Prompt for confirmation
+        print(f"\nWARNING: This will delete the collection '{collection_name}'.")
+        response = input("Are you sure you want to proceed? (y/N): ")
+        if response.lower() != "y":
+            logger.info("Operation cancelled")
+            return
+    else:
+        # Prompt for confirmation
+        print("\nWARNING: This will delete the entire vector store database.")
+        response = input("Are you sure you want to proceed? (y/N): ")
+        if response.lower() != "y":
+            logger.info("Operation cancelled")
+            return
+
+    _delete_collection_files(collection_name)
 
 
 class VectorStore:
@@ -518,7 +524,7 @@ class VectorStore:
         if collection_name == DEFAULT_COLLECTION:
             raise ValueError("Cannot delete the default collection")
 
-        clean_vectorstore(collection_name)
+        _delete_collection_files(collection_name)
 
         # Remove from internal collections dict if present
         if collection_name in self._collections:
