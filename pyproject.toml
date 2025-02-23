@@ -75,7 +75,7 @@ include = ["rag_retriever*", "scripts*"]
 namespaces = true
 
 [tool.setuptools.package-data]
-rag_retriever = ["config/*.yaml", "config/.env.example"]
+rag_retriever = ["config/*.yaml", "config/.env.example", "ui/*.py", "static/*"]
 
 [project.scripts]
 rag-retriever = "rag_retriever.cli:main"
