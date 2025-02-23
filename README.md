@@ -28,7 +28,7 @@ RAG Retriever processes various types of content:
 - GitHub repositories are indexed with their code and documentation
 - Confluence spaces are indexed with their full content hierarchy
 
-When you search, the system finds semantically relevant content across all sources. For images, instead of returning the images themselves, it returns their AI-generated descriptions, making visual content searchable alongside your documentation.
+All content can be organized into collections for better organization and targeted searching. By default, searches are performed within the current collection, but you can also explicitly search across all collections using the `--search-all-collections` flag. For images, instead of returning the images themselves, it returns their AI-generated descriptions, making visual content searchable alongside your documentation.
 
 ## Watch a Short Demo Video (not all RAG Retriever features are shown)
 
@@ -37,6 +37,53 @@ When you search, the system finds semantically relevant content across all sourc
 _RAG Retriever seamlessly integrating with aider, Cursor, and Windsurf to provide accurate, up-to-date information during development._
 
 > **💡 Note**: While our examples focus on AI coding assistants, RAG Retriever can enhance any AI-powered development environment or tool that can execute command-line applications. Use it to augment IDEs, CLI tools, or any development workflow that needs reliable, up-to-date information.
+
+## Collections
+
+RAG Retriever organizes content into collections, allowing you to:
+
+- Group related content together (e.g., by project, team, or topic)
+- Search within specific collections or across all collections
+- Manage and clean up collections independently
+- Track metadata like creation date, last modified, and document counts
+
+### Collection Features
+
+- **Default Collection**: All content goes to the 'default' collection unless specified otherwise
+- **Collection Management**:
+  - Create collections automatically by specifying a name
+  - List all collections and their metadata
+  - Delete specific collections while preserving others
+  - Search within a specific collection or across all collections
+- **Collection Metadata**:
+  - Creation timestamp
+  - Last modified timestamp
+  - Document count
+  - Total chunks processed
+  - Optional description
+
+### Using Collections
+
+All commands support specifying a collection:
+
+```bash
+# List all collections
+rag-retriever --list-collections
+
+# Add content to a specific collection
+rag-retriever --fetch-url https://example.com --collection docs
+rag-retriever --ingest-file document.md --collection project-x
+rag-retriever --github-repo https://github.com/org/repo.git --collection code-docs
+
+# Search within a specific collection
+rag-retriever --query "search term" --collection docs
+
+# Search across all collections
+rag-retriever --query "search term" --search-all-collections
+
+# Delete a specific collection
+rag-retriever --clean --collection old-docs
+```
 
 ## Why Do We Need Such Tools?
 
@@ -51,6 +98,7 @@ RAG Retriever solves these challenges by:
 
 1. Providing a unified knowledge repository that can ingest content from diverse sources
 2. Offering a simple command-line interface that works with any AI tool supporting shell commands
+3. Supporting collections to organize and manage content effectively
 
 > **💡 For a detailed discussion** of why centralized knowledge retrieval tools are crucial for AI-driven development, see our [Why RAG Retriever](docs/why-rag-retriever.md) guide.
 
@@ -155,12 +203,12 @@ All settings are in `config.yaml`. For detailed information about all configurat
 
 ### Data Storage
 
-The vector store database is stored at:
+The vector store database and collections are stored at:
 
 - Unix/Mac: `~/.local/share/rag-retriever/chromadb/`
 - Windows: `%LOCALAPPDATA%\rag-retriever\chromadb/`
 
-This location is automatically managed by the application and should not be modified directly.
+Each collection is stored in its own subdirectory, with collection metadata maintained in a central metadata file. This location is automatically managed by the application and should not be modified directly.
 
 ### Uninstallation
 
@@ -219,16 +267,19 @@ RAG Retriever provides support for Anthropic's Model Context Protocol (MCP), ena
 
 - Vector store search
   - Semantic search across indexed content
+  - Search within specific collections
+  - Search across all collections simultaneously
   - Configurable result limits
   - Score threshold filtering
   - Full or partial content retrieval
-  - Source attribution
+  - Source attribution with collection information
   - Markdown-formatted output with relevance scores
 
 **Content Processing**
 
 - URL content processing
   - Fetch and ingest web content
+  - Store content in specific collections
   - Automatically extract and clean text content
   - Store processed content in vector store for semantic search
   - Support for recursive crawling with depth control
