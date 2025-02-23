@@ -146,6 +146,14 @@ def register_tools(mcp_server: FastMCP) -> None:
         full_content: bool = Field(
             description="Whether to return full content", default=True
         ),
+        collection_name: Optional[str] = Field(
+            description="Name of collection to search in (defaults to 'default')",
+            default=None,
+        ),
+        search_all_collections: bool = Field(
+            description="Whether to search across all collections",
+            default=False,
+        ),
     ) -> list[types.TextContent]:
         """Search the vector store for relevant content."""
         try:
@@ -168,7 +176,8 @@ def register_tools(mcp_server: FastMCP) -> None:
 
             logger.debug(
                 f"Query parameters: query='{query_text}', limit={actual_limit}, "
-                f"score_threshold={actual_score_threshold}, full_content={full_content}"
+                f"score_threshold={actual_score_threshold}, full_content={full_content}, "
+                f"collection_name={collection_name}, search_all_collections={search_all_collections}"
             )
 
             # Capture stdout using StringIO
@@ -188,6 +197,8 @@ def register_tools(mcp_server: FastMCP) -> None:
                     full_content=full_content,
                     json_output=True,
                     verbose=True,
+                    collection_name=collection_name,
+                    search_all_collections=search_all_collections,
                 )
                 logger.debug("search_content function completed")
             finally:
@@ -246,6 +257,8 @@ def register_tools(mcp_server: FastMCP) -> None:
                 section.append(f"## Result {i} (Score: {item['score']:.2f})")
                 if item.get("source"):
                     section.append(f"\n**Source:** {item['source']}")
+                if item.get("collection"):
+                    section.append(f"\n**Collection:** {item['collection']}")
                 section.append(f"\n{item['content']}")
                 section.append("\n---")
                 sections.append("\n".join(section))
@@ -267,6 +280,10 @@ def register_tools(mcp_server: FastMCP) -> None:
         url: str = Field(description="URL to fetch and process"),
         max_depth: Optional[int] = Field(
             description="Maximum depth for recursive URL loading", default=2, ge=0
+        ),
+        collection_name: Optional[str] = Field(
+            description="Name of collection to store content in (defaults to 'default')",
+            default=None,
         ),
     ) -> list[types.TextContent]:
         """Fetch and process content from a URL, optionally crawling linked pages.
@@ -298,6 +315,7 @@ def register_tools(mcp_server: FastMCP) -> None:
                             url,  # First positional arg like CLI
                             max_depth=actual_max_depth,  # Named arg like CLI
                             verbose=True,  # Always enable verbose for MCP feedback
+                            collection_name=collection_name,  # Pass collection name
                         )
                     finally:
                         # Restore stdout and get the captured output
@@ -312,11 +330,14 @@ def register_tools(mcp_server: FastMCP) -> None:
             asyncio.create_task(process_url_task())
 
             # Return immediately with a status message
+            collection_info = (
+                f" in collection '{collection_name}'" if collection_name else ""
+            )
             return [
                 types.TextContent(
                     type="text",
                     text=f"# URL Processing Started\n\n"
-                    f"Started processing URL: {url} with max_depth={actual_max_depth}\n\n"
+                    f"Started processing URL: {url} with max_depth={actual_max_depth}{collection_info}\n\n"
                     f"The processing will continue in the background. You can proceed with other operations.\n\n"
                     f"Note: The content will be available for querying once processing is complete.",
                 )
