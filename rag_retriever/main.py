@@ -70,8 +70,20 @@ def get_openai_client() -> OpenAI:
         raise
 
 
-def process_url(url: str, max_depth: int = 2, verbose: bool = True) -> int:
-    """Process a URL, extracting and indexing its content."""
+def process_url(
+    url: str,
+    max_depth: int = 2,
+    verbose: bool = True,
+    collection_name: Optional[str] = None,
+) -> int:
+    """Process a URL, extracting and indexing its content.
+
+    Args:
+        url: URL to process
+        max_depth: Maximum depth for recursive crawling
+        verbose: Whether to show verbose output
+        collection_name: Optional name of collection to use (defaults to 'default')
+    """
     # Configure asyncio debug mode and logging
     logging.getLogger("asyncio").setLevel(logging.DEBUG)
     warnings.resetwarnings()  # Reset any warning filters
@@ -139,7 +151,7 @@ def process_url(url: str, max_depth: int = 2, verbose: bool = True) -> int:
             logger.info("\nStarting content fetch and indexing process...")
             logger.debug("Initializing browser...")
             crawler = PlaywrightCrawler()
-            store = VectorStore()
+            store = VectorStore(collection_name=collection_name)
 
             retry_count = 0
             while retry_count < MAX_RETRIES:
@@ -275,8 +287,21 @@ def search_content(
     full_content: bool = False,
     json_output: bool = False,
     verbose: bool = False,
+    collection_name: Optional[str] = None,
+    search_all_collections: bool = False,
 ) -> int:
-    """Search indexed content."""
+    """Search indexed content.
+
+    Args:
+        query: Search query string
+        limit: Maximum number of results to return
+        score_threshold: Minimum similarity score threshold
+        full_content: Whether to show full content in results
+        json_output: Whether to output results as JSON
+        verbose: Whether to show verbose output
+        collection_name: Optional name of collection to search in (defaults to 'default')
+        search_all_collections: Whether to search across all collections
+    """
     # Use default values from config if not specified
     if limit is None:
         limit = config.search["default_limit"]
@@ -303,11 +328,12 @@ def search_content(
 
     try:
         logger.info("\nStarting content search...")
-        searcher = Searcher()
+        searcher = Searcher(collection_name=collection_name)
         results = searcher.search(
             query,
             limit=limit,
             score_threshold=score_threshold,
+            search_all_collections=search_all_collections,
         )
 
         if not results:

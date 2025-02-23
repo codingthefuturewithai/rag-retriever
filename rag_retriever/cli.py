@@ -51,7 +51,13 @@ def create_parser() -> argparse.ArgumentParser:
     )
 
     parser.add_argument(
-        "--fetch",
+        "--list-collections",
+        action="store_true",
+        help="List all available collections and their metadata",
+    )
+
+    parser.add_argument(
+        "--fetch-url",
         type=str,
         help="URL to fetch and index",
     )
@@ -60,7 +66,7 @@ def create_parser() -> argparse.ArgumentParser:
         "--max-depth",
         type=int,
         default=2,
-        help="Maximum depth for recursive URL loading (default: 2)",
+        help="Maximum depth for recursive URL loading when using --fetch-url (default: 2). Not applicable to other commands.",
     )
 
     parser.add_argument(
@@ -96,7 +102,7 @@ def create_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--clean",
         action="store_true",
-        help="Clean (delete) the vector store",
+        help="Clean (delete) the vector store. Use with --collection to delete a specific collection.",
     )
 
     parser.add_argument(
@@ -181,6 +187,18 @@ def create_parser() -> argparse.ArgumentParser:
         help="Specific file extensions to load (e.g., .py .md .js)",
     )
 
+    parser.add_argument(
+        "--collection",
+        type=str,
+        help="Name of the collection to use (defaults to 'default')",
+    )
+
+    parser.add_argument(
+        "--search-all-collections",
+        action="store_true",
+        help="Search across all collections (ignores --collection)",
+    )
+
     return parser
 
 
@@ -243,12 +261,38 @@ def main():
         logging.getLogger("rag_retriever").setLevel(logging.DEBUG)
         logger.debug("Verbose logging enabled")
 
+    # Validate max-depth usage
+    if args.max_depth != 2 and not args.fetch_url:  # 2 is the default value
+        logger.error("The --max-depth option can only be used with --fetch-url")
+        return 1
+
     if args.init:
         initialize_user_files()
         return
 
+    if args.list_collections:
+        store = VectorStore()
+        collections = store.list_collections()
+        if not collections:
+            print("\nNo collections found.")
+            return 0
+
+        print("\nAvailable collections:")
+        for collection in collections:
+            print(f"\nCollection: {collection['name']}")
+            print(f"  Created: {collection['created_at']}")
+            print(f"  Last Modified: {collection['last_modified']}")
+            print(f"  Documents: {collection['document_count']}")
+            print(f"  Total Chunks: {collection['total_chunks']}")
+            if collection.get("description"):
+                print(f"  Description: {collection['description']}")
+        return 0
+
     if args.clean:
-        clean_vectorstore()
+        if args.collection:
+            clean_vectorstore(collection_name=args.collection)
+        else:
+            clean_vectorstore()  # Deletes entire store
         return
 
     if args.web_search:
@@ -263,7 +307,7 @@ def main():
     if args.ingest_image or args.ingest_image_directory:
         try:
             image_loader = ImageLoader(config=config._config, show_progress=True)
-            store = VectorStore()
+            store = VectorStore(collection_name=args.collection)
 
             if args.ingest_image:
                 logger.info(f"Loading image: {args.ingest_image}")
@@ -296,7 +340,7 @@ def main():
             loader = LocalDocumentLoader(
                 config=config._config, show_progress=True, use_multithreading=True
             )
-            store = VectorStore()
+            store = VectorStore(collection_name=args.collection)
 
             if args.ingest_file:
                 logger.info(f"Loading file: {args.ingest_file}")
@@ -317,7 +361,7 @@ def main():
     if args.confluence:
         try:
             loader = ConfluenceDocumentLoader(config=config._config)
-            store = VectorStore()
+            store = VectorStore(collection_name=args.collection)
             documents = loader.load_pages(
                 space_key=args.space_key, parent_id=args.parent_id
             )
@@ -333,7 +377,7 @@ def main():
     if args.github_repo:
         try:
             loader = GitHubLoader(config=config._config)
-            store = VectorStore()
+            store = VectorStore(collection_name=args.collection)
 
             # Create file filter if extensions specified
             file_filter = None
@@ -358,14 +402,17 @@ def main():
             return 1
 
     try:
-        if args.fetch:
+        if args.fetch_url:
             # Only prompt once for max_depth > 1
             if args.max_depth > 1 and not confirm_max_depth(args.max_depth):
                 logger.info("Operation cancelled")
                 return 0
 
             return process_url(
-                args.fetch, max_depth=args.max_depth, verbose=args.verbose
+                args.fetch_url,
+                max_depth=args.max_depth,
+                verbose=args.verbose,
+                collection_name=args.collection,
             )
 
         if args.query:
@@ -376,6 +423,8 @@ def main():
                 full_content=not args.truncate,  # Show full content by default
                 json_output=args.json,
                 verbose=args.verbose,
+                collection_name=args.collection,
+                search_all_collections=args.search_all_collections,
             )
 
         # No command specified, show help

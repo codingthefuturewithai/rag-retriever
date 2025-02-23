@@ -2,7 +2,7 @@
 
 import json
 import logging
-from typing import List, Tuple, Dict, Any
+from typing import List, Tuple, Dict, Any, Optional
 from dataclasses import dataclass
 from statistics import mean
 
@@ -25,14 +25,13 @@ class SearchResult:
 class Searcher:
     """Handle search operations and result formatting."""
 
-    def __init__(self, vector_store: VectorStore | None = None):
-        """Initialize searcher with vector store.
+    def __init__(self, collection_name: Optional[str] = None):
+        """Initialize searcher.
 
         Args:
-            vector_store: VectorStore instance to use.
-                        If None, creates new instance.
+            collection_name: Optional name of collection to search in (defaults to 'default')
         """
-        self.vector_store = vector_store or VectorStore()
+        self.store = VectorStore(collection_name=collection_name)
         self.default_limit = config.search["default_limit"]
         self.default_score_threshold = config.search["default_score_threshold"]
 
@@ -41,32 +40,35 @@ class Searcher:
         query: str,
         limit: int | None = None,
         score_threshold: float | None = None,
+        search_all_collections: bool = False,
     ) -> List[SearchResult]:
         """Search for documents matching query.
 
         Args:
-            query: Search query.
-            limit: Maximum number of results.
-            score_threshold: Minimum relevance score.
+            query: Search query string
+            limit: Maximum number of results to return
+            score_threshold: Minimum similarity score threshold
+            search_all_collections: Whether to search across all collections
 
         Returns:
-            List of SearchResult objects.
+            List of search results sorted by relevance
         """
-        # Use defaults from config if not specified
-        limit = self.default_limit if limit is None else limit
-        score_threshold = (
-            self.default_score_threshold if score_threshold is None else score_threshold
-        )
+        # Use default values if not specified
+        if limit is None:
+            limit = self.default_limit
+        if score_threshold is None:
+            score_threshold = self.default_score_threshold
 
-        logger.debug(f"Search query: {query}")
+        logger.debug(f"Searching with query: {query}")
         logger.debug(f"Result limit: {limit}")
         logger.debug(f"Score threshold: {score_threshold}")
 
         # Get raw results from vector store
-        raw_results = self.vector_store.search(
+        raw_results = self.store.search(
             query,
             limit=limit,
             score_threshold=score_threshold,
+            search_all_collections=search_all_collections,
         )
 
         scores = [score for _, score in raw_results]
