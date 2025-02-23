@@ -45,6 +45,19 @@ def create_parser() -> argparse.ArgumentParser:
     )
 
     parser.add_argument(
+        "--ui",
+        action="store_true",
+        help="Launch the RAG Retriever web interface",
+    )
+
+    parser.add_argument(
+        "--port",
+        type=int,
+        default=8501,
+        help="Port to run the web interface on (default: 8501). Only used with --ui",
+    )
+
+    parser.add_argument(
         "--init",
         action="store_true",
         help="Initialize user configuration files in standard locations",
@@ -260,6 +273,17 @@ def main():
         # Set rag_retriever logger to DEBUG for detailed output
         logging.getLogger("rag_retriever").setLevel(logging.DEBUG)
         logger.debug("Verbose logging enabled")
+
+    # Handle UI launch first
+    if args.ui:
+        import streamlit.web.cli as stcli
+        import sys
+        import os
+
+        # Get the path to the UI script
+        ui_script = os.path.join(os.path.dirname(__file__), "ui", "app.py")
+        sys.argv = ["streamlit", "run", ui_script, "--server.port", str(args.port)]
+        sys.exit(stcli.main())
 
     # Validate max-depth usage
     if args.max_depth != 2 and not args.fetch_url:  # 2 is the default value

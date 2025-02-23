@@ -4,13 +4,24 @@ The RAG Retriever UI provides a modern, intuitive interface for managing and sea
 
 ## Launching the UI
 
-To start the RAG Retriever UI, run the following command from your terminal:
+To start the RAG Retriever UI, use one of these commands:
 
 ```bash
-streamlit run rag_retriever/ui/app.py
+# Launch with default port (8501)
+rag-retriever --ui
+
+# Launch with a custom port
+rag-retriever --ui --port 8000
 ```
 
-This will launch the Streamlit-based interface in your default web browser.
+The UI will launch in your default web browser. By default, it's accessible at `http://localhost:8501`. If you specify a custom port, replace `8501` with your chosen port number.
+
+You might want to use a custom port when:
+
+- The default port 8501 is already in use
+- You need to run multiple instances of the UI
+- You're running behind a proxy that requires a specific port
+- You want to avoid conflicts with other Streamlit applications
 
 ## Main Features
 
