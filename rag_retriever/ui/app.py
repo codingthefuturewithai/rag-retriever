@@ -5,6 +5,11 @@ from rag_retriever.vectorstore.store import VectorStore
 from rag_retriever.search.searcher import Searcher
 from typing import Dict, Any
 import pandas as pd
+import logging
+
+# Configure logging
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
 
 # Configure page settings
 st.set_page_config(
@@ -888,7 +893,7 @@ def display_discover():
     # Web Search Section
     st.subheader("Web Search")
     with st.container():
-        col1, col2 = st.columns([3, 1])
+        col1, col2, col3 = st.columns([3, 1, 1])
         with col1:
             search_query = st.text_input(
                 "Search query",
@@ -904,6 +909,13 @@ def display_discover():
                 value=5,
                 key="discover_num_results",
                 help="Maximum number of search results to display",
+            )
+        with col3:
+            search_provider = st.selectbox(
+                "Provider",
+                options=["Default", "DuckDuckGo", "Google"],
+                key="discover_search_provider",
+                help="Search provider to use. Default uses the configured default provider (falls back to DuckDuckGo if Google credentials not configured)",
             )
 
         search_clicked = st.button(
@@ -921,11 +933,73 @@ def display_discover():
             else:
                 with st.spinner("🔍 Searching..."):
                     try:
-                        from rag_retriever.search.web_search import web_search
+                        from rag_retriever.search.web_search import (
+                            web_search,
+                            get_search_provider,
+                            GoogleSearchProvider,
+                            DuckDuckGoSearchProvider,
+                        )
+                        from rag_retriever.utils.config import config
 
-                        results = web_search(search_query, num_results)
-                        st.session_state.web_search_results = results
+                        # Convert provider selection to API parameter
+                        provider = (
+                            None
+                            if search_provider == "Default"
+                            else search_provider.lower()
+                        )
+
+                        logger.debug(f"Selected provider in UI: {search_provider}")
+                        logger.debug(f"Provider parameter for web_search: {provider}")
+
+                        # Log the default provider from config
+                        default_provider = config.search.get(
+                            "default_provider", "duckduckgo"
+                        )
+                        logger.debug(
+                            f"Default provider from config: {default_provider}"
+                        )
+
+                        try:
+                            # Get the actual provider that will be used
+                            actual_provider = get_search_provider(provider)
+                            provider_type = type(actual_provider).__name__
+                            logger.debug(
+                                f"Actual provider instance type: {provider_type}"
+                            )
+
+                            # Show which provider will be used
+                            if isinstance(actual_provider, GoogleSearchProvider):
+                                st.info("🔍 Using Google Search")
+                                logger.info("Using Google Search provider")
+                            else:
+                                st.info("🦆 Using DuckDuckGo Search")
+                                logger.info("Using DuckDuckGo provider")
+
+                            # Perform the search
+                            results = web_search(
+                                search_query, num_results, provider=provider
+                            )
+
+                            if results:
+                                logger.debug(f"Got {len(results)} results")
+                                st.session_state.web_search_results = results
+                            else:
+                                logger.warning("No results returned from search")
+                                st.warning("No results found")
+                                st.session_state.web_search_results = None
+
+                        except ValueError as e:
+                            error_msg = str(e)
+                            logger.error(f"ValueError in web search: {error_msg}")
+                            st.error(f"🚨 {error_msg}")
+                            st.info(
+                                "💡 Try using DuckDuckGo instead, or configure Google Search credentials."
+                            )
+                            st.session_state.web_search_results = None
                     except Exception as e:
+                        logger.error(
+                            f"Unexpected error in web search: {str(e)}", exc_info=True
+                        )
                         st.error(f"🚨 Error performing search: {str(e)}")
                         st.session_state.web_search_results = None
 
