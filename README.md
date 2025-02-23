@@ -636,6 +636,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 Core options:
 
+- `--version`: Show version information
 - `--init`: Initialize user configuration files
 - `--clean`: Clean (delete) the vector store
 - `--verbose`: Enable verbose output for troubleshooting

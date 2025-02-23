@@ -45,6 +45,12 @@ def create_parser() -> argparse.ArgumentParser:
     )
 
     parser.add_argument(
+        "--version",
+        action="store_true",
+        help="Show version information",
+    )
+
+    parser.add_argument(
         "--ui",
         action="store_true",
         help="Launch the RAG Retriever web interface",
@@ -273,6 +279,18 @@ def main():
         # Set rag_retriever logger to DEBUG for detailed output
         logging.getLogger("rag_retriever").setLevel(logging.DEBUG)
         logger.debug("Verbose logging enabled")
+
+    # Handle version display first
+    if args.version:
+        import importlib.metadata
+
+        try:
+            version = importlib.metadata.version("rag-retriever")
+            print(f"RAG Retriever version {version}")
+            return 0
+        except importlib.metadata.PackageNotFoundError:
+            logger.error("Could not determine package version")
+            return 1
 
     # Handle UI launch first
     if args.ui:
