@@ -6,6 +6,8 @@ from rag_retriever.search.searcher import Searcher
 from typing import Dict, Any
 import pandas as pd
 import logging
+from importlib import resources
+import os
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
@@ -1370,13 +1372,17 @@ def main():
     col1, col2 = st.columns([1, 4])
 
     with col1:
-        # Load and display logo
+        # Load and display logo using importlib.resources
         try:
-            st.image("rag_retriever/static/CTF-logo.jpg", width=100)
-        except:
-            st.warning(
-                "Logo not found. Place CTF-logo.jpg in rag_retriever/static/ directory"
-            )
+            with (
+                resources.files("rag_retriever")
+                .joinpath("static/CTF-logo.jpg")
+                .open("rb") as f
+            ):
+                image_data = f.read()
+                st.image(image_data, width=100)
+        except Exception as e:
+            st.warning(f"Logo not found. Error: {str(e)}")
 
     with col2:
         st.title("RAG Retriever UI")
