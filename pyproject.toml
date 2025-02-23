@@ -52,7 +52,8 @@ dependencies = [
     "starlette>=0.36.0",
     "uvicorn>=0.27.0",
     "streamlit>=1.32.0",
-    "pandas>=2.2.0"
+    "pandas>=2.2.0",
+    "plotly>=5.19.0"
 ]
 
 [project.optional-dependencies]
