@@ -677,3 +677,65 @@ Confluence Integration:
 - `--confluence`: Load from Confluence
 - `--space-key STRING`: Confluence space key
 - `--parent-id STRING`: Confluence parent page ID
+
+## Web Search Integration
+
+RAG Retriever supports multiple search providers for retrieving web content:
+
+### Default Search Provider
+
+By default, RAG Retriever will try to use Google Search if configured, falling back to DuckDuckGo if Google credentials are not available. You can change the default provider in your `config.yaml`:
+
+```yaml
+search:
+  default_provider: "google" # or "duckduckgo"
+```
+
+### Using Google Search
+
+To use Google's Programmable Search Engine:
+
+1. Set up Google Search credentials (one of these methods):
+
+   ```bash
+   # Environment variables (recommended for development)
+   export GOOGLE_API_KEY=your_api_key
+   export GOOGLE_CSE_ID=your_cse_id
+
+   # Or in config.yaml (recommended for permanent setup)
+   search:
+     google_search:
+       api_key: "your_api_key"
+       cse_id: "your_cse_id"
+   ```
+
+2. Use Google Search:
+
+   ```bash
+   # Use default provider (will use Google if configured)
+   rag-retriever --web-search "your query"
+
+   # Explicitly request Google
+   rag-retriever --web-search "your query" --search-provider google
+   ```
+
+### Using DuckDuckGo Search
+
+DuckDuckGo search is always available and requires no configuration:
+
+```bash
+# Use DuckDuckGo explicitly
+rag-retriever --web-search "your query" --search-provider duckduckgo
+```
+
+### Provider Selection Behavior
+
+- When no provider is specified:
+  - Uses the default_provider from config
+  - If Google is default but not configured, silently falls back to DuckDuckGo
+- When Google is explicitly requested but not configured:
+  - Shows error message suggesting to use DuckDuckGo
+- When DuckDuckGo is requested:
+  - Uses DuckDuckGo directly
+
+For detailed configuration options and setup instructions, see our [Configuration Guide](docs/configuration-guide.md#search-provider-configuration).

@@ -249,7 +249,7 @@ class Config:
                 "batch_size": 50,
                 "delay_between_batches": 1.0,
                 "max_retries": 3,
-                "retry_delay": 5.0
+                "retry_delay": 5.0,
             }
         return config
 
@@ -322,6 +322,42 @@ class Config:
 
         logger.debug("No valid API key found in config or environment")
         return None
+
+
+def get_google_search_credentials():
+    """Get Google Search credentials from config or environment."""
+    # Try command line args first (handled in cli.py)
+
+    # Try environment variables
+    api_key = os.getenv("GOOGLE_API_KEY")
+    cse_id = os.getenv("GOOGLE_CSE_ID")
+
+    logger.debug("Retrieving Google Search credentials:")
+    logger.debug(
+        "From environment - API Key: %s, CSE ID: %s", bool(api_key), bool(cse_id)
+    )
+
+    # If not found, try config file
+    if not api_key and not cse_id:
+        try:
+            search_config = config._config.get("search", {})
+            google_config = search_config.get("google_search", {})
+            logger.debug(
+                "Config sections found - search: %s, google_search: %s",
+                bool(search_config),
+                bool(google_config),
+            )
+
+            api_key = google_config.get("api_key")
+            cse_id = google_config.get("cse_id")
+            logger.debug(
+                "From config - API Key: %s, CSE ID: %s", bool(api_key), bool(cse_id)
+            )
+        except (KeyError, AttributeError) as e:
+            logger.debug("Error reading from config: %s", str(e))
+            pass
+
+    return api_key, cse_id
 
 
 # Global config instance

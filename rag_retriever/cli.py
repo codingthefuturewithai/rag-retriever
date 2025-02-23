@@ -20,6 +20,9 @@ logging.getLogger("rag_retriever").setLevel(getattr(logging, log_level))
 logging.getLogger("chromadb").setLevel(logging.WARNING)
 logging.getLogger("httpx").setLevel(logging.WARNING)
 logging.getLogger("urllib3").setLevel(logging.WARNING)
+logging.getLogger("googleapiclient").setLevel(logging.WARNING)  # Added for Google API
+logging.getLogger("primp").setLevel(logging.WARNING)  # Added for DuckDuckGo
+logging.getLogger("google").setLevel(logging.WARNING)  # Added for Google API
 
 # Now import the rest
 from rag_retriever.main import process_url, search_content
@@ -145,14 +148,33 @@ def create_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--web-search",
         type=str,
-        help="Perform a web search using DuckDuckGo",
+        help="Perform a web search query",
+    )
+
+    parser.add_argument(
+        "--search-provider",
+        type=str,
+        choices=["duckduckgo", "google"],
+        help="Search provider to use (defaults to duckduckgo if not specified or if Google credentials not configured)",
+    )
+
+    parser.add_argument(
+        "--google-api-key",
+        type=str,
+        help="Google API key for search (overrides config and environment variable)",
+    )
+
+    parser.add_argument(
+        "--google-cse-id",
+        type=str,
+        help="Google Custom Search Engine ID (overrides config and environment variable)",
     )
 
     parser.add_argument(
         "--results",
         type=int,
-        default=5,
-        help="Number of results to return for web search (default: 5)",
+        default=config.search.get("default_web_results", 5),
+        help="Number of results to return for web search (default from config)",
     )
 
     parser.add_argument(
@@ -338,12 +360,42 @@ def main():
         return
 
     if args.web_search:
-        results = web_search(args.web_search, args.results)
-        for i, result in enumerate(results, 1):
-            print(f"\n{i}. {result.title}")
-            print(f"   URL: {result.url}")
-            print(f"   {result.snippet}")
-        return
+        # Set Google Search credentials from command line if provided
+        if args.google_api_key:
+            os.environ["GOOGLE_API_KEY"] = args.google_api_key
+        if args.google_cse_id:
+            os.environ["GOOGLE_CSE_ID"] = args.google_cse_id
+
+        try:
+            results = web_search(
+                args.web_search, args.results, provider=args.search_provider
+            )
+            if args.json:
+                print(
+                    json.dumps(
+                        [
+                            {"title": r.title, "url": r.url, "snippet": r.snippet}
+                            for r in results
+                        ],
+                        indent=2,
+                    )
+                )
+            else:
+                print(f"\nSearch results for: {args.web_search}\n")
+                for i, result in enumerate(results, 1):
+                    print(f"{i}. {result.title}")
+                    print(f"   URL: {result.url}")
+                    print(f"   {result.snippet}\n")
+            return 0
+        except ValueError as e:
+            print(f"\nError: {str(e)}")
+            return 1
+        except Exception as e:
+            logger.error(f"Unexpected error during web search: {e}")
+            print(
+                "\nAn unexpected error occurred during the web search. Please try again."
+            )
+            return 1
 
     # Handle image ingestion
     if args.ingest_image or args.ingest_image_directory:

@@ -189,7 +189,8 @@ RAG Retriever is designed to work with various AI coding assistants. For detaile
    --ingest-image-directory PATH  Path to a directory containing images to analyze and ingest
 
    # Web search options
-   --web-search STRING     Perform a web search using DuckDuckGo
+   --web-search STRING     Perform a web search query
+   --search-provider STRING  Search provider to use (choices: duckduckgo, google; default: duckduckgo)
    --results N            Number of results to return for web search (default: 5)
 
    # GitHub options
@@ -214,3 +215,86 @@ If you're experiencing issues:
 - Use the `--verbose` flag for detailed logging output
 - Make sure your OpenAI API key is correctly configured
 - For AI assistant integration issues, refer to the [AI Assistant Setup Guide](https://github.com/codingthefuturewithai/ai-assistant-instructions/blob/main/instructions/setup/ai-assistant-setup-guide.md)
+
+## Optional Features
+
+### Google Search Integration
+
+RAG Retriever supports Google's Programmable Search Engine as an alternative to the default DuckDuckGo search. To use Google Search, you'll need to:
+
+1. Set up Google Search credentials (one of the following methods):
+
+   a. Environment variables (recommended for development):
+
+   ```bash
+   export GOOGLE_API_KEY=your_api_key
+   export GOOGLE_CSE_ID=your_cse_id
+   ```
+
+   b. Configuration file (recommended for permanent setup):
+
+   ```yaml
+   # In ~/.config/rag-retriever/config.yaml
+   search:
+     google_search:
+       api_key: "your_api_key"
+       cse_id: "your_cse_id"
+   ```
+
+   c. Command-line arguments (for one-time use):
+
+   ```bash
+   rag-retriever --web-search "your query" \
+                 --search-provider google \
+                 --google-api-key "your_api_key" \
+                 --google-cse-id "your_cse_id"
+   ```
+
+2. Use Google Search:
+
+   ```bash
+   # Using credentials from config or environment
+   rag-retriever --web-search "your query" --search-provider google
+
+   # Or specify credentials directly (overrides config and environment)
+   rag-retriever --web-search "your query" \
+                 --search-provider google \
+                 --google-api-key "your_api_key" \
+                 --google-cse-id "your_cse_id"
+   ```
+
+3. For programmatic use:
+
+   ```python
+   from rag_retriever.search import web_search
+
+   # Using credentials from config or environment
+   results = web_search("your query", provider="google")
+
+   # Process results
+   for result in results:
+       print(f"Title: {result.title}")
+       print(f"URL: {result.url}")
+       print(f"Snippet: {result.snippet}")
+   ```
+
+Credential Priority:
+
+1. Command-line arguments (highest priority)
+2. Environment variables
+3. Configuration file
+4. Falls back to DuckDuckGo if no valid credentials found
+
+# Example web search commands:
+
+# Using default DuckDuckGo search
+
+rag-retriever --web-search "your search query" --results 5
+
+# Using Google search (requires GOOGLE_API_KEY and GOOGLE_CSE_ID environment variables)
+
+rag-retriever --web-search "your search query" --search-provider google --results 5
+
+# You can then fetch content from the web search results using --fetch
+
+rag-retriever --fetch https://found-url-from-search.com --max-depth 0

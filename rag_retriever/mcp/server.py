@@ -87,30 +87,43 @@ def register_tools(mcp_server: FastMCP) -> None:
 
     @mcp_server.tool(
         name="web_search",
-        description="Perform a web search using DuckDuckGo and return formatted results",
+        description="Perform a web search using the configured default provider (set in config.yaml)",
     )
     def web_search(
         search_string: str = Field(description="Search query string"),
         num_results: Optional[int] = Field(
-            description="Number of results to return", default=5, ge=1
+            description="Number of results to return (if None, uses default from config)",
+            default=None,
+            ge=1,
+        ),
+        provider: Optional[str] = Field(
+            description="Search provider to use ('google' or 'duckduckgo'). If not specified, uses default from config. "
+            "When Google is used (either by default or explicitly) but credentials aren't configured, "
+            "it falls back to DuckDuckGo for default case or shows error for explicit case.",
+            default=None,
+            choices=["google", "duckduckgo"],
         ),
     ) -> list[types.TextContent]:
-        """Perform a web search using DuckDuckGo.
+        """Perform a web search using the specified provider.
 
         Args:
             search_string: Search query string
-            num_results: Number of results to return (default: 5)
+            num_results: Number of results to return (uses default from config if None)
+            provider: Search provider to use ('google' or 'duckduckgo').
+                     If not specified, uses default from config.
+                     When Google is used (either by default or explicitly) but credentials aren't configured,
+                     it falls back to DuckDuckGo for default case or shows error for explicit case.
         """
         try:
-            # Ensure num_results has a value
-            actual_num_results = num_results if num_results is not None else 5
-
             logger.debug(
-                f"Executing web search with query: {search_string}, num_results: {actual_num_results}"
+                f"Executing web search with query: {search_string}, "
+                f"num_results: {num_results}, provider: {provider}"
             )
 
             # Get the raw search results from the imported module
-            raw_results = search_module.web_search(search_string, actual_num_results)
+            raw_results = search_module.web_search(
+                search_string, num_results=num_results, provider=provider
+            )
 
             if not raw_results:
                 return [types.TextContent(type="text", text="No results found.")]
@@ -124,6 +137,10 @@ def register_tools(mcp_server: FastMCP) -> None:
 
             return [types.TextContent(type="text", text=markdown)]
 
+        except ValueError as e:
+            # This will be raised when Google is explicitly requested but not configured
+            logger.error(f"ValueError in web_search: {e}")
+            return [types.TextContent(type="text", text=f"Error: {str(e)}")]
         except Exception as e:
             logger.error(f"Error in web_search: {e}", exc_info=True)
             return [types.TextContent(type="text", text=f"Error: {str(e)}")]

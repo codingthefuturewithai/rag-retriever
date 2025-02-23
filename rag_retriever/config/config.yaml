@@ -96,8 +96,16 @@ content:
 
 # Search settings
 search:
-  default_limit: 8
-  default_score_threshold: 0.3
+  # Vector store search settings
+  default_limit: 8 # Default number of results for vector store searches
+  default_score_threshold: 0.3 # Minimum relevance score for vector store searches
+
+  # Web search settings
+  default_provider: "google" # Search provider to use by default ("google" or "duckduckgo")
+  default_web_results: 5 # Default number of results for web searches
+  google_search:
+    api_key: null # Your Google API key
+    cse_id: null # Your Custom Search Engine ID
 
 # Browser settings for web crawling
 browser:

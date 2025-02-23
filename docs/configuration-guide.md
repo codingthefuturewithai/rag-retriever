@@ -130,9 +130,74 @@ content:
 
 ```yaml
 search:
-  default_limit: 8 # Default number of results
-  default_score_threshold: 0.3 # Minimum relevance score
+  # Vector store search settings
+  default_limit: 8 # Default number of results for vector store searches
+  default_score_threshold: 0.3 # Minimum relevance score for vector store searches
+
+  # Web search settings
+  default_provider: "google" # Search provider to use by default ("google" or "duckduckgo")
+  default_web_results: 5 # Default number of results for web searches
+  google_search:
+    api_key: null # Your Google API key (can also be set via GOOGLE_API_KEY env var)
+    cse_id: null # Your Custom Search Engine ID (can also be set via GOOGLE_CSE_ID env var)
 ```
+
+### Search Provider Configuration
+
+RAG Retriever supports multiple search providers for web search functionality:
+
+#### DuckDuckGo Search
+
+- No configuration required
+- Always available as a fallback option
+- No rate limits or API keys needed
+- Provides consistent, high-quality results
+
+#### Google Programmable Search Engine
+
+1. Setup Requirements:
+
+   - Google Cloud Project with Custom Search API enabled
+   - Custom Search Engine (CSE) created and configured
+   - Valid API key and CSE ID
+
+2. Configuration Methods:
+   a. Environment Variables (recommended for development):
+
+   ```bash
+   export GOOGLE_API_KEY=your_api_key
+   export GOOGLE_CSE_ID=your_cse_id
+   ```
+
+   b. Configuration File (recommended for permanent setup):
+
+   ```yaml
+   search:
+     google_search:
+       api_key: "your_api_key"
+       cse_id: "your_cse_id"
+   ```
+
+3. Provider Selection Behavior:
+
+   - When no provider specified: Uses default_provider from config
+   - If Google is default/requested but no credentials:
+     - For default: Silently falls back to DuckDuckGo
+     - For explicit request: Shows error suggesting DuckDuckGo
+   - If DuckDuckGo specified: Uses DuckDuckGo directly
+
+4. Command Line Usage:
+
+   ```bash
+   # Use default provider
+   rag-retriever --web-search "query"
+
+   # Explicitly use Google
+   rag-retriever --web-search "query" --search-provider google
+
+   # Explicitly use DuckDuckGo
+   rag-retriever --web-search "query" --search-provider duckduckgo
+   ```
 
 ## Browser Settings (Web Crawling)
 
@@ -260,3 +325,37 @@ document_processing:
     max_file_size_mb: 10
     default_branch: "main"
 ```
+
+## Search Configuration
+
+RAG Retriever supports multiple search providers for web search functionality:
+
+### DuckDuckGo Search (Default)
+
+DuckDuckGo search is the default provider and requires no additional configuration.
+
+### Google Programmable Search Engine
+
+To use Google Search, you'll need to:
+
+1. Set up a Google Cloud Project and enable the Custom Search API
+2. Create a Custom Search Engine (CSE) and get your CSE ID
+3. Configure the following environment variables:
+   ```bash
+   GOOGLE_API_KEY=your_api_key
+   GOOGLE_CSE_ID=your_cse_id
+   ```
+
+You can then specify the search provider when performing searches:
+
+```python
+from rag_retriever.search import web_search
+
+# Use DuckDuckGo (default)
+results = web_search("your query")
+
+# Use Google Search
+results = web_search("your query", provider="google")
+```
+
+If Google Search credentials are missing or invalid, RAG Retriever will automatically fall back to DuckDuckGo search.
