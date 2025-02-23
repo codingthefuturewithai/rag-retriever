@@ -40,6 +40,16 @@ RAG Retriever includes a modern web interface intended to help you manage your k
 - Semantic search with relevance scoring
 - Interactive visualizations of collection metrics
 
+To launch the UI:
+
+```bash
+# If installed via pipx or uv
+rag-retriever --ui
+
+# If running from local repository
+python scripts/run_ui.py
+```
+
 For detailed instructions on using the interface, see our [RAG Retriever UI User Guide](docs/rag-retriever-ui-guide.md).
 
 ## Watch a Short Demo Video (not all RAG Retriever features are shown)
