@@ -30,6 +30,162 @@ RAG Retriever processes various types of content:
 
 All content can be organized into collections for better organization and targeted searching. By default, searches are performed within the current collection, but you can also explicitly search across all collections using the `--search-all-collections` flag. For images, instead of returning the images themselves, it returns their AI-generated descriptions, making visual content searchable alongside your documentation.
 
+[![Watch the video](https://img.youtube.com/vi/oQ6fSWUZYh0/0.jpg)](https://youtu.be/oQ6fSWUZYh0)
+
+_RAG Retriever seamlessly integrating with aider, Cursor, and Windsurf to provide accurate, up-to-date information during development._
+
+> **💡 Note**: While our examples focus on AI coding assistants, RAG Retriever can enhance any AI-powered development environment or tool that can execute command-line applications. Use it to augment IDEs, CLI tools, or any development workflow that needs reliable, up-to-date information.
+
+## Why Do We Need Such Tools?
+
+Modern AI coding assistants each implement their own way of loading external context from files and web sources. However, this creates several challenges:
+
+- Knowledge remains siloed within each tool's ecosystem
+- Support for different document types and sources varies widely
+- Integration with enterprise knowledge bases (Confluence, Notion, etc.) is limited
+- Each tool requires learning its unique context-loading mechanisms
+
+RAG Retriever solves these challenges by:
+
+1. Providing a unified knowledge repository that can ingest content from diverse sources
+2. Offering both a command-line interface and a Model Context Protocol (MCP) server that work with any AI tool supporting shell commands or MCP integration
+3. Supporting collections to organize and manage content effectively
+
+> **💡 For a detailed discussion** of why centralized knowledge retrieval tools are crucial for AI-driven development, see our [Why RAG Retriever](docs/why-rag-retriever.md) guide.
+
+## Prerequisites
+
+### Core Requirements
+
+- Python 3.10-3.12 (Download from [python.org](https://python.org))
+- One of these package managers:
+
+  - pipx (Recommended, install with one of these commands):
+
+    ```bash
+    # On MacOS
+    brew install pipx
+
+    # On Windows/Linux
+    python -m pip install --user pipx
+    ```
+
+  - uv (Alternative, faster installation):
+
+    ```bash
+    # On MacOS
+    brew install uv
+
+    # On Windows/Linux
+    curl -LsSf https://astral.sh/uv/install.sh | sh
+    ```
+
+---
+
+> ### 🚀 Ready to Try It? Let's Go!
+>
+> **Get up and running in 10 minutes!**
+>
+> 1. Install RAG Retriever using one of these methods:
+>
+>    ```bash
+>    # Using pipx (recommended for isolation)
+>    pipx install rag-retriever
+>
+>    # Using uv (faster installation)
+>    uv pip install --system rag-retriever
+>    ```
+>
+> 2. Configure your AI coding assistant by following our [AI Assistant Setup Guide](https://github.com/codingthefuturewithai/ai-assistant-instructions/blob/main/instructions/setup/ai-assistant-setup-guide.md)
+> 3. Start using RAG Retriever with your configured AI assistant!
+>
+> For detailed installation and configuration steps, see our [Getting Started Guide](docs/getting-started.md).
+
+---
+
+### Optional Dependencies
+
+The following dependencies are only required for specific advanced PDF processing features:
+
+**MacOS**: `brew install tesseract`
+**Windows**: Install [Tesseract](https://github.com/UB-Mannheim/tesseract/wiki)
+
+### System Requirements
+
+The application uses Playwright with Chromium for web crawling:
+
+- Chromium browser is automatically installed during package installation
+- Sufficient disk space for Chromium (~200MB)
+- Internet connection for initial setup and crawling
+
+Note: The application will automatically download and manage Chromium installation.
+
+## Installation
+
+Install RAG Retriever as a standalone application:
+
+```bash
+pipx install rag-retriever
+```
+
+This will:
+
+- Create an isolated environment for the application
+- Install all required dependencies
+- Install Chromium browser automatically
+- Make the `rag-retriever` command available in your PATH
+
+## How to Upgrade
+
+To upgrade RAG Retriever to the latest version, use the same package manager you used for installation:
+
+```bash
+# If installed with pipx
+pipx upgrade rag-retriever
+
+# If installed with uv
+uv pip install --system --upgrade rag-retriever
+```
+
+Both methods will:
+
+- Upgrade the package to the latest available version
+- Preserve your existing configuration and data
+- Update any new dependencies automatically
+
+After upgrading, it's recommended to reinitialize the configuration to ensure you have any new settings:
+
+```bash
+# Initialize configuration files
+rag-retriever --init
+```
+
+This creates a configuration file at `~/.config/rag-retriever/config.yaml` (Unix/Mac) or `%APPDATA%\rag-retriever\config.yaml` (Windows)
+
+### Setting up your API Key
+
+Add your OpenAI API key to your configuration file:
+
+```yaml
+api:
+  openai_api_key: "sk-your-api-key-here"
+```
+
+> **Security Note**: During installation, RAG Retriever automatically sets strict file permissions (600) on `config.yaml` to ensure it's only readable by you. This helps protect your API key.
+
+### Customizing Configuration
+
+All settings are in `config.yaml`. For detailed information about all configuration options, best practices, and example configurations, see our [Configuration Guide](docs/configuration-guide.md).
+
+### Data Storage
+
+The vector store database and collections are stored at:
+
+- Unix/Mac: `~/.local/share/rag-retriever/chromadb/`
+- Windows: `%LOCALAPPDATA%\rag-retriever\chromadb/`
+
+Each collection is stored in its own subdirectory, with collection metadata maintained in a central metadata file. This location is automatically managed by the application and should not be modified directly.
+
 ## Knowledge Management Web Interface
 
 ![RAG Retriever UI](docs/images/rag-retriever-UI-collections.png)
@@ -52,13 +208,46 @@ python scripts/run_ui.py
 
 For detailed instructions on using the interface, see our [RAG Retriever UI User Guide](docs/rag-retriever-ui-guide.md).
 
-## Watch a Short Demo Video (not all RAG Retriever features are shown)
+### Uninstallation
 
-[![Watch the video](https://img.youtube.com/vi/oQ6fSWUZYh0/0.jpg)](https://youtu.be/oQ6fSWUZYh0)
+To completely remove RAG Retriever:
 
-_RAG Retriever seamlessly integrating with aider, Cursor, and Windsurf to provide accurate, up-to-date information during development._
+```bash
+# Remove the application and its isolated environment
+pipx uninstall rag-retriever
 
-> **💡 Note**: While our examples focus on AI coding assistants, RAG Retriever can enhance any AI-powered development environment or tool that can execute command-line applications. Use it to augment IDEs, CLI tools, or any development workflow that needs reliable, up-to-date information.
+# Remove Playwright browsers
+python -m playwright uninstall chromium
+
+# Optional: Remove configuration and data files
+# Unix/Mac:
+rm -rf ~/.config/rag-retriever ~/.local/share/rag-retriever
+# Windows (run in PowerShell):
+Remove-Item -Recurse -Force "$env:APPDATA\rag-retriever"
+Remove-Item -Recurse -Force "$env:LOCALAPPDATA\rag-retriever"
+```
+
+### Development Setup
+
+If you want to contribute to RAG Retriever or modify the code:
+
+```bash
+# Clone the repository
+git clone https://github.com/codingthefuturewithai/rag-retriever.git
+cd rag-retriever
+
+# Create and activate virtual environment
+python -m venv venv
+source venv/bin/activate  # Unix/Mac
+venv\Scripts\activate     # Windows
+
+# Install in editable mode
+pip install -e .
+
+# Initialize user configuration
+./scripts/run-rag.sh --init  # Unix/Mac
+scripts\run-rag.bat --init   # Windows
+```
 
 ## Collections
 
@@ -106,352 +295,6 @@ rag-retriever --query "search term" --search-all-collections
 # Delete a specific collection
 rag-retriever --clean --collection old-docs
 ```
-
-## Why Do We Need Such Tools?
-
-Modern AI coding assistants each implement their own way of loading external context from files and web sources. However, this creates several challenges:
-
-- Knowledge remains siloed within each tool's ecosystem
-- Support for different document types and sources varies widely
-- Integration with enterprise knowledge bases (Confluence, Notion, etc.) is limited
-- Each tool requires learning its unique context-loading mechanisms
-
-RAG Retriever solves these challenges by:
-
-1. Providing a unified knowledge repository that can ingest content from diverse sources
-2. Offering a simple command-line interface that works with any AI tool supporting shell commands
-3. Supporting collections to organize and manage content effectively
-
-> **💡 For a detailed discussion** of why centralized knowledge retrieval tools are crucial for AI-driven development, see our [Why RAG Retriever](docs/why-rag-retriever.md) guide.
-
-## Prerequisites
-
-### Core Requirements
-
-- Python 3.10-3.12 (Download from [python.org](https://python.org))
-- pipx (Install with one of these commands):
-
-  ```bash
-  # On MacOS
-  brew install pipx
-
-  # On Windows/Linux
-  python -m pip install --user pipx
-  ```
-
----
-
-> ### 🚀 Ready to Try It? Let's Go!
->
-> **Get up and running in 10 minutes!**
->
-> 1. Install RAG Retriever: `pipx install rag-retriever`
-> 2. Configure your AI coding assistant by following our [AI Assistant Setup Guide](https://github.com/codingthefuturewithai/ai-assistant-instructions/blob/main/instructions/setup/ai-assistant-setup-guide.md)
-> 3. Start using RAG Retriever with your configured AI assistant!
->
-> For detailed installation and configuration steps, see our [Getting Started Guide](docs/getting-started.md).
-
----
-
-### Optional Dependencies
-
-The following dependencies are only required for specific advanced PDF processing features:
-
-**MacOS**: `brew install tesseract`
-**Windows**: Install [Tesseract](https://github.com/UB-Mannheim/tesseract/wiki)
-
-### System Requirements
-
-The application uses Playwright with Chromium for web crawling:
-
-- Chromium browser is automatically installed during package installation
-- Sufficient disk space for Chromium (~200MB)
-- Internet connection for initial setup and crawling
-
-Note: The application will automatically download and manage Chromium installation.
-
-## Installation
-
-Install RAG Retriever as a standalone application:
-
-```bash
-pipx install rag-retriever
-```
-
-This will:
-
-- Create an isolated environment for the application
-- Install all required dependencies
-- Install Chromium browser automatically
-- Make the `rag-retriever` command available in your PATH
-
-## How to Upgrade
-
-To upgrade RAG Retriever to the latest version:
-
-```bash
-pipx upgrade rag-retriever
-```
-
-This will:
-
-- Upgrade the package to the latest available version
-- Preserve your existing configuration and data
-- Update any new dependencies automatically
-
-After installation, initialize the configuration:
-
-```bash
-# Initialize configuration files
-rag-retriever --init
-```
-
-This creates a configuration file at `~/.config/rag-retriever/config.yaml` (Unix/Mac) or `%APPDATA%\rag-retriever\config.yaml` (Windows)
-
-### Setting up your API Key
-
-Add your OpenAI API key to your configuration file:
-
-```yaml
-api:
-  openai_api_key: "sk-your-api-key-here"
-```
-
-> **Security Note**: During installation, RAG Retriever automatically sets strict file permissions (600) on `config.yaml` to ensure it's only readable by you. This helps protect your API key.
-
-### Customizing Configuration
-
-All settings are in `config.yaml`. For detailed information about all configuration options, best practices, and example configurations, see our [Configuration Guide](docs/configuration-guide.md).
-
-### Data Storage
-
-The vector store database and collections are stored at:
-
-- Unix/Mac: `~/.local/share/rag-retriever/chromadb/`
-- Windows: `%LOCALAPPDATA%\rag-retriever\chromadb/`
-
-Each collection is stored in its own subdirectory, with collection metadata maintained in a central metadata file. This location is automatically managed by the application and should not be modified directly.
-
-### Uninstallation
-
-To completely remove RAG Retriever:
-
-```bash
-# Remove the application and its isolated environment
-pipx uninstall rag-retriever
-
-# Remove Playwright browsers
-python -m playwright uninstall chromium
-
-# Optional: Remove configuration and data files
-# Unix/Mac:
-rm -rf ~/.config/rag-retriever ~/.local/share/rag-retriever
-# Windows (run in PowerShell):
-Remove-Item -Recurse -Force "$env:APPDATA\rag-retriever"
-Remove-Item -Recurse -Force "$env:LOCALAPPDATA\rag-retriever"
-```
-
-### Development Setup
-
-If you want to contribute to RAG Retriever or modify the code:
-
-```bash
-# Clone the repository
-git clone https://github.com/codingthefuturewithai/rag-retriever.git
-cd rag-retriever
-
-# Create and activate virtual environment
-python -m venv venv
-source venv/bin/activate  # Unix/Mac
-venv\Scripts\activate     # Windows
-
-# Install in editable mode
-pip install -e .
-
-# Initialize user configuration
-./scripts/run-rag.sh --init  # Unix/Mac
-scripts\run-rag.bat --init   # Windows
-```
-
-## MCP Integration (Experimental)
-
-RAG Retriever provides support for Anthropic's Model Context Protocol (MCP), enabling AI assistants to directly leverage its retrieval capabilities. The MCP integration currently offers a focused set of core features, with ongoing development to expand the available functionality.
-
-### Currently Supported MCP Features
-
-**Search Operations**
-
-- Web search using DuckDuckGo
-
-  - Customizable number of results
-  - Results include titles, URLs, and snippets
-  - Markdown-formatted output
-
-- Vector store search
-  - Semantic search across indexed content
-  - Search within specific collections
-  - Search across all collections simultaneously
-  - Configurable result limits
-  - Score threshold filtering
-  - Full or partial content retrieval
-  - Source attribution with collection information
-  - Markdown-formatted output with relevance scores
-
-**Content Processing**
-
-- URL content processing
-  - Fetch and ingest web content
-  - Store content in specific collections
-  - Automatically extract and clean text content
-  - Store processed content in vector store for semantic search
-  - Support for recursive crawling with depth control
-
-### Server Modes
-
-RAG Retriever's MCP server supports multiple operation modes:
-
-1. **stdio Mode** (Default)
-
-   - Used by Cursor and Claude Desktop integrations
-   - Communicates via standard input/output
-   - Configure as shown in the integration guides below
-
-2. **SSE Mode**
-
-   - Runs as a web server with Server-Sent Events
-   - Useful for web-based integrations or development
-   - Start with:
-
-   ```bash
-   python rag_retriever/mcp/server.py --port 3001
-   ```
-
-3. **Debug Mode**
-   - Uses the MCP Inspector for testing and development
-   - Helpful for debugging tool implementations
-   - Start with:
-   ```bash
-   mcp dev rag_retriever/mcp/server.py
-   ```
-
-### Cursor Integration
-
-1. First install RAG Retriever following the installation instructions above.
-
-2. Get the full path to the MCP server:
-
-```bash
-which mcp-rag-retriever
-```
-
-This will output something like `/Users/<username>/.local/bin/mcp-rag-retriever`
-
-3. Configure Cursor:
-   - Open Cursor Settings > Features > MCP Servers
-   - Click "+ Add New MCP Server"
-   - Configure the server:
-     - Name: rag-retriever
-     - Type: stdio
-     - Command: [paste the full path from step 2]
-
-For more details about MCP configuration in Cursor, see the [Cursor MCP documentation](https://docs.cursor.com/context/model-context-protocol).
-
-### Claude Desktop Integration
-
-1. First install RAG Retriever following the installation instructions above.
-
-2. Get the full path to the MCP server:
-
-```bash
-which mcp-rag-retriever
-```
-
-This will output something like `/Users/<username>/.local/bin/mcp-rag-retriever`
-
-3. Configure Claude Desktop:
-   - Open Claude menu > Settings > Developer > Edit Config
-   - Add RAG Retriever to the MCP servers configuration:
-
-```json
-{
-  "mcpServers": {
-    "rag-retriever": {
-      "command": "/Users/<username>/.local/bin/mcp-rag-retriever"
-    }
-  }
-}
-```
-
-For more details, see the [Claude Desktop MCP documentation](https://modelcontextprotocol.io/quickstart/user#for-claude-desktop-users).
-
-## Project Structure
-
-The project is organized into the following key directories:
-
-```
-rag_retriever/              # Main package directory
-├── main.py                # Core application logic
-├── cli.py                 # Command-line interface implementation
-├── config/               # Configuration management
-├── document_processor/   # Document processing modules
-├── vectorstore/         # Vector storage and embedding
-├── crawling/            # Web crawling functionality
-├── search/              # Search implementation
-├── mcp/                # Model Context Protocol integration
-└── utils/              # Utility functions and helpers
-
-tests/                    # Test suite
-├── unit/               # Unit tests
-├── integration/        # Integration tests
-├── data/              # Test data files
-├── docs/              # Test documentation
-└── results/           # Test execution results
-
-docs/                    # Project documentation
-├── getting-started.md         # Quick start guide
-├── configuration-guide.md     # Configuration details
-├── why-rag-retriever.md      # Project motivation and benefits
-├── future-features.md        # Planned enhancements
-├── rag-retriever-usage-guide.md  # Usage instructions
-└── images/                   # Documentation images
-
-scripts/                 # Utility scripts
-├── install.py          # Installation helper script
-├── test_github_loader.py    # GitHub integration tests
-├── test_pdf_processing.py   # PDF processing tests
-├── organize_pdfs.py         # PDF organization utility
-├── run-rag.sh              # Unix/Mac runner script
-└── run-rag.bat             # Windows runner script
-
-tools/                   # Development tools
-└── test_utils/         # Test utilities
-    ├── verify_categorization.py   # Category verification
-    ├── categorize_pdfs.py        # PDF categorization
-    ├── run_regression_tests.py   # Regression testing
-    └── ingest_samples.sh         # Sample data ingestion
-```
-
-### Key Components
-
-- **document_processor/**: Handles processing of various document types (PDF, text, etc.)
-- **vectorstore/**: Manages document embeddings and vector storage using ChromaDB
-- **crawling/**: Implements web crawling and content extraction
-- **search/**: Provides semantic search functionality
-- **config/**: Manages application configuration and settings
-- **utils/**: Contains shared utility functions and helpers
-- **tests/**: Comprehensive test suite with unit and integration tests
-- **docs/**: User and developer documentation
-- **scripts/**: Installation and testing utility scripts
-- **tools/**: Development and testing utilities
-
-### Supporting Directories
-
-- **tests/**: Comprehensive test suite with unit and integration tests
-- **docs/**: User and developer documentation
-- **scripts/**: Installation and testing utility scripts
-- **tools/**: Development and testing tools
-
-The test suite is organized into unit tests and integration tests, with separate directories for test data, documentation, and results. The `docs/` directory contains comprehensive guides for users and contributors, including specific instructions for AI assistant integration.
 
 ## Usage Examples
 
@@ -739,3 +582,114 @@ rag-retriever --web-search "your query" --search-provider duckduckgo
   - Uses DuckDuckGo directly
 
 For detailed configuration options and setup instructions, see our [Configuration Guide](docs/configuration-guide.md#search-provider-configuration).
+
+## MCP Integration (Experimental)
+
+RAG Retriever provides support for Anthropic's Model Context Protocol (MCP), enabling AI assistants to directly leverage its retrieval capabilities. The MCP integration currently offers a focused set of core features, with ongoing development to expand the available functionality.
+
+### Currently Supported MCP Features
+
+**Search Operations**
+
+- Web search using DuckDuckGo
+
+  - Customizable number of results
+  - Results include titles, URLs, and snippets
+  - Markdown-formatted output
+
+- Vector store search
+  - Semantic search across indexed content
+  - Search within specific collections
+  - Search across all collections simultaneously
+  - Configurable result limits
+  - Score threshold filtering
+  - Full or partial content retrieval
+  - Source attribution with collection information
+  - Markdown-formatted output with relevance scores
+
+**Content Processing**
+
+- URL content processing
+  - Fetch and ingest web content
+  - Store content in specific collections
+  - Automatically extract and clean text content
+  - Store processed content in vector store for semantic search
+  - Support for recursive crawling with depth control
+
+### Server Modes
+
+RAG Retriever's MCP server supports multiple operation modes:
+
+1. **stdio Mode** (Default)
+
+   - Used by Cursor and Claude Desktop integrations
+   - Communicates via standard input/output
+   - Configure as shown in the integration guides below
+
+2. **SSE Mode**
+
+   - Runs as a web server with Server-Sent Events
+   - Useful for web-based integrations or development
+   - Start with:
+
+   ```bash
+   python rag_retriever/mcp/server.py --port 3001
+   ```
+
+3. **Debug Mode**
+   - Uses the MCP Inspector for testing and development
+   - Helpful for debugging tool implementations
+   - Start with:
+   ```bash
+   mcp dev rag_retriever/mcp/server.py
+   ```
+
+### Cursor Integration
+
+1. First install RAG Retriever following the installation instructions above.
+
+2. Get the full path to the MCP server:
+
+```bash
+which mcp-rag-retriever
+```
+
+This will output something like `/Users/<username>/.local/bin/mcp-rag-retriever`
+
+3. Configure Cursor:
+   - Open Cursor Settings > Features > MCP Servers
+   - Click "+ Add New MCP Server"
+   - Configure the server:
+     - Name: rag-retriever
+     - Type: stdio
+     - Command: [paste the full path from step 2]
+
+For more details about MCP configuration in Cursor, see the [Cursor MCP documentation](https://docs.cursor.com/context/model-context-protocol).
+
+### Claude Desktop Integration
+
+1. First install RAG Retriever following the installation instructions above.
+
+2. Get the full path to the MCP server:
+
+```bash
+which mcp-rag-retriever
+```
+
+This will output something like `/Users/<username>/.local/bin/mcp-rag-retriever`
+
+3. Configure Claude Desktop:
+   - Open Claude menu > Settings > Developer > Edit Config
+   - Add RAG Retriever to the MCP servers configuration:
+
+```json
+{
+  "mcpServers": {
+    "rag-retriever": {
+      "command": "/Users/<username>/.local/bin/mcp-rag-retriever"
+    }
+  }
+}
+```
+
+For more details, see the [Claude Desktop MCP documentation](https://modelcontextprotocol.io/quickstart/user#for-claude-desktop-users).
