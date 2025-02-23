@@ -50,11 +50,11 @@ st.markdown(
     
     /* Card-like containers */
     .stDataFrame, div[data-testid="stExpander"] {
-        background-color: white;
-        padding: 1.5rem;
-        border-radius: 10px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-        margin: 1rem 0;
+        background-color: transparent;
+        padding: 1rem;
+        border-radius: 8px;
+        border: 1px solid var(--border-color);
+        margin: 0.75rem 0;
         transition: all 0.3s ease;
     }
     
@@ -125,20 +125,23 @@ st.markdown(
     /* Tables */
     .stDataFrame table {
         border: none !important;
+        background-color: transparent;
     }
     
     .stDataFrame th {
-        background-color: var(--background-color);
+        background-color: transparent;
         font-weight: 600;
+        border-bottom: 2px solid var(--border-color);
     }
     
     .stDataFrame td {
         font-size: 0.9rem;
+        background-color: transparent;
     }
     
     /* Sidebar */
     .css-1d391kg {
-        background-color: white;
+        background-color: transparent;
         border-right: 1px solid var(--border-color);
     }
     
@@ -155,10 +158,24 @@ st.markdown(
     /* Search results */
     .search-result {
         border-left: 4px solid var(--primary-color);
-        padding-left: 1rem;
+        padding: 1rem;
         margin: 1rem 0;
-        background-color: white;
+        background-color: transparent;
         border-radius: 0 8px 8px 0;
+        border: 1px solid var(--border-color);
+    }
+    
+    /* Metadata container styling */
+    .metadata-container {
+        background-color: #2b3035;
+        padding: 1rem;
+        margin: 0.5rem 0;
+        border-radius: 8px;
+        color: #e9ecef;
+    }
+    
+    .metadata-container strong {
+        color: #ffffff;
     }
 </style>
 """,
@@ -207,20 +224,18 @@ def get_collection_stats(collection_name: str) -> Dict[str, Any]:
 
 def display_search():
     """Display search interface."""
-    st.header("Search")
+    st.header("Search Knowledge Store")
 
     # Initialize searcher
     searcher = Searcher()
 
-    # Initialize session state for expanded sections and button clicks
-    if "expanded_metadata" not in st.session_state:
-        st.session_state.expanded_metadata = set()
-    if "expanded_content" not in st.session_state:
-        st.session_state.expanded_content = set()
+    # Initialize session state for search results and expanded states
     if "search_results" not in st.session_state:
         st.session_state.search_results = None
-    if "button_clicked" not in st.session_state:
-        st.session_state.button_clicked = None
+    if "expanded_content" not in st.session_state:
+        st.session_state.expanded_content = set()
+    if "expanded_metadata" not in st.session_state:
+        st.session_state.expanded_metadata = set()
 
     # Get list of collections for dropdown
     store = VectorStore()
@@ -295,11 +310,6 @@ def display_search():
 
             with st.spinner("🔍 Searching..."):
                 try:
-                    # Clear expanded states
-                    st.session_state.expanded_metadata = set()
-                    st.session_state.expanded_content = set()
-                    st.session_state.button_clicked = None
-
                     # Perform search
                     search_all = selected_collection == "All Collections"
                     if not search_all:
@@ -326,76 +336,76 @@ def display_search():
     if st.session_state.search_results:
         st.markdown("### Search Results")
 
-        for i, result in enumerate(st.session_state.search_results, 1):
-            # Result container with card styling
-            st.markdown('<div class="search-result">', unsafe_allow_html=True)
+        # Display results in cards
+        for i, result in enumerate(st.session_state.search_results):
+            with st.container():
+                st.markdown('<div class="search-result">', unsafe_allow_html=True)
 
-            # Score indicator with color
-            score_color = (
-                "#4CAF50"
-                if result.score >= 0.7
-                else "#FF9800" if result.score >= 0.5 else "#F44336"
-            )
-
-            st.markdown(
-                f"""
-                <h4 style="margin-bottom: 0.5rem;">Result {i}</h4>
-                <p style="color: {score_color}; font-weight: 600; margin: 0;">
-                    Relevance Score: {result.score:.2f}
-                </p>
-                <p style="color: gray; margin: 0.5rem 0;">
-                    Source: {result.source}
-                </p>
-                """,
-                unsafe_allow_html=True,
-            )
-
-            # Content display with animation
-            if show_full:
-                st.markdown(result.content)
-            else:
-                preview = (
-                    result.content[:200] + "..."
-                    if len(result.content) > 200
-                    else result.content
+                # Source name as title
+                source = (
+                    result.source.split("/")[-1]
+                    if "/" in result.source
+                    else result.source
                 )
-                st.markdown(preview)
+                st.markdown(f"#### {source}")
 
-                if len(result.content) > 200:
-                    content_key = f"content_{i}"
-                    is_content_expanded = i in st.session_state.expanded_content
-
-                    if is_content_expanded:
-                        st.markdown(result.content)
-                        if st.button("📕 Show less", key=f"less_{content_key}"):
+                # Source URL and buttons in one row
+                col1, col2, col3, col4 = st.columns([2, 1, 1, 1])
+                with col1:
+                    st.markdown(f"*{result.source}*")
+                with col2:
+                    if result.source.startswith(("http://", "https://")):
+                        st.markdown(
+                            f'<a href="{result.source}" target="_blank">🔗 Open</a>',
+                            unsafe_allow_html=True,
+                        )
+                with col3:
+                    # Toggle content expansion
+                    is_expanded = i in st.session_state.expanded_content
+                    if st.button("📄 Full Content", key=f"content_{i}"):
+                        if is_expanded:
                             st.session_state.expanded_content.remove(i)
-                            st.session_state.button_clicked = f"less_{content_key}"
-                            st.rerun()
-                    else:
-                        if st.button("📖 Show full content", key=f"more_{content_key}"):
+                        else:
                             st.session_state.expanded_content.add(i)
-                            st.session_state.button_clicked = f"more_{content_key}"
-                            st.rerun()
+                with col4:
+                    # Toggle metadata expansion
+                    is_metadata_expanded = i in st.session_state.expanded_metadata
+                    if st.button("ℹ️ Metadata", key=f"metadata_{i}"):
+                        if is_metadata_expanded:
+                            st.session_state.expanded_metadata.remove(i)
+                        else:
+                            st.session_state.expanded_metadata.add(i)
 
-            # Metadata handling with improved UI
-            metadata_key = f"metadata_{i}"
-            is_metadata_expanded = i in st.session_state.expanded_metadata
+                # Content
+                if i in st.session_state.expanded_content or show_full:
+                    # Show full content
+                    st.markdown(result.content)
+                else:
+                    # Show truncated content
+                    content = (
+                        result.content[:200] + "..."
+                        if len(result.content) > 200
+                        else result.content
+                    )
+                    st.markdown(content)
+                    if len(result.content) > 200:
+                        st.markdown("*Click 'Full Content' to see more*")
 
-            if is_metadata_expanded:
-                with st.expander("📋 Metadata", expanded=True):
-                    st.json(result.metadata)
-                if st.button("Hide metadata", key=f"hide_{metadata_key}"):
-                    st.session_state.expanded_metadata.remove(i)
-                    st.session_state.button_clicked = f"hide_{metadata_key}"
-                    st.rerun()
-            else:
-                if st.button("📋 Show metadata", key=f"show_{metadata_key}"):
-                    st.session_state.expanded_metadata.add(i)
-                    st.session_state.button_clicked = f"show_{metadata_key}"
-                    st.rerun()
+                # Show score
+                st.markdown(f"*Relevance Score: {result.score:.2f}*")
 
-            st.markdown("</div>", unsafe_allow_html=True)
-            st.markdown("<br>", unsafe_allow_html=True)
+                # Metadata (if expanded)
+                if i in st.session_state.expanded_metadata:
+                    with st.expander("Document Metadata", expanded=True):
+                        for key, value in result.metadata.items():
+                            if key not in [
+                                "source",
+                                "depth",
+                            ]:  # Skip source and depth fields
+                                st.markdown(f"**{key}**: {value}")
+
+                st.markdown("</div>", unsafe_allow_html=True)
+                st.markdown("<br>", unsafe_allow_html=True)
 
 
 def display_collections():
@@ -857,6 +867,428 @@ def show_collection_stats():
             st.rerun()
 
 
+def display_discover():
+    """Display content discovery and ingestion interface."""
+    st.header("Discover Content")
+
+    # Initialize session state for URL entries and search results
+    if "url_entries" not in st.session_state:
+        st.session_state.url_entries = [{"url": "", "max_depth": 0}]
+    if "web_search_results" not in st.session_state:
+        st.session_state.web_search_results = None
+    if "processing_state" not in st.session_state:
+        st.session_state.processing_state = {"status": "idle", "progress": 0}
+    if "validation_states" not in st.session_state:
+        st.session_state.validation_states = {}
+    if "selected_discover_urls" not in st.session_state:
+        st.session_state.selected_discover_urls = set()
+    if "discover_url_depths" not in st.session_state:
+        st.session_state.discover_url_depths = {}
+
+    # Web Search Section
+    st.subheader("Web Search")
+    with st.container():
+        col1, col2 = st.columns([3, 1])
+        with col1:
+            search_query = st.text_input(
+                "Search query",
+                key="discover_search_query",
+                placeholder="Enter search terms to find relevant content...",
+                help="Enter keywords to search for relevant web content",
+            )
+        with col2:
+            num_results = st.number_input(
+                "Number of results",
+                min_value=1,
+                max_value=20,
+                value=5,
+                key="discover_num_results",
+                help="Maximum number of search results to display",
+            )
+
+        search_clicked = st.button(
+            "🔍 Search",
+            type="primary",
+            key="discover_search_button",
+            use_container_width=True,
+            help="Search for web content",
+        )
+
+        # Handle search
+        if search_clicked:
+            if not search_query:
+                st.warning("⚠️ Please enter a search query")
+            else:
+                with st.spinner("🔍 Searching..."):
+                    try:
+                        from rag_retriever.search.web_search import web_search
+
+                        results = web_search(search_query, num_results)
+                        st.session_state.web_search_results = results
+                    except Exception as e:
+                        st.error(f"🚨 Error performing search: {str(e)}")
+                        st.session_state.web_search_results = None
+
+    # Display search results
+    if st.session_state.web_search_results:
+        st.markdown("### Search Results")
+
+        # Add select all checkbox
+        if st.checkbox("Select All Results", key="discover_select_all"):
+            st.session_state.selected_discover_urls = {
+                result.url for result in st.session_state.web_search_results
+            }
+        else:
+            st.session_state.selected_discover_urls.clear()
+
+        # Display results in cards
+        for i, result in enumerate(st.session_state.web_search_results):
+            with st.container():
+                st.markdown('<div class="search-result">', unsafe_allow_html=True)
+
+                # Title and selection in one row
+                col1, col2 = st.columns([4, 1])
+                with col1:
+                    st.markdown(f"#### {result.title}")
+                with col2:
+                    is_selected = result.url in st.session_state.selected_discover_urls
+                    if st.checkbox(
+                        "Select", key=f"discover_select_{i}", value=is_selected
+                    ):
+                        st.session_state.selected_discover_urls.add(result.url)
+                    else:
+                        st.session_state.selected_discover_urls.discard(result.url)
+
+                # URL and open link
+                col1, col2 = st.columns([4, 1])
+                with col1:
+                    st.markdown(f"*{result.url}*")
+                with col2:
+                    st.markdown(
+                        f'<a href="{result.url}" target="_blank">🔗 Open</a>',
+                        unsafe_allow_html=True,
+                    )
+
+                # Snippet
+                st.markdown(result.snippet)
+
+                # Max depth selector (only show if selected)
+                if result.url in st.session_state.selected_discover_urls:
+                    depth = st.number_input(
+                        "Max Depth",
+                        min_value=0,
+                        max_value=5,
+                        value=st.session_state.discover_url_depths.get(result.url, 0),
+                        key=f"depth_discover_{i}",
+                        help="Maximum depth of pages to crawl (0 = current page only)",
+                    )
+                    # Store the depth value in session state
+                    st.session_state.discover_url_depths[result.url] = depth
+
+                st.markdown("</div>", unsafe_allow_html=True)
+                st.markdown("<br>", unsafe_allow_html=True)
+
+        # Collection selection for processing
+        if st.session_state.selected_discover_urls:
+            st.divider()
+
+            # Get list of collections
+            store = VectorStore()
+            collections = store.list_collections()
+            collection_names = [c["name"] for c in collections]
+
+            col1, col2 = st.columns([3, 1])
+            with col1:
+                selected_collection = st.selectbox(
+                    "Select collection",
+                    options=["Create New Collection"] + collection_names,
+                    key="process_collection",
+                    help="Choose which collection to add the content to",
+                )
+
+            # Show new collection input if selected
+            if selected_collection == "Create New Collection":
+                new_collection_name = st.text_input(
+                    "New collection name",
+                    key="new_collection_name",
+                    help="Enter a name for the new collection",
+                )
+                new_collection_description = st.text_area(
+                    "Collection description",
+                    key="new_collection_description",
+                    help="Enter a description for the new collection",
+                )
+
+            # Process button
+            process_button = st.button(
+                f"Process {len(st.session_state.selected_discover_urls)} Selected URLs",
+                type="primary",
+                disabled=False,
+                use_container_width=True,
+                help="Process and index the selected URLs",
+            )
+
+            if process_button:
+                # Initialize VectorStore first
+                store = VectorStore()
+
+                if selected_collection == "Create New Collection":
+                    if not new_collection_name:
+                        st.error("Please enter a name for the new collection")
+                        return
+
+                    try:
+                        # Create new collection
+                        collection = store._get_or_create_collection(
+                            new_collection_name
+                        )
+                        if new_collection_description:
+                            collection._collection_metadata.description = (
+                                new_collection_description
+                            )
+                            store._save_collection_metadata()
+                        selected_collection = new_collection_name
+                        st.success(f"Created new collection: {new_collection_name}")
+                    except Exception as e:
+                        st.error(f"Error creating collection: {str(e)}")
+                        return
+
+                # Process URLs with progress bar
+                progress_bar = st.progress(0)
+                status_text = st.empty()
+                error_container = st.container()
+
+                total_urls = len(st.session_state.selected_discover_urls)
+                processed_urls = 0
+                errors = []
+
+                for url in st.session_state.selected_discover_urls:
+                    try:
+                        status_text.text(f"Processing {url}...")
+                        depth = st.session_state.discover_url_depths.get(url, 0)
+
+                        # Use the process_url function from main.py
+                        from rag_retriever.main import process_url
+
+                        result = process_url(
+                            url=url,
+                            max_depth=depth,
+                            verbose=True,
+                            collection_name=selected_collection,
+                        )
+
+                        if result == 0:  # Success
+                            processed_urls += 1
+                            progress = processed_urls / total_urls
+                            progress_bar.progress(progress)
+                            st.success(f"Successfully processed: {url}")
+                        else:
+                            errors.append((url, "Failed to process URL"))
+                            st.error(f"Error processing {url}")
+
+                    except Exception as e:
+                        errors.append((url, str(e)))
+                        st.error(f"Error processing {url}: {str(e)}")
+
+                # Show final status
+                if errors:
+                    with error_container:
+                        st.error("Some URLs failed to process:")
+                        for url, error in errors:
+                            st.markdown(f"- **{url}**: {error}")
+
+                if processed_urls > 0:
+                    st.success(f"Successfully processed {processed_urls} URLs")
+                    # Clear selections after successful processing
+                    st.session_state.selected_discover_urls.clear()
+                    st.session_state.discover_url_depths.clear()
+                    st.rerun()
+
+    # Direct URL Input Section
+    st.divider()
+    st.subheader("Direct URL Input")
+
+    # Display existing URL entries
+    for i, entry in enumerate(st.session_state.url_entries):
+        with st.container():
+            col1, col2, col3 = st.columns([3, 1, 1])
+
+            with col1:
+                url = st.text_input(
+                    "URL",
+                    value=entry["url"],
+                    key=f"url_{i}",
+                    placeholder="Enter a URL to index...",
+                    help="Enter the web page URL you want to add to your knowledge base",
+                )
+
+                # Update URL in session state
+                st.session_state.url_entries[i]["url"] = url
+
+                # Basic URL validation
+                if url:
+                    from urllib.parse import urlparse
+
+                    parsed = urlparse(url)
+                    is_valid = bool(parsed.scheme and parsed.netloc)
+                    st.session_state.validation_states[f"url_{i}"] = is_valid
+
+                    if not is_valid:
+                        st.error("Please enter a valid URL (e.g., https://example.com)")
+
+            with col2:
+                depth = st.number_input(
+                    "Max Depth",
+                    min_value=0,
+                    max_value=5,
+                    value=entry["max_depth"],
+                    key=f"depth_{i}",
+                    help="Maximum depth of pages to crawl (0 = current page only)",
+                )
+                # Update depth in session state
+                st.session_state.url_entries[i]["max_depth"] = depth
+
+            with col3:
+                if st.button("Remove", key=f"remove_{i}", help="Remove this URL"):
+                    st.session_state.url_entries.pop(i)
+                    # Remove validation state
+                    st.session_state.validation_states.pop(f"url_{i}", None)
+                    st.rerun()
+
+    # Add URL button
+    if st.button("➕ Add Another URL", use_container_width=True):
+        st.session_state.url_entries.append({"url": "", "max_depth": 0})
+        st.rerun()
+
+    # Only show collection selection and process button if there are valid URLs
+    valid_urls = [
+        entry["url"]
+        for entry in st.session_state.url_entries
+        if entry["url"]
+        and st.session_state.validation_states.get(
+            f"url_{st.session_state.url_entries.index(entry)}", False
+        )
+    ]
+
+    if valid_urls:
+        st.divider()
+
+        # Get list of collections
+        store = VectorStore()
+        collections = store.list_collections()
+        collection_names = [c["name"] for c in collections]
+
+        col1, col2 = st.columns([3, 1])
+        with col1:
+            selected_collection = st.selectbox(
+                "Select collection",
+                options=["Create New Collection"] + collection_names,
+                key="direct_process_collection",
+                help="Choose which collection to add the content to",
+            )
+
+        # Show new collection input if selected
+        if selected_collection == "Create New Collection":
+            new_collection_name = st.text_input(
+                "New collection name",
+                key="direct_new_collection_name",
+                help="Enter a name for the new collection",
+            )
+            new_collection_description = st.text_area(
+                "Collection description",
+                key="direct_new_collection_description",
+                help="Enter a description for the new collection",
+            )
+
+        # Process URLs button
+        process_button = st.button(
+            f"Process {len(valid_urls)} URLs",
+            type="primary",
+            use_container_width=True,
+            help="Process and index the entered URLs",
+        )
+
+        if process_button:
+            # Initialize VectorStore first
+            store = VectorStore()
+
+            if selected_collection == "Create New Collection":
+                if not new_collection_name:
+                    st.error("Please enter a name for the new collection")
+                    return
+
+                try:
+                    # Create new collection
+                    collection = store._get_or_create_collection(new_collection_name)
+                    if new_collection_description:
+                        collection._collection_metadata.description = (
+                            new_collection_description
+                        )
+                        store._save_collection_metadata()
+                    selected_collection = new_collection_name
+                    st.success(f"Created new collection: {new_collection_name}")
+                except Exception as e:
+                    st.error(f"Error creating collection: {str(e)}")
+                    return
+
+            # Process URLs with progress bar
+            progress_bar = st.progress(0)
+            status_text = st.empty()
+            error_container = st.container()
+
+            total_urls = len(valid_urls)
+            processed_urls = 0
+            errors = []
+
+            for url in valid_urls:
+                try:
+                    status_text.text(f"Processing {url}...")
+                    # Get depth for this URL
+                    url_index = next(
+                        i
+                        for i, entry in enumerate(st.session_state.url_entries)
+                        if entry["url"] == url
+                    )
+                    depth = st.session_state.url_entries[url_index]["max_depth"]
+
+                    # Use the process_url function from main.py
+                    from rag_retriever.main import process_url
+
+                    result = process_url(
+                        url=url,
+                        max_depth=depth,
+                        verbose=True,
+                        collection_name=selected_collection,
+                    )
+
+                    if result == 0:  # Success
+                        processed_urls += 1
+                        progress = processed_urls / total_urls
+                        progress_bar.progress(progress)
+                        st.success(f"Successfully processed: {url}")
+                    else:
+                        errors.append((url, "Failed to process URL"))
+                        st.error(f"Error processing {url}")
+
+                except Exception as e:
+                    errors.append((url, str(e)))
+                    st.error(f"Error processing {url}: {str(e)}")
+
+            # Show final status
+            if errors:
+                with error_container:
+                    st.error("Some URLs failed to process:")
+                    for url, error in errors:
+                        st.markdown(f"- **{url}**: {error}")
+
+            if processed_urls > 0:
+                st.success(f"Successfully processed {processed_urls} URLs")
+                # Clear URL entries after successful processing
+                st.session_state.url_entries = [{"url": "", "max_depth": 0}]
+                st.session_state.validation_states = {}
+                st.rerun()
+
+
 def main():
     """Main Streamlit application."""
 
@@ -876,13 +1308,16 @@ def main():
         st.title("RAG Retriever UI")
 
     # Add tabs for different functionality
-    tab1, tab2 = st.tabs(["Collections", "Search"])
+    tab1, tab2, tab3 = st.tabs(["Collections", "Search Knowledge Store", "Discover"])
 
     with tab1:
         display_collections()
 
     with tab2:
         display_search()
+
+    with tab3:
+        display_discover()
 
 
 if __name__ == "__main__":
