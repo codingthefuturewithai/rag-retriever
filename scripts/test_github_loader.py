@@ -33,7 +33,7 @@ def main():
     try:
         # Load only Python and Markdown files
         documents = loader.load_repository(
-            repo_url=repo_url, file_filter=[".py", ".md"]
+            repo_url=repo_url, file_filter=lambda x: x.endswith((".py", ".md"))
         )
 
         print(f"\nSuccessfully loaded {len(documents)} documents")

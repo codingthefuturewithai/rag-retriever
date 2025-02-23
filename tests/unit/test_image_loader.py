@@ -8,6 +8,7 @@ import shutil
 from PIL import Image
 import requests
 from unittest.mock import patch, MagicMock
+from langchain_core.documents import Document
 
 from rag_retriever.document_processor import ImageLoader
 
@@ -26,21 +27,33 @@ TEST_CONFIG = {
 
 
 @pytest.fixture
-def image_loader():
-    """Create an ImageLoader instance for testing."""
-    return ImageLoader(TEST_CONFIG)
+def mock_vision_analyzer():
+    """Create a mock vision analyzer."""
+    mock = MagicMock()
+    mock.analyze_image.return_value = {
+        "source": "test_image.png",
+        "content": "Test image description",
+        "type": "vision_analysis",
+    }
+    return mock
+
+
+@pytest.fixture
+def image_loader(mock_vision_analyzer):
+    """Create an ImageLoader instance with mocked vision analyzer."""
+    config = {"image_processing": {"vision_enabled": True, "max_file_size_mb": 10}}
+    loader = ImageLoader(config)
+    loader.vision_analyzer = mock_vision_analyzer
+    return loader
 
 
 @pytest.fixture
 def test_image_path():
     """Create a temporary test image."""
     with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as tmp:
-        # Create a simple test image
         img = Image.new("RGB", (100, 30), color="white")
         img.save(tmp.name)
-        yield tmp.name
-        # Cleanup
-        os.unlink(tmp.name)
+        return tmp.name
 
 
 def test_supported_formats(image_loader):
@@ -101,17 +114,24 @@ def test_download_image_failure(mock_get, image_loader):
     assert result is None
 
 
-def test_load_image_local_file(image_loader, test_image_path):
+def test_load_image_local_file(image_loader, test_image_path, mock_vision_analyzer):
     """Test loading a local image file."""
     document = image_loader.load_image(test_image_path)
+
     assert document is not None
+    assert document.page_content == "Test image description"
     assert document.metadata["source"] == test_image_path
     assert document.metadata["type"] == "image"
     assert document.metadata["extension"] == ".png"
+    assert document.metadata["analysis_type"] == "vision"
+
+    mock_vision_analyzer.analyze_image.assert_called_once_with(test_image_path)
 
 
 @patch("requests.get")
-def test_load_image_from_url(mock_get, image_loader, test_image_path):
+def test_load_image_from_url(
+    mock_get, image_loader, test_image_path, mock_vision_analyzer
+):
     """Test loading an image from a URL."""
     # Mock successful image download
     with open(test_image_path, "rb") as f:
@@ -123,13 +143,18 @@ def test_load_image_from_url(mock_get, image_loader, test_image_path):
     mock_get.return_value = mock_response
 
     document = image_loader.load_image("https://example.com/test.png")
+
     assert document is not None
+    assert document.page_content == "Test image description"
     assert document.metadata["source"] == "https://example.com/test.png"
     assert document.metadata["type"] == "image"
     assert document.metadata["extension"] == ".png"
+    assert document.metadata["analysis_type"] == "vision"
+
+    mock_vision_analyzer.analyze_image.assert_called_once()
 
 
-def test_load_directory(image_loader):
+def test_load_directory(image_loader, mock_vision_analyzer):
     """Test loading images from a directory."""
     # Create a temporary directory with test images
     with tempfile.TemporaryDirectory() as tmp_dir:
@@ -142,8 +167,12 @@ def test_load_directory(image_loader):
         Path(os.path.join(tmp_dir, "test.txt")).touch()
 
         documents = image_loader.load_directory(tmp_dir)
-        assert len(documents) == 3
 
+        assert len(documents) == 3
         for doc in documents:
+            assert doc.page_content == "Test image description"
             assert doc.metadata["type"] == "image"
             assert doc.metadata["extension"] == ".png"
+            assert doc.metadata["analysis_type"] == "vision"
+
+        assert mock_vision_analyzer.analyze_image.call_count == 3
