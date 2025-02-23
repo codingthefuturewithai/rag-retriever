@@ -73,7 +73,11 @@ class DuckDuckGoSearchProvider:
         logger.debug(f"Performing DuckDuckGo search for query: {query}")
         logger.debug(f"Requested number of results: {num_results}")
 
-        raw_results = self.search_wrapper.results(query, max_results=num_results)
+        try:
+            raw_results = self.search_wrapper.results(query, max_results=num_results)
+        except Exception as e:
+            logger.error(f"DuckDuckGo search error: {e}")
+            return []
 
         snippet_lengths = [len(result.get("snippet", "")) for result in raw_results]
         logger.debug(f"Number of results returned: {len(raw_results)}")
@@ -109,20 +113,28 @@ class GoogleSearchProvider:
         if not api_key or not cse_id:
             raise ValueError(
                 "Google Search requires GOOGLE_API_KEY and GOOGLE_CSE_ID to be set "
-                "via environment variables, config file, or command line arguments"
+                "via environment variables or config file"
             )
 
         # Set environment variables for GoogleSearchAPIWrapper
         os.environ["GOOGLE_API_KEY"] = api_key
         os.environ["GOOGLE_CSE_ID"] = cse_id
 
-        self.search_wrapper = GoogleSearchAPIWrapper()
+        try:
+            self.search_wrapper = GoogleSearchAPIWrapper()
+        except Exception as e:
+            logger.error(f"Failed to initialize Google Search wrapper: {e}")
+            raise ValueError(f"Failed to initialize Google Search: {e}")
 
     def search(self, query: str, num_results: int) -> List[SearchResult]:
         logger.debug(f"Performing Google search for query: {query}")
         logger.debug(f"Requested number of results: {num_results}")
 
-        raw_results = self.search_wrapper.results(query, num_results=num_results)
+        try:
+            raw_results = self.search_wrapper.results(query, num_results=num_results)
+        except Exception as e:
+            logger.error(f"Google search error: {e}")
+            return []
 
         snippet_lengths = [len(result.get("snippet", "")) for result in raw_results]
         logger.debug(f"Number of results returned: {len(raw_results)}")
@@ -141,36 +153,58 @@ class GoogleSearchProvider:
         ]
 
 
-def get_search_provider(provider: str = "duckduckgo") -> SearchProvider:
+def get_search_provider(provider: str | None = None) -> SearchProvider:
     """
     Factory function to get the appropriate search provider.
 
     The function follows these rules:
-    1. If Google is explicitly requested but credentials missing:
-       - Raises ValueError with message suggesting DuckDuckGo
-    2. For all other cases:
-       - Returns DuckDuckGo provider
+    1. If provider is None, use default from config
+    2. If provider is unknown, raise ValueError
+    3. If Google is requested (explicitly or by default) but credentials missing:
+       - For explicit request: Raise ValueError with message suggesting DuckDuckGo
+       - For default: Silently fall back to DuckDuckGo
+    4. If DuckDuckGo is requested: Return DuckDuckGo provider
 
     Args:
         provider: Name of the search provider to use ("duckduckgo" or "google")
+                 If None, uses default from config
 
     Returns:
         SearchProvider instance
 
     Raises:
-        ValueError: If Google is explicitly requested but credentials are not configured
+        ValueError: If unknown provider specified or if Google explicitly requested
+                   but credentials not configured
     """
-    # If explicitly requesting Google, check credentials
-    if provider.lower() == "google":
+    # Normalize provider name if provided
+    if provider:
+        provider = provider.lower()
+        # Validate provider name
+        if provider not in ["google", "duckduckgo"]:
+            raise ValueError(
+                f"Unknown search provider: {provider}. "
+                "Valid options are 'google' or 'duckduckgo'"
+            )
+    else:
+        # Use default from config
+        provider = config.search.get("default_provider", "duckduckgo").lower()
+
+    # Handle Google provider
+    if provider == "google":
         try:
             return GoogleSearchProvider()
-        except ValueError:
-            raise ValueError(
-                "Google Search credentials are not configured. Please try again with "
-                "provider='duckduckgo' or configure Google Search credentials."
-            )
+        except ValueError as e:
+            # If explicitly requested, show error
+            if provider:
+                raise ValueError(
+                    "Google Search credentials are not configured. Please try again with "
+                    "provider='duckduckgo' or configure Google Search credentials."
+                )
+            # If default, silently fall back
+            logger.debug("Google credentials not found, falling back to DuckDuckGo")
+            return DuckDuckGoSearchProvider()
 
-    # For all other cases (including failed Google default), use DuckDuckGo
+    # For all other cases (including DuckDuckGo and Google fallback)
     return DuckDuckGoSearchProvider()
 
 

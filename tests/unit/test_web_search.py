@@ -49,7 +49,7 @@ def mock_google_results():
 def test_duckduckgo_search_provider(mock_duckduckgo_results):
     """Test DuckDuckGo search provider."""
     with patch(
-        "langchain_community.utilities.DuckDuckGoSearchAPIWrapper"
+        "rag_retriever.search.web_search.DuckDuckGoSearchAPIWrapper"
     ) as mock_wrapper:
         mock_instance = MagicMock()
         mock_instance.results.return_value = mock_duckduckgo_results
@@ -70,7 +70,9 @@ def test_duckduckgo_search_provider(mock_duckduckgo_results):
 def test_google_search_provider(mock_google_results):
     """Test Google search provider."""
     with patch.dict(os.environ, {"GOOGLE_API_KEY": "test", "GOOGLE_CSE_ID": "test"}):
-        with patch("langchain_google_community.GoogleSearchAPIWrapper") as mock_wrapper:
+        with patch(
+            "rag_retriever.search.web_search.GoogleSearchAPIWrapper"
+        ) as mock_wrapper:
             mock_instance = MagicMock()
             mock_instance.results.return_value = mock_google_results
             mock_wrapper.return_value = mock_instance
@@ -90,11 +92,15 @@ def test_google_search_provider(mock_google_results):
 def test_google_search_provider_missing_credentials():
     """Test Google search provider with missing credentials."""
     with patch.dict(os.environ, {}, clear=True):
-        with pytest.raises(ValueError) as exc_info:
-            GoogleSearchProvider()
-        assert "Google Search requires GOOGLE_API_KEY and GOOGLE_CSE_ID" in str(
-            exc_info.value
-        )
+        with patch(
+            "rag_retriever.search.web_search.get_google_search_credentials"
+        ) as mock_creds:
+            mock_creds.return_value = (None, None)
+            with pytest.raises(ValueError) as exc_info:
+                GoogleSearchProvider()
+            assert "Google Search requires GOOGLE_API_KEY and GOOGLE_CSE_ID" in str(
+                exc_info.value
+            )
 
 
 def test_get_search_provider_duckduckgo():
@@ -118,25 +124,54 @@ def test_get_search_provider_unknown():
 
 
 def test_get_search_provider_fallback():
-    """Test fallback to DuckDuckGo when Google fails."""
+    """Test fallback to DuckDuckGo when Google fails as default provider."""
     with patch.dict(os.environ, {}, clear=True):
-        provider = get_search_provider("google")
-        assert isinstance(provider, DuckDuckGoSearchProvider)
+        with patch(
+            "rag_retriever.search.web_search.get_google_search_credentials"
+        ) as mock_creds:
+            mock_creds.return_value = (None, None)
+            # Mock config to simulate Google as default provider
+            with patch("rag_retriever.search.web_search.config") as mock_config:
+                mock_config.search.get.side_effect = lambda key, default=None: {
+                    "default_provider": "google",
+                    "default_web_results": 5,
+                }.get(key, default)
+                # Mock DuckDuckGo wrapper since that's what we'll fall back to
+                with patch(
+                    "rag_retriever.search.web_search.DuckDuckGoSearchAPIWrapper"
+                ) as mock_wrapper:
+                    mock_instance = MagicMock()
+                    mock_wrapper.return_value = mock_instance
+                    # Call web_search without explicit provider to test default behavior
+                    web_search("test query")
+                    # Verify DuckDuckGo was used
+                    mock_instance.results.assert_called_once_with(
+                        "test query", max_results=5
+                    )
 
 
 def test_web_search_integration(mock_duckduckgo_results):
     """Test web_search function integration."""
     with patch(
-        "langchain_community.utilities.DuckDuckGoSearchAPIWrapper"
+        "rag_retriever.search.web_search.DuckDuckGoSearchAPIWrapper"
     ) as mock_wrapper:
         mock_instance = MagicMock()
         mock_instance.results.return_value = mock_duckduckgo_results
         mock_wrapper.return_value = mock_instance
 
-        results = web_search("test query", num_results=2)
+        # Mock config to ensure we use DuckDuckGo
+        with patch("rag_retriever.search.web_search.config") as mock_config:
+            mock_config.search.get.side_effect = lambda key, default=None: {
+                "default_provider": "duckduckgo",
+                "default_web_results": 5,
+            }.get(key, default)
 
-        assert len(results) == 2
-        assert isinstance(results[0], SearchResult)
-        assert results[0].title == "Test Title 1"
-        assert results[0].url == "https://example.com/1"
-        assert results[0].snippet == "Test snippet 1"
+            results = web_search("test query", num_results=2)
+
+            assert len(results) == 2
+            assert isinstance(results[0], SearchResult)
+            assert results[0].title == "Test Title 1"
+            assert results[0].url == "https://example.com/1"
+            assert results[0].snippet == "Test snippet 1"
+
+            mock_instance.results.assert_called_once_with("test query", max_results=2)
