@@ -402,7 +402,7 @@ def display_collections():
     """Display collections table with metadata."""
     st.header("Collections Management")
 
-    # Initialize session state for deletion flow and editing
+    # Initialize session state
     if "show_delete_confirm" not in st.session_state:
         st.session_state.show_delete_confirm = False
         st.session_state.collection_to_delete = None
@@ -419,18 +419,14 @@ def display_collections():
 
     # Initialize vector store
     store = VectorStore()
-
-    # Get collections
     collections = store.list_collections()
 
     if not collections:
         st.info("No collections found.")
         return
 
-    # Create a DataFrame for better display
+    # Display collections table
     df = pd.DataFrame(collections)
-
-    # Reorder columns for better presentation
     columns = [
         "name",
         "created_at",
@@ -440,11 +436,8 @@ def display_collections():
         "description",
     ]
     df = df[columns]
-
-    # Rename columns for better display
     df.columns = [col.replace("_", " ").title() for col in df.columns]
 
-    # Display the table with sorting enabled
     st.dataframe(
         df,
         use_container_width=True,
@@ -485,365 +478,383 @@ def display_collections():
         },
     )
 
-    # Add collection actions
+    # Collection Management Section
     st.divider()
+    st.subheader("Collection Actions")
 
-    # Create two columns for individual stats and comparison
-    col1, col2 = st.columns(2)
+    selected_collection = st.selectbox(
+        "Select collection to manage",
+        options=[c["name"] for c in collections],
+        help="Select a collection to manage",
+    )
 
-    with col1:
-        st.subheader("Individual Collection Stats")
-        selected_collection = st.selectbox(
-            "Select collection",
-            options=[c["name"] for c in collections],
-            help="Select a collection to view its statistics.",
-            key="individual_stats",
-        )
+    if selected_collection:
+        if selected_collection != "default":
+            col1, col2 = st.columns(2)
+            with col1:
+                if st.button(
+                    "Edit Description",
+                    type="secondary",
+                    use_container_width=True,
+                    help="Edit the collection's description",
+                ):
+                    handle_edit_description(selected_collection, collections)
+            with col2:
+                if st.button(
+                    "Delete Collection",
+                    type="secondary",
+                    use_container_width=True,
+                    help="Permanently delete this collection",
+                ):
+                    handle_delete_collection(selected_collection)
+        else:
+            st.info("The default collection cannot be modified.")
 
-        if selected_collection:
-            if st.button("View Stats", type="primary", use_container_width=True):
-                st.session_state.show_stats = True
-                st.session_state.show_comparison = (
-                    False  # Hide comparison if showing individual stats
-                )
-                st.session_state.collection_to_show = selected_collection
-                st.rerun()
+        # Show management dialogs if active
+        if st.session_state.show_delete_confirm:
+            st.divider()
+            show_delete_confirmation()
 
-    with col2:
-        st.subheader("Compare Collections")
-        # Multi-select for collections to compare
+        if st.session_state.show_edit_description:
+            st.divider()
+            show_edit_description()
+
+        # Statistics Section
+        st.divider()
+        st.subheader("Collection Statistics")
+
+        # Individual Stats
+        if st.button("View Collection Stats", type="primary", use_container_width=True):
+            st.session_state.show_stats = True
+            st.session_state.show_comparison = False
+            st.session_state.collection_to_show = selected_collection
+            st.rerun()
+
+        # Collection Comparison
+        st.markdown("#### Compare with Other Collections")
         collections_to_compare = st.multiselect(
             "Select collections to compare",
             options=[c["name"] for c in collections],
-            help="Select 2 or more collections to compare their statistics.",
+            help="Select 2 or more collections to compare their statistics",
             key="compare_collections",
         )
 
         if len(collections_to_compare) >= 2:
-            if st.button("Compare Stats", type="primary", use_container_width=True):
+            if st.button(
+                "Compare Collections", type="primary", use_container_width=True
+            ):
                 st.session_state.show_comparison = True
-                st.session_state.show_stats = (
-                    False  # Hide individual stats if showing comparison
-                )
+                st.session_state.show_stats = False
                 st.session_state.collections_to_compare = collections_to_compare
                 st.rerun()
 
-    # Collection management buttons
-    if selected_collection and selected_collection != "default":
-        st.divider()
-        st.subheader("Collection Management")
-        col3, col4 = st.columns(2)
-
-        with col3:
-            if st.button(
-                "Edit Description", type="secondary", use_container_width=True
-            ):
-                current_desc = next(
-                    (
-                        c["description"]
-                        for c in collections
-                        if c["name"] == selected_collection
-                    ),
-                    "",
-                )
-                st.session_state.show_edit_description = True
-                st.session_state.collection_to_edit = selected_collection
-                st.session_state.current_description = current_desc
-                st.rerun()
-
-        with col4:
-            if st.button(
-                "Delete Collection", type="secondary", use_container_width=True
-            ):
-                st.session_state.show_delete_confirm = True
-                st.session_state.collection_to_delete = selected_collection
-                st.rerun()
-
-    # Show comparison if needed
-    if st.session_state.show_comparison:
-        st.divider()
-        st.subheader("Collection Comparison")
-
-        # Get stats for all selected collections
-        comparison_data = []
-        for collection_name in st.session_state.collections_to_compare:
-            stats = get_collection_stats(collection_name)
-            comparison_data.append(
-                {
-                    "Collection": collection_name,
-                    "Documents": stats["Collection Size"]["Documents"],
-                    "Total Chunks": stats["Collection Size"]["Total Chunks"],
-                    "Avg Chunks/Doc": stats["Collection Size"][
-                        "Average Chunks per Document"
-                    ],
-                    "Created": pd.to_datetime(stats["Timestamps"]["Created"]),
-                    "Last Modified": pd.to_datetime(
-                        stats["Timestamps"]["Last Modified"]
-                    ),
-                }
-            )
-
-        # Create comparison DataFrame
-        comparison_df = pd.DataFrame(comparison_data)
-
-        # Display metrics comparison
-        st.markdown("#### Size Metrics")
-
-        # Create a bar chart comparing document counts
-        doc_chart_data = pd.DataFrame(
-            {
-                "Collection": comparison_df["Collection"],
-                "Documents": comparison_df["Documents"],
-                "Total Chunks": comparison_df["Total Chunks"],
-            }
-        ).melt(id_vars=["Collection"], var_name="Metric", value_name="Count")
-
-        import plotly.express as px
-
-        # Calculate chart height based on number of collections
-        chart_height = max(300, len(st.session_state.collections_to_compare) * 100)
-
-        fig = px.bar(
-            doc_chart_data,
-            x="Count",
-            y="Collection",
-            color="Metric",
-            orientation="h",
-            height=chart_height,
-            title="Documents and Chunks by Collection",
-            barmode="group",
-        )
-
-        fig.update_layout(
-            showlegend=True,
-            margin=dict(l=20, r=20, t=40, b=20),
-            yaxis_title="",
-            xaxis_title="Count",
-        )
-
-        st.plotly_chart(fig, use_container_width=True)
-
-        # Display average chunks comparison
-        st.markdown("#### Average Chunks per Document")
-        avg_fig = px.bar(
-            comparison_df,
-            x="Collection",
-            y="Avg Chunks/Doc",
-            height=300,
-            title="Average Chunks per Document by Collection",
-        )
-        avg_fig.update_layout(
-            showlegend=False,
-            margin=dict(l=20, r=20, t=40, b=20),
-            yaxis_title="Average Chunks",
-            xaxis_title="",
-        )
-        st.plotly_chart(avg_fig, use_container_width=True)
-
-        # Display timeline comparison
-        st.markdown("#### Collection Timelines")
-        timeline_data = []
-        for _, row in comparison_df.iterrows():
-            age = row["Last Modified"] - row["Created"]
-            timeline_data.append(
-                {
-                    "Collection": row["Collection"],
-                    "Created": row["Created"].strftime("%b %d, %Y at %H:%M:%S"),
-                    "Last Modified": row["Last Modified"].strftime(
-                        "%b %d, %Y at %H:%M:%S"
-                    ),
-                    "Age": f"{age.days} days, {age.seconds // 3600} hours, {(age.seconds % 3600) // 60} minutes",
-                }
-            )
-
-        timeline_df = pd.DataFrame(timeline_data)
-        st.dataframe(
-            timeline_df,
-            use_container_width=True,
-            hide_index=True,
-            column_config={
-                "Collection": st.column_config.TextColumn("Collection", width="medium"),
-                "Created": st.column_config.TextColumn("Created", width="medium"),
-                "Last Modified": st.column_config.TextColumn(
-                    "Last Modified", width="medium"
-                ),
-                "Age": st.column_config.TextColumn("Age", width="medium"),
-            },
-        )
-
-        if st.button("Close Comparison", type="secondary", use_container_width=True):
-            st.session_state.show_comparison = False
-            st.session_state.collections_to_compare = []
-            st.rerun()
-
-    # Show individual stats if needed
+    # Show statistics views if active
     if st.session_state.show_stats:
         st.divider()
-        st.subheader(f"Statistics for '{st.session_state.collection_to_show}'")
+        show_collection_stats()
 
-        try:
-            stats = get_collection_stats(st.session_state.collection_to_show)
-            size_data = stats["Collection Size"]
-            time_data = stats["Timestamps"]
-
-            # Create two columns for metrics
-            col_metrics1, col_metrics2 = st.columns(2)
-
-            with col_metrics1:
-                st.metric(
-                    "Documents",
-                    size_data["Documents"],
-                    help="Total number of documents in the collection",
-                )
-                st.metric(
-                    "Total Chunks",
-                    size_data["Total Chunks"],
-                    help="Total number of text chunks after splitting documents",
-                )
-
-            with col_metrics2:
-                st.metric(
-                    "Average Chunks per Document",
-                    f"{size_data['Average Chunks per Document']:.1f}",
-                    help="Average number of chunks each document is split into",
-                )
-
-            # Display size metrics with a bar chart
-            st.markdown("#### Collection Size Distribution")
-
-            # Create bar chart data with better formatting
-            chart_data = pd.DataFrame(
-                {
-                    "Category": ["Documents", "Chunks"],
-                    "Count": [size_data["Documents"], size_data["Total Chunks"]],
-                }
-            ).set_index("Category")
-
-            # Calculate chart height based on data range
-            max_value = max(size_data["Documents"], size_data["Total Chunks"])
-            chart_height = min(
-                max(150, max_value * 0.8), 300
-            )  # Dynamic height between 150-300px
-
-            # Use plotly for more control over the chart
-            import plotly.express as px
-
-            fig = px.bar(
-                chart_data,
-                orientation="v",
-                height=chart_height,
-                labels={"value": "Count", "Category": ""},
-            )
-            fig.update_layout(
-                showlegend=False,
-                margin=dict(l=20, r=20, t=20, b=20),
-                yaxis_range=[0, max_value * 1.1],  # Add 10% padding to top
-            )
-            st.plotly_chart(fig, use_container_width=True)
-
-            # Display timestamps in a more compact format
-            st.markdown("#### Collection Timeline")
-            created = pd.to_datetime(time_data["Created"])
-            modified = pd.to_datetime(time_data["Last Modified"])
-
-            # Calculate time difference
-            time_diff = modified - created
-
-            col_time1, col_time2 = st.columns(2)
-            with col_time1:
-                st.info(
-                    f"**Created**  \n{created.strftime('%b %d, %Y at %H:%M:%S')}",
-                    icon="🕒",
-                )
-            with col_time2:
-                st.info(
-                    f"**Last Modified**  \n{modified.strftime('%b %d, %Y at %H:%M:%S')}",
-                    icon="📝",
-                )
-
-            # Show time difference if it's significant
-            if (
-                time_diff.total_seconds() > 60
-            ):  # Only show if difference is more than a minute
-                st.caption(
-                    f"Collection age: {time_diff.days} days, "
-                    f"{time_diff.seconds // 3600} hours, "
-                    f"{(time_diff.seconds % 3600) // 60} minutes"
-                )
-
-            # Add close button at the bottom
-            st.divider()
-            if st.button("Close Stats", type="secondary", use_container_width=True):
-                st.session_state.show_stats = False
-                st.session_state.collection_to_show = None
-                st.rerun()
-
-        except Exception as e:
-            st.error(f"Error loading statistics: {str(e)}")
-            if st.button("Close", type="secondary"):
-                st.session_state.show_stats = False
-                st.session_state.collection_to_show = None
-                st.rerun()
-
-    # Show edit description dialog if needed
-    if st.session_state.show_edit_description:
+    if st.session_state.show_comparison:
         st.divider()
-        st.subheader(f"Edit Description for '{st.session_state.collection_to_edit}'")
+        show_collection_comparison()
 
-        new_description = st.text_area(
-            "Collection Description",
-            value=st.session_state.current_description,
-            height=100,
-            help="Enter a description for this collection",
-            key="edit_description",
-        )
 
-        col4, col5 = st.columns([1, 1])
-        with col4:
-            if st.button("Save Description", type="primary", use_container_width=True):
-                try:
-                    edit_collection_description(
-                        st.session_state.collection_to_edit, new_description
-                    )
-                    st.session_state.show_edit_description = False
-                    st.session_state.collection_to_edit = None
-                    st.session_state.current_description = ""
-                    st.success("Description updated successfully!")
-                    st.rerun()
-                except Exception as e:
-                    st.error(f"Error updating description: {str(e)}")
-        with col5:
-            if st.button("Cancel", type="secondary", use_container_width=True):
+def handle_edit_description(collection_name: str, collections: list):
+    """Handle edit description button click."""
+    current_desc = next(
+        (c["description"] for c in collections if c["name"] == collection_name),
+        "",
+    )
+    st.session_state.show_edit_description = True
+    st.session_state.collection_to_edit = collection_name
+    st.session_state.current_description = current_desc
+    st.rerun()
+
+
+def handle_delete_collection(collection_name: str):
+    """Handle delete collection button click."""
+    st.session_state.show_delete_confirm = True
+    st.session_state.collection_to_delete = collection_name
+    st.rerun()
+
+
+def show_delete_confirmation():
+    collection_name = st.session_state.collection_to_delete
+    st.warning(
+        f"Are you sure you want to delete collection '{collection_name}'?",
+        icon="⚠️",
+    )
+    col6, col7 = st.columns([1, 1])
+    with col6:
+        if st.button("Yes, Delete", type="primary", use_container_width=True):
+            try:
+                delete_collection(collection_name)
+                st.session_state.show_delete_confirm = False
+                st.session_state.collection_to_delete = None
+                st.success(f"Collection '{collection_name}' deleted successfully!")
+                st.rerun()
+            except Exception as e:
+                st.error(f"Error deleting collection: {str(e)}")
+    with col7:
+        if st.button("No, Cancel", type="secondary", use_container_width=True):
+            st.session_state.show_delete_confirm = False
+            st.session_state.collection_to_delete = None
+            st.rerun()
+
+
+def show_edit_description():
+    st.divider()
+    st.subheader(f"Edit Description for '{st.session_state.collection_to_edit}'")
+
+    new_description = st.text_area(
+        "Collection Description",
+        value=st.session_state.current_description,
+        height=100,
+        help="Enter a description for this collection",
+        key="edit_description",
+    )
+
+    col4, col5 = st.columns([1, 1])
+    with col4:
+        if st.button("Save Description", type="primary", use_container_width=True):
+            try:
+                edit_collection_description(
+                    st.session_state.collection_to_edit, new_description
+                )
                 st.session_state.show_edit_description = False
                 st.session_state.collection_to_edit = None
                 st.session_state.current_description = ""
+                st.success("Description updated successfully!")
                 st.rerun()
+            except Exception as e:
+                st.error(f"Error updating description: {str(e)}")
+    with col5:
+        if st.button("Cancel", type="secondary", use_container_width=True):
+            st.session_state.show_edit_description = False
+            st.session_state.collection_to_edit = None
+            st.session_state.current_description = ""
+            st.rerun()
 
-    # Show confirmation dialog if needed
-    if st.session_state.show_delete_confirm:
-        st.divider()
-        st.warning(
-            f"Are you sure you want to delete collection '{st.session_state.collection_to_delete}'?",
-            icon="⚠️",
+
+def show_collection_comparison():
+    st.divider()
+    st.subheader("Collection Comparison")
+
+    # Get stats for all selected collections
+    comparison_data = []
+    for collection_name in st.session_state.collections_to_compare:
+        stats = get_collection_stats(collection_name)
+        comparison_data.append(
+            {
+                "Collection": collection_name,
+                "Documents": stats["Collection Size"]["Documents"],
+                "Total Chunks": stats["Collection Size"]["Total Chunks"],
+                "Avg Chunks/Doc": stats["Collection Size"][
+                    "Average Chunks per Document"
+                ],
+                "Created": pd.to_datetime(stats["Timestamps"]["Created"]),
+                "Last Modified": pd.to_datetime(stats["Timestamps"]["Last Modified"]),
+            }
         )
-        col6, col7 = st.columns([1, 1])
-        with col6:
-            if st.button("Yes, Delete", type="primary", use_container_width=True):
-                try:
-                    delete_collection(st.session_state.collection_to_delete)
-                    st.session_state.show_delete_confirm = False
-                    st.session_state.collection_to_delete = None
-                    st.success(
-                        f"Collection '{selected_collection}' deleted successfully!"
-                    )
-                    st.rerun()
-                except Exception as e:
-                    st.error(f"Error deleting collection: {str(e)}")
-        with col7:
-            if st.button("No, Cancel", type="secondary", use_container_width=True):
-                st.session_state.show_delete_confirm = False
-                st.session_state.collection_to_delete = None
-                st.rerun()
+
+    # Create comparison DataFrame
+    comparison_df = pd.DataFrame(comparison_data)
+
+    # Display metrics comparison
+    st.markdown("#### Size Metrics")
+
+    # Create a bar chart comparing document counts
+    doc_chart_data = pd.DataFrame(
+        {
+            "Collection": comparison_df["Collection"],
+            "Documents": comparison_df["Documents"],
+            "Total Chunks": comparison_df["Total Chunks"],
+        }
+    ).melt(id_vars=["Collection"], var_name="Metric", value_name="Count")
+
+    import plotly.express as px
+
+    # Calculate chart height based on number of collections
+    chart_height = max(300, len(st.session_state.collections_to_compare) * 100)
+
+    fig = px.bar(
+        doc_chart_data,
+        x="Count",
+        y="Collection",
+        color="Metric",
+        orientation="h",
+        height=chart_height,
+        title="Documents and Chunks by Collection",
+        barmode="group",
+    )
+
+    fig.update_layout(
+        showlegend=True,
+        margin=dict(l=20, r=20, t=40, b=20),
+        yaxis_title="",
+        xaxis_title="Count",
+    )
+
+    st.plotly_chart(fig, use_container_width=True)
+
+    # Display average chunks comparison
+    st.markdown("#### Average Chunks per Document")
+    avg_fig = px.bar(
+        comparison_df,
+        x="Collection",
+        y="Avg Chunks/Doc",
+        height=300,
+        title="Average Chunks per Document by Collection",
+    )
+    avg_fig.update_layout(
+        showlegend=False,
+        margin=dict(l=20, r=20, t=40, b=20),
+        yaxis_title="Average Chunks",
+        xaxis_title="",
+    )
+    st.plotly_chart(avg_fig, use_container_width=True)
+
+    # Display timeline comparison
+    st.markdown("#### Collection Timelines")
+    timeline_data = []
+    for _, row in comparison_df.iterrows():
+        age = row["Last Modified"] - row["Created"]
+        timeline_data.append(
+            {
+                "Collection": row["Collection"],
+                "Created": row["Created"].strftime("%b %d, %Y at %H:%M:%S"),
+                "Last Modified": row["Last Modified"].strftime("%b %d, %Y at %H:%M:%S"),
+                "Age": f"{age.days} days, {age.seconds // 3600} hours, {(age.seconds % 3600) // 60} minutes",
+            }
+        )
+
+    timeline_df = pd.DataFrame(timeline_data)
+    st.dataframe(
+        timeline_df,
+        use_container_width=True,
+        hide_index=True,
+        column_config={
+            "Collection": st.column_config.TextColumn("Collection", width="medium"),
+            "Created": st.column_config.TextColumn("Created", width="medium"),
+            "Last Modified": st.column_config.TextColumn(
+                "Last Modified", width="medium"
+            ),
+            "Age": st.column_config.TextColumn("Age", width="medium"),
+        },
+    )
+
+    if st.button("Close Comparison", type="secondary", use_container_width=True):
+        st.session_state.show_comparison = False
+        st.session_state.collections_to_compare = []
+        st.rerun()
+
+
+def show_collection_stats():
+    st.divider()
+    st.subheader(f"Statistics for '{st.session_state.collection_to_show}'")
+
+    try:
+        stats = get_collection_stats(st.session_state.collection_to_show)
+        size_data = stats["Collection Size"]
+        time_data = stats["Timestamps"]
+
+        # Create two columns for metrics
+        col_metrics1, col_metrics2 = st.columns(2)
+
+        with col_metrics1:
+            st.metric(
+                "Documents",
+                size_data["Documents"],
+                help="Total number of documents in the collection",
+            )
+            st.metric(
+                "Total Chunks",
+                size_data["Total Chunks"],
+                help="Total number of text chunks after splitting documents",
+            )
+
+        with col_metrics2:
+            st.metric(
+                "Average Chunks per Document",
+                f"{size_data['Average Chunks per Document']:.1f}",
+                help="Average number of chunks each document is split into",
+            )
+
+        # Display size metrics with a bar chart
+        st.markdown("#### Collection Size Distribution")
+
+        # Create bar chart data with better formatting
+        chart_data = pd.DataFrame(
+            {
+                "Category": ["Documents", "Chunks"],
+                "Count": [size_data["Documents"], size_data["Total Chunks"]],
+            }
+        ).set_index("Category")
+
+        # Calculate chart height based on data range
+        max_value = max(size_data["Documents"], size_data["Total Chunks"])
+        chart_height = min(
+            max(150, max_value * 0.8), 300
+        )  # Dynamic height between 150-300px
+
+        # Use plotly for more control over the chart
+        import plotly.express as px
+
+        fig = px.bar(
+            chart_data,
+            orientation="v",
+            height=chart_height,
+            labels={"value": "Count", "Category": ""},
+        )
+        fig.update_layout(
+            showlegend=False,
+            margin=dict(l=20, r=20, t=20, b=20),
+            yaxis_range=[0, max_value * 1.1],  # Add 10% padding to top
+        )
+        st.plotly_chart(fig, use_container_width=True)
+
+        # Display timestamps in a more compact format
+        st.markdown("#### Collection Timeline")
+        created = pd.to_datetime(time_data["Created"])
+        modified = pd.to_datetime(time_data["Last Modified"])
+
+        # Calculate time difference
+        time_diff = modified - created
+
+        col_time1, col_time2 = st.columns(2)
+        with col_time1:
+            st.info(
+                f"**Created**  \n{created.strftime('%b %d, %Y at %H:%M:%S')}",
+                icon="🕒",
+            )
+        with col_time2:
+            st.info(
+                f"**Last Modified**  \n{modified.strftime('%b %d, %Y at %H:%M:%S')}",
+                icon="📝",
+            )
+
+        # Show time difference if it's significant
+        if (
+            time_diff.total_seconds() > 60
+        ):  # Only show if difference is more than a minute
+            st.caption(
+                f"Collection age: {time_diff.days} days, "
+                f"{time_diff.seconds // 3600} hours, "
+                f"{(time_diff.seconds % 3600) // 60} minutes"
+            )
+
+        # Add close button at the bottom
+        st.divider()
+        if st.button("Close Stats", type="secondary", use_container_width=True):
+            st.session_state.show_stats = False
+            st.session_state.collection_to_show = None
+            st.rerun()
+
+    except Exception as e:
+        st.error(f"Error loading statistics: {str(e)}")
+        if st.button("Close", type="secondary"):
+            st.session_state.show_stats = False
+            st.session_state.collection_to_show = None
+            st.rerun()
 
 
 def main():
