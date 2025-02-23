@@ -30,6 +30,18 @@ RAG Retriever processes various types of content:
 
 All content can be organized into collections for better organization and targeted searching. By default, searches are performed within the current collection, but you can also explicitly search across all collections using the `--search-all-collections` flag. For images, instead of returning the images themselves, it returns their AI-generated descriptions, making visual content searchable alongside your documentation.
 
+## Knowledge Management Web Interface
+
+![RAG Retriever UI](docs/images/rag-retriever-UI-collections.png)
+
+RAG Retriever includes a modern web interface intended to help you manage your knowledge store. The UI provides:
+
+- Collection management with statistics and comparisons
+- Semantic search with relevance scoring
+- Interactive visualizations of collection metrics
+
+For detailed instructions on using the interface, see our [RAG Retriever UI User Guide](docs/rag-retriever-ui-guide.md).
+
 ## Watch a Short Demo Video (not all RAG Retriever features are shown)
 
 [![Watch the video](https://img.youtube.com/vi/oQ6fSWUZYh0/0.jpg)](https://youtu.be/oQ6fSWUZYh0)
