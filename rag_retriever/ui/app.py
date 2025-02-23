@@ -6,6 +6,165 @@ from rag_retriever.search.searcher import Searcher
 from typing import Dict, Any
 import pandas as pd
 
+# Configure page settings
+st.set_page_config(
+    page_title="RAG Retriever UI",
+    page_icon="🔍",
+    layout="wide",
+    initial_sidebar_state="expanded",
+)
+
+# Custom CSS for modern styling
+st.markdown(
+    """
+<style>
+    /* Modern color scheme */
+    :root {
+        --primary-color: #2196F3;
+        --secondary-color: #4CAF50;
+        --background-color: #f8f9fa;
+        --text-color: #212529;
+        --border-color: #dee2e6;
+        --hover-color: #e9ecef;
+    }
+    
+    /* Main container styling */
+    .main {
+        background-color: var(--background-color);
+        color: var(--text-color);
+    }
+    
+    /* Typography */
+    h1 {
+        color: var(--text-color);
+        font-size: 2.5rem !important;
+        font-weight: 600 !important;
+        margin-bottom: 2rem !important;
+    }
+    
+    h2, h3 {
+        color: var(--text-color);
+        font-weight: 600 !important;
+        margin-top: 1.5rem !important;
+    }
+    
+    /* Card-like containers */
+    .stDataFrame, div[data-testid="stExpander"] {
+        background-color: white;
+        padding: 1.5rem;
+        border-radius: 10px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        margin: 1rem 0;
+        transition: all 0.3s ease;
+    }
+    
+    /* Button styling */
+    .stButton > button {
+        border-radius: 8px;
+        font-weight: 500;
+        padding: 0.5rem 1rem;
+        transition: all 0.3s ease;
+    }
+    
+    .stButton > button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    
+    .stButton > button[kind="primary"] {
+        background-color: var(--primary-color);
+    }
+    
+    .stButton > button[kind="secondary"] {
+        border: 1px solid var(--border-color);
+    }
+    
+    /* Input fields */
+    .stTextInput > div > div > input,
+    .stNumberInput > div > div > input {
+        border-radius: 8px;
+        border: 1px solid var(--border-color);
+        padding: 0.5rem;
+    }
+    
+    .stTextInput > div > div > input:focus,
+    .stNumberInput > div > div > input:focus {
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 2px rgba(33, 150, 243, 0.1);
+    }
+    
+    /* Select boxes */
+    .stSelectbox > div > div {
+        border-radius: 8px;
+    }
+    
+    /* Metrics */
+    [data-testid="stMetricValue"] {
+        font-size: 2rem !important;
+        font-weight: 600 !important;
+        color: var(--primary-color);
+    }
+    
+    /* Alerts and messages */
+    .stAlert {
+        border-radius: 8px;
+        border: none;
+        padding: 1rem;
+    }
+    
+    /* Dividers */
+    .stDivider {
+        margin: 2rem 0;
+    }
+    
+    /* Animations */
+    .stMarkdown, .stDataFrame, .element-container {
+        transition: opacity 0.3s ease;
+    }
+    
+    /* Tables */
+    .stDataFrame table {
+        border: none !important;
+    }
+    
+    .stDataFrame th {
+        background-color: var(--background-color);
+        font-weight: 600;
+    }
+    
+    .stDataFrame td {
+        font-size: 0.9rem;
+    }
+    
+    /* Sidebar */
+    .css-1d391kg {
+        background-color: white;
+        border-right: 1px solid var(--border-color);
+    }
+    
+    /* Tabs */
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 1rem;
+    }
+    
+    .stTabs [data-baseweb="tab"] {
+        border-radius: 4px;
+        padding: 0.5rem 1rem;
+    }
+    
+    /* Search results */
+    .search-result {
+        border-left: 4px solid var(--primary-color);
+        padding-left: 1rem;
+        margin: 1rem 0;
+        background-color: white;
+        border-radius: 0 8px 8px 0;
+    }
+</style>
+""",
+    unsafe_allow_html=True,
+)
+
 
 def delete_collection(collection_name: str) -> None:
     """Delete a collection using VectorStore."""
@@ -68,83 +227,130 @@ def display_search():
     collections = store.list_collections()
     collection_names = [c["name"] for c in collections]
 
-    # Search controls
-    col1, col2, col3 = st.columns([3, 1, 1])
+    # Search interface container
+    with st.container():
+        st.markdown('<div class="element-container">', unsafe_allow_html=True)
 
-    with col1:
-        query = st.text_input("Search query", key="search_query")
-    with col2:
-        limit = st.number_input("Max results", min_value=1, value=5, key="search_limit")
-    with col3:
-        threshold = st.number_input(
-            "Score threshold",
-            min_value=0.0,
-            max_value=1.0,
-            value=0.3,
-            step=0.1,
-            key="score_threshold",
-        )
+        # Search controls
+        col1, col2, col3 = st.columns([3, 1, 1])
 
-    # Collection selection
-    col4, col5 = st.columns([3, 1])
-    with col4:
-        selected_collection = st.selectbox(
-            "Search in collection",
-            options=["All Collections"] + collection_names,
-            index=0,
-            key="search_collection",
-        )
-    with col5:
-        show_full = st.checkbox("Show full content", value=False, key="show_full")
-
-    # Search button
-    if st.button("Search", type="primary", use_container_width=True):
-        if not query:
-            st.warning("Please enter a search query")
-            return
-
-        try:
-            # Clear expanded states on new search
-            st.session_state.expanded_metadata = set()
-            st.session_state.expanded_content = set()
-            st.session_state.button_clicked = None
-
-            # Perform search
-            search_all = selected_collection == "All Collections"
-            if not search_all:
-                searcher = Searcher(collection_name=selected_collection)
-
-            results = searcher.search(
-                query=query,
-                limit=limit,
-                score_threshold=threshold,
-                search_all_collections=search_all,
+        with col1:
+            query = st.text_input(
+                "Search query",
+                key="search_query",
+                placeholder="Enter your search query...",
+                help="Type your search terms here",
+            )
+        with col2:
+            limit = st.number_input(
+                "Max results",
+                min_value=1,
+                value=5,
+                key="search_limit",
+                help="Maximum number of results to show",
+            )
+        with col3:
+            threshold = st.number_input(
+                "Score threshold",
+                min_value=0.0,
+                max_value=1.0,
+                value=0.3,
+                step=0.1,
+                key="score_threshold",
+                help="Minimum relevance score (0-1)",
             )
 
-            if not results:
-                st.info("No results found")
-                st.session_state.search_results = None
+        # Collection selection
+        col4, col5 = st.columns([3, 1])
+        with col4:
+            selected_collection = st.selectbox(
+                "Search in collection",
+                options=["All Collections"] + collection_names,
+                index=0,
+                key="search_collection",
+                help="Choose which collection to search in",
+            )
+        with col5:
+            show_full = st.checkbox(
+                "Show full content",
+                value=False,
+                key="show_full",
+                help="Display complete content in results",
+            )
+
+        # Search button
+        search_clicked = st.button(
+            "🔍 Search",
+            type="primary",
+            use_container_width=True,
+            help="Click to perform search",
+        )
+
+        st.markdown("</div>", unsafe_allow_html=True)
+
+        if search_clicked:
+            if not query:
+                st.warning("⚠️ Please enter a search query")
                 return
 
-            # Store results in session state
-            st.session_state.search_results = results
+            with st.spinner("🔍 Searching..."):
+                try:
+                    # Clear expanded states
+                    st.session_state.expanded_metadata = set()
+                    st.session_state.expanded_content = set()
+                    st.session_state.button_clicked = None
 
-        except Exception as e:
-            st.error(f"Error performing search: {str(e)}")
+                    # Perform search
+                    search_all = selected_collection == "All Collections"
+                    if not search_all:
+                        searcher = Searcher(collection_name=selected_collection)
 
-    # Display results if they exist in session state
+                    results = searcher.search(
+                        query=query,
+                        limit=limit,
+                        score_threshold=threshold,
+                        search_all_collections=search_all,
+                    )
+
+                    if not results:
+                        st.info("ℹ️ No results found")
+                        st.session_state.search_results = None
+                        return
+
+                    st.session_state.search_results = results
+
+                except Exception as e:
+                    st.error(f"🚨 Error performing search: {str(e)}")
+
+    # Display results if they exist
     if st.session_state.search_results:
         st.markdown("### Search Results")
 
         for i, result in enumerate(st.session_state.search_results, 1):
-            st.markdown(
-                f"""
-                #### Result {i} - Score: {result.score:.4f}
-                **Source:** {result.source}
-                """
+            # Result container with card styling
+            st.markdown('<div class="search-result">', unsafe_allow_html=True)
+
+            # Score indicator with color
+            score_color = (
+                "#4CAF50"
+                if result.score >= 0.7
+                else "#FF9800" if result.score >= 0.5 else "#F44336"
             )
 
-            # Content handling
+            st.markdown(
+                f"""
+                <h4 style="margin-bottom: 0.5rem;">Result {i}</h4>
+                <p style="color: {score_color}; font-weight: 600; margin: 0;">
+                    Relevance Score: {result.score:.2f}
+                </p>
+                <p style="color: gray; margin: 0.5rem 0;">
+                    Source: {result.source}
+                </p>
+                """,
+                unsafe_allow_html=True,
+            )
+
+            # Content display with animation
             if show_full:
                 st.markdown(result.content)
             else:
@@ -156,46 +362,40 @@ def display_search():
                 st.markdown(preview)
 
                 if len(result.content) > 200:
-                    # Generate unique keys for content buttons
                     content_key = f"content_{i}"
-
-                    # Check if content is expanded
                     is_content_expanded = i in st.session_state.expanded_content
 
-                    # Show the appropriate button and content
                     if is_content_expanded:
                         st.markdown(result.content)
-                        if st.button("Show less", key=f"less_{content_key}"):
+                        if st.button("📕 Show less", key=f"less_{content_key}"):
                             st.session_state.expanded_content.remove(i)
                             st.session_state.button_clicked = f"less_{content_key}"
                             st.rerun()
                     else:
-                        if st.button("Show full content", key=f"more_{content_key}"):
+                        if st.button("📖 Show full content", key=f"more_{content_key}"):
                             st.session_state.expanded_content.add(i)
                             st.session_state.button_clicked = f"more_{content_key}"
                             st.rerun()
 
-            # Metadata handling
-            # Generate unique keys for metadata buttons
+            # Metadata handling with improved UI
             metadata_key = f"metadata_{i}"
-
-            # Check if metadata is expanded
             is_metadata_expanded = i in st.session_state.expanded_metadata
 
-            # Show the appropriate button and metadata
             if is_metadata_expanded:
-                st.json(result.metadata)
+                with st.expander("📋 Metadata", expanded=True):
+                    st.json(result.metadata)
                 if st.button("Hide metadata", key=f"hide_{metadata_key}"):
                     st.session_state.expanded_metadata.remove(i)
                     st.session_state.button_clicked = f"hide_{metadata_key}"
                     st.rerun()
             else:
-                if st.button("Show metadata", key=f"show_{metadata_key}"):
+                if st.button("📋 Show metadata", key=f"show_{metadata_key}"):
                     st.session_state.expanded_metadata.add(i)
                     st.session_state.button_clicked = f"show_{metadata_key}"
                     st.rerun()
 
-            st.divider()
+            st.markdown("</div>", unsafe_allow_html=True)
+            st.markdown("<br>", unsafe_allow_html=True)
 
 
 def display_collections():
@@ -648,13 +848,21 @@ def display_collections():
 
 def main():
     """Main Streamlit application."""
-    st.set_page_config(
-        page_title="RAG Retriever UI",
-        page_icon="🔍",
-        layout="wide",
-    )
 
-    st.title("RAG Retriever UI")
+    # Add logo and title in a row
+    col1, col2 = st.columns([1, 4])
+
+    with col1:
+        # Load and display logo
+        try:
+            st.image("rag_retriever/static/CTF-logo.jpg", width=100)
+        except:
+            st.warning(
+                "Logo not found. Place CTF-logo.jpg in rag_retriever/static/ directory"
+            )
+
+    with col2:
+        st.title("RAG Retriever UI")
 
     # Add tabs for different functionality
     tab1, tab2 = st.tabs(["Collections", "Search"])
