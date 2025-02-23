@@ -8,10 +8,32 @@ import pandas as pd
 import logging
 from importlib import resources
 import os
+from urllib.parse import urlparse
+import re
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
+
+
+def is_valid_url(url: str) -> bool:
+    """More permissive URL validation that doesn't rely on TLD checking."""
+    try:
+        result = urlparse(url)
+        # Check for scheme and netloc
+        has_scheme = bool(result.scheme in ("http", "https"))
+        has_netloc = bool(result.netloc)
+        # Basic netloc validation (at least one dot, valid chars)
+        valid_netloc = bool(
+            re.match(
+                r"^[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$",
+                result.netloc,
+            )
+        )
+        return all([has_scheme, has_netloc, valid_netloc])
+    except Exception:
+        return False
+
 
 # Configure page settings
 st.set_page_config(
@@ -359,17 +381,22 @@ def display_search():
                 # Source URL and buttons in one row
                 col1, col2, col3, col4 = st.columns([2, 1, 1, 1])
                 with col1:
-                    st.markdown(f"*{result.source}*")
+                    # Encode URL for display to prevent browser validation
+                    display_url = result.source.replace(
+                        "://", "://\u200B"
+                    )  # Insert zero-width space
+                    st.markdown(f"*{display_url}*")
                 with col2:
                     if result.source.startswith(("http://", "https://")):
+                        # Use HTML anchor tag instead of JavaScript
                         st.markdown(
-                            f'<a href="{result.source}" target="_blank">🔗 Open</a>',
+                            f'<a href="{result.source}" target="_blank"><button style="padding: 0.5rem 1rem; border-radius: 8px; border: 1px solid var(--border-color); background-color: transparent; cursor: pointer; font-weight: 500;">🔗 Open</button></a>',
                             unsafe_allow_html=True,
                         )
                 with col3:
                     # Toggle content expansion
                     is_expanded = i in st.session_state.expanded_content
-                    if st.button("📄 Full Content", key=f"content_{i}"):
+                    if st.button("📄 Full Content", key=f"search_content_{i}"):
                         if is_expanded:
                             st.session_state.expanded_content.remove(i)
                         else:
@@ -377,7 +404,7 @@ def display_search():
                 with col4:
                     # Toggle metadata expansion
                     is_metadata_expanded = i in st.session_state.expanded_metadata
-                    if st.button("ℹ️ Metadata", key=f"metadata_{i}"):
+                    if st.button("ℹ️ Metadata", key=f"search_metadata_{i}"):
                         if is_metadata_expanded:
                             st.session_state.expanded_metadata.remove(i)
                         else:
@@ -549,21 +576,16 @@ def display_collections():
 
         # Collection Comparison
         st.markdown("#### Compare with Other Collections")
-        collections_to_compare = st.multiselect(
+        st.session_state.collections_to_compare = st.multiselect(
             "Select collections to compare",
             options=[c["name"] for c in collections],
             help="Select 2 or more collections to compare their statistics",
             key="compare_collections",
         )
 
-        if len(collections_to_compare) >= 2:
-            if st.button(
-                "Compare Collections", type="primary", use_container_width=True
-            ):
-                st.session_state.show_comparison = True
-                st.session_state.show_stats = False
-                st.session_state.collections_to_compare = collections_to_compare
-                st.rerun()
+        # Show comparison immediately when 2 or more collections are selected
+        if len(st.session_state.collections_to_compare) >= 2:
+            show_collection_comparison()
 
     # Show statistics views if active
     if st.session_state.show_stats:
@@ -659,19 +681,29 @@ def show_collection_comparison():
     # Get stats for all selected collections
     comparison_data = []
     for collection_name in st.session_state.collections_to_compare:
-        stats = get_collection_stats(collection_name)
-        comparison_data.append(
-            {
-                "Collection": collection_name,
-                "Documents": stats["Collection Size"]["Documents"],
-                "Total Chunks": stats["Collection Size"]["Total Chunks"],
-                "Avg Chunks/Doc": stats["Collection Size"][
-                    "Average Chunks per Document"
-                ],
-                "Created": pd.to_datetime(stats["Timestamps"]["Created"]),
-                "Last Modified": pd.to_datetime(stats["Timestamps"]["Last Modified"]),
-            }
-        )
+        try:
+            stats = get_collection_stats(collection_name)
+            comparison_data.append(
+                {
+                    "Collection": collection_name,
+                    "Documents": stats["Collection Size"]["Documents"],
+                    "Total Chunks": stats["Collection Size"]["Total Chunks"],
+                    "Avg Chunks/Doc": stats["Collection Size"][
+                        "Average Chunks per Document"
+                    ],
+                    "Created": pd.to_datetime(stats["Timestamps"]["Created"]),
+                    "Last Modified": pd.to_datetime(
+                        stats["Timestamps"]["Last Modified"]
+                    ),
+                }
+            )
+        except Exception as e:
+            st.error(f"Error getting stats for collection {collection_name}: {str(e)}")
+            return
+
+    if not comparison_data:
+        st.warning("No valid collections to compare")
+        return
 
     # Create comparison DataFrame
     comparison_df = pd.DataFrame(comparison_data)
@@ -1038,12 +1070,18 @@ def display_discover():
                 # URL and open link
                 col1, col2 = st.columns([4, 1])
                 with col1:
-                    st.markdown(f"*{result.url}*")
+                    # Encode URL for display to prevent browser validation
+                    display_url = result.url.replace(
+                        "://", "://\u200B"
+                    )  # Insert zero-width space
+                    st.markdown(f"*{display_url}*")
                 with col2:
-                    st.markdown(
-                        f'<a href="{result.url}" target="_blank">🔗 Open</a>',
-                        unsafe_allow_html=True,
-                    )
+                    if result.url.startswith(("http://", "https://")):
+                        # Use HTML anchor tag instead of JavaScript
+                        st.markdown(
+                            f'<a href="{result.url}" target="_blank"><button style="padding: 0.5rem 1rem; border-radius: 8px; border: 1px solid var(--border-color); background-color: transparent; cursor: pointer; font-weight: 500;">🔗 Open</button></a>',
+                            unsafe_allow_html=True,
+                        )
 
                 # Snippet
                 st.markdown(result.snippet)
@@ -1084,16 +1122,40 @@ def display_discover():
 
             # Show new collection input if selected
             if selected_collection == "Create New Collection":
-                new_collection_name = st.text_input(
-                    "New collection name",
-                    key="new_collection_name",
-                    help="Enter a name for the new collection",
-                )
-                new_collection_description = st.text_area(
-                    "Collection description",
-                    key="new_collection_description",
-                    help="Enter a description for the new collection",
-                )
+                # Wrap inputs in a form to better handle focus changes
+                with st.form(key="new_collection_form"):
+                    new_collection_name = st.text_input(
+                        "New collection name",
+                        key="new_collection_name",
+                        help="Enter a name for the new collection",
+                    )
+                    new_collection_description = st.text_area(
+                        "Collection description",
+                        key="new_collection_description",
+                        help="Enter a description for the new collection",
+                    )
+                    # Add a hidden submit button to handle form submission properly
+                    submitted = st.form_submit_button("Create", type="primary")
+                    if submitted:
+                        if not new_collection_name:
+                            st.error("Please enter a name for the new collection")
+                        else:
+                            try:
+                                # Create new collection
+                                collection = store._get_or_create_collection(
+                                    new_collection_name
+                                )
+                                if new_collection_description:
+                                    collection._collection_metadata.description = (
+                                        new_collection_description
+                                    )
+                                    store._save_collection_metadata()
+                                selected_collection = new_collection_name
+                                st.success(
+                                    f"Created new collection: {new_collection_name}"
+                                )
+                            except Exception as e:
+                                st.error(f"Error creating collection: {str(e)}")
 
             # Process button
             process_button = st.button(
@@ -1201,12 +1263,14 @@ def display_discover():
                 # Update URL in session state
                 st.session_state.url_entries[i]["url"] = url
 
+                # Display URL with zero-width space to prevent browser validation
+                if url:
+                    display_url = url.replace("://", "://\u200B")
+                    st.markdown(f"Current URL: *{display_url}*")
+
                 # Basic URL validation
                 if url:
-                    from urllib.parse import urlparse
-
-                    parsed = urlparse(url)
-                    is_valid = bool(parsed.scheme and parsed.netloc)
+                    is_valid = is_valid_url(url)
                     st.session_state.validation_states[f"url_{i}"] = is_valid
 
                     if not is_valid:
@@ -1265,16 +1329,38 @@ def display_discover():
 
         # Show new collection input if selected
         if selected_collection == "Create New Collection":
-            new_collection_name = st.text_input(
-                "New collection name",
-                key="direct_new_collection_name",
-                help="Enter a name for the new collection",
-            )
-            new_collection_description = st.text_area(
-                "Collection description",
-                key="direct_new_collection_description",
-                help="Enter a description for the new collection",
-            )
+            # Wrap inputs in a form to better handle focus changes
+            with st.form(key="new_collection_form"):
+                new_collection_name = st.text_input(
+                    "New collection name",
+                    key="new_collection_name",
+                    help="Enter a name for the new collection",
+                )
+                new_collection_description = st.text_area(
+                    "Collection description",
+                    key="new_collection_description",
+                    help="Enter a description for the new collection",
+                )
+                # Add a hidden submit button to handle form submission properly
+                submitted = st.form_submit_button("Create", type="primary")
+                if submitted:
+                    if not new_collection_name:
+                        st.error("Please enter a name for the new collection")
+                    else:
+                        try:
+                            # Create new collection
+                            collection = store._get_or_create_collection(
+                                new_collection_name
+                            )
+                            if new_collection_description:
+                                collection._collection_metadata.description = (
+                                    new_collection_description
+                                )
+                                store._save_collection_metadata()
+                            selected_collection = new_collection_name
+                            st.success(f"Created new collection: {new_collection_name}")
+                        except Exception as e:
+                            st.error(f"Error creating collection: {str(e)}")
 
         # Process URLs button
         process_button = st.button(
