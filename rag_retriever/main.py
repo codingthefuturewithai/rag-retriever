@@ -16,7 +16,11 @@ from rag_retriever.crawling.playwright_crawler import PlaywrightCrawler
 from rag_retriever.crawling.exceptions import PageLoadError, ContentExtractionError
 from rag_retriever.search.searcher import Searcher
 from rag_retriever.vectorstore.store import VectorStore, get_vectorstore_path
-from rag_retriever.utils.config import config, mask_api_key
+from rag_retriever.utils.config import (
+    config,
+    mask_api_key,
+    get_user_friendly_config_path,
+)
 from rag_retriever.utils.windows import suppress_asyncio_warnings, windows_event_loop
 from openai import OpenAI
 
@@ -56,7 +60,7 @@ def get_openai_client() -> OpenAI:
         raise ValueError(
             "Valid OpenAI API key not found. Please configure it by either:\n"
             "1. Setting OPENAI_API_KEY environment variable\n"
-            "2. Adding it to ~/.config/rag-retriever/config.yaml under api.openai_api_key\n"
+            f"2. Adding it to {get_user_friendly_config_path()} under api.openai_api_key\n"
             "The API key should start with 'sk-'"
         )
 

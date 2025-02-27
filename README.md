@@ -58,6 +58,16 @@ RAG Retriever solves these challenges by:
 ### Core Requirements
 
 - Python 3.10-3.12 (Download from [python.org](https://python.org))
+- **Windows Users Only**: Visual Studio C++ Build Tools
+  - Download from [Visual Studio Downloads](https://visualstudio.microsoft.com/visual-cpp-build-tools/)
+  - Install with "Desktop development with C++" workload
+  - Required for ChromaDB and other dependencies
+- Git (Required for core functionality)
+  - **Windows**: Download from [Git for Windows](https://git-scm.com/download/windows)
+    - During installation, select "Git from the command line and also from 3rd-party software"
+    - Choose "Use Windows' default console window"
+  - **macOS**: `brew install git`
+  - **Linux**: Use your distribution's package manager (e.g., `apt install git` or `dnf install git`)
 - One of these package managers:
 
   - pipx (Recommended, install with one of these commands):

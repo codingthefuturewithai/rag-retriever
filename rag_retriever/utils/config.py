@@ -360,5 +360,13 @@ def get_google_search_credentials():
     return api_key, cse_id
 
 
+def get_user_friendly_config_path() -> str:
+    """Get a user-friendly representation of the config file path for error messages."""
+    if os.name == "nt":  # Windows
+        return "%APPDATA%\\rag-retriever\\config.yaml"
+    else:  # Unix-like
+        return "~/.config/rag-retriever/config.yaml"
+
+
 # Global config instance
 config = Config()

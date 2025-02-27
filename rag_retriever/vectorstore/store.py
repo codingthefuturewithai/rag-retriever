@@ -14,7 +14,12 @@ from langchain_chroma import Chroma
 from langchain_core.documents import Document
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 
-from rag_retriever.utils.config import config, get_data_dir, mask_api_key
+from rag_retriever.utils.config import (
+    config,
+    get_data_dir,
+    mask_api_key,
+    get_user_friendly_config_path,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -250,7 +255,7 @@ class VectorStore:
         api_key = config.get_openai_api_key()
         if not api_key:
             raise ValueError(
-                "OpenAI API key not found. Please configure it in ~/.config/rag-retriever/config.yaml"
+                f"OpenAI API key not found. Please configure it in {get_user_friendly_config_path()}"
             )
 
         logger.debug("Using OpenAI API key: %s", mask_api_key(api_key))

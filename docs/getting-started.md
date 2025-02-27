@@ -2,6 +2,25 @@
 
 This guide will walk you through installing RAG Retriever and loading your first documentation.
 
+## Prerequisites
+
+Before installing RAG Retriever, ensure you have the following requirements installed:
+
+1. **Python 3.10-3.12**: Download from [python.org](https://python.org)
+
+2. **Git**: Required for core functionality and GitHub integration
+
+   - **Windows**: Download from [Git for Windows](https://git-scm.com/download/windows)
+     - During installation, select "Git from the command line and also from 3rd-party software"
+     - Choose "Use Windows' default console window"
+   - **macOS**: Install via `brew install git`
+   - **Linux**: Use your distribution's package manager (e.g., `apt install git` or `dnf install git`)
+
+3. **Windows Users Only**: Visual Studio C++ Build Tools
+   - Download from [Visual Studio Downloads](https://visualstudio.microsoft.com/visual-cpp-build-tools/)
+   - Install with "Desktop development with C++" workload
+   - Required for ChromaDB and other dependencies
+
 ## Installation
 
 1. Install RAG Retriever using pipx:
