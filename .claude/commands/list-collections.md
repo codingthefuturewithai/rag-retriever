@@ -2,6 +2,9 @@
 
 Discover all available vector store collections and their contents.
 
+## Prerequisites
+This command requires the RAG Retriever MCP server to be configured in your Claude Code setup. The server manages vector store collections for semantic search.
+
 ## Implementation Approach
 This command uses **direct implementation** as it involves straightforward MCP operations and data analysis.
 

@@ -2,10 +2,13 @@
 
 Search across vector store collections for specific information and insights.
 
+## Prerequisites
+This command requires the RAG Retriever MCP server to be configured in your Claude Code setup. The server provides semantic search capabilities across your indexed content collections.
+
 ## Arguments
 Use $ARGUMENTS to specify search parameters:
 - Query string (required)
-- Collection name (optional - if not specified, searches default collection)
+- Collection name (optional - **IMPORTANT**: if not specified, searches ONLY the "default" collection, not all collections)
 - Number of results (optional - defaults to 8)
 - Score threshold (optional - defaults to 0.3)
 
@@ -24,9 +27,10 @@ This command uses **direct implementation** for focused knowledge retrieval.
    - Use sensible defaults if not specified
 
 2. **Collection Selection**
-   - If no collection specified, use `list_collections` to show available options
+   - **CRITICAL**: If no collection specified, search will ONLY check the "default" collection
+   - Use `list_collections` to show all available collections if user needs different content
    - Guide user to select appropriate collection based on their query
-   - For general queries, search the default collection first
+   - Many users will need to specify a collection name to find their content
 
 3. **Perform Search**
    - Use `vector_search` with specified parameters

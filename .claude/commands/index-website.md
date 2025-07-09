@@ -2,6 +2,9 @@
 
 Crawl and index a website into the RAG Retriever vector store for future semantic search.
 
+## Prerequisites
+This command requires the RAG Retriever MCP server to be configured in your Claude Code setup. The server handles web crawling and content indexing into vector store collections.
+
 ## Arguments
 Use $ARGUMENTS to specify crawling parameters:
 - URL (required)

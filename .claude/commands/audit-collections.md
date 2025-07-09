@@ -2,6 +2,9 @@
 
 Review and validate the current state of all vector store collections.
 
+## Prerequisites
+This command requires the RAG Retriever MCP server to be configured in your Claude Code setup. The server provides access to vector store collections for analysis and validation.
+
 ## Implementation Approach
 This command uses **direct implementation** as it involves comprehensive analysis of existing collections.
 
