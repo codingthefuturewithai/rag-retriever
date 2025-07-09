@@ -91,22 +91,30 @@ rag-retriever --help
 ### 6. MCP Server Setup (Optional but Recommended)
 If I want to use RAG Retriever with Claude Code:
 
-**First, determine my home directory and build the full path:**
-You should run this to get my exact path:
+**You should automatically determine my home directory and build the command:**
+Run this to get my home directory:
 ```bash
-echo "Full MCP path: $HOME/.local/bin/mcp-rag-retriever"
+echo $HOME
 ```
 
-**Then add MCP Server using the full path (NO tilde):**
+Then use that path to construct the command. For example, if my home directory is `/Users/timkitchens`, the command would be:
 ```bash
-claude mcp add-json -s user rag-retriever '{"type":"stdio","command":"/Users/username/.local/bin/mcp-rag-retriever"}'
+claude mcp add-json -s user rag-retriever '{"type":"stdio","command":"/Users/timkitchens/.local/bin/mcp-rag-retriever"}'
 ```
 
-**Replace `/Users/username/` with my actual home directory path from the echo command above.**
+**Important**: Replace `/Users/timkitchens` with MY actual home directory from the echo command above.
 
-**Windows users**: Check `pipx list` to get the exact path, then use that full path.
+**For Other AI Assistants (Windsurf, Cursor, etc.):**
+If I want to use RAG Retriever with other AI coding assistants, provide this JSON configuration (with my actual home directory):
+```json
+"rag-retriever": {
+  "command": "/Users/timkitchens/.local/bin/mcp-rag-retriever"
+}
+```
 
-**Grant Permissions:**
+**Windows users**: Use `pipx list` to get the exact path, then use that full path in both cases.
+
+**Grant Permissions in Claude Code:**
 Edit `~/.claude/settings.json` to add:
 ```json
 "mcp__rag-retriever__*"
@@ -205,9 +213,11 @@ Edit config.yaml to customize:
 **You CAN safely:**
 - Run installation commands on my behalf (pipx, pip, playwright install)
 - Check system requirements (python --version, git --version)
+- Determine my home directory path (echo $HOME)
 - Create directories and copy configuration templates
 - Run help commands and system validation
 - Test basic functionality
+- Build the correct MCP command with my actual home directory path
 
 **You CANNOT:**
 - See or handle my API key

@@ -275,7 +275,10 @@ Use this guide when encountering issues with RAG Retriever installation, configu
 1. **Re-add MCP server**:
    ```bash
    claude mcp remove rag-retriever
-   claude mcp add --transport stdio -s user rag-retriever python -m rag_retriever.mcp
+   # Get your home directory first
+   echo $HOME
+   # Then use the full path (replace with your actual home directory)
+   claude mcp add-json -s user rag-retriever '{"type":"stdio","command":"/Users/timkitchens/.local/bin/mcp-rag-retriever"}'
    ```
 
 2. **Check server status**:

@@ -27,21 +27,29 @@ api:
 ```
 
 ### 4. Add MCP Server to Claude Code
-First get the full path (don't use tilde):
+First get your home directory:
 
 ```bash
-echo "Full MCP path: $HOME/.local/bin/mcp-rag-retriever"
+echo $HOME
 ```
 
-Add the MCP server using the FULL path from above:
+Add the MCP server using the FULL path. For example, if your home directory is `/Users/timkitchens`:
 
 ```bash
-claude mcp add-json -s user rag-retriever '{"type":"stdio","command":"/Users/username/.local/bin/mcp-rag-retriever"}'
+claude mcp add-json -s user rag-retriever '{"type":"stdio","command":"/Users/timkitchens/.local/bin/mcp-rag-retriever"}'
 ```
 
-**Important**: Replace `/Users/username/` with your actual home directory path from the echo command.
+**Important**: Replace `/Users/timkitchens` with your actual home directory from the echo command above.
 
-**Windows users**: Check `pipx list` for the exact path and use that full path.
+**For Other AI Assistants (Windsurf, Cursor, etc.):**
+Add this JSON configuration (with your actual home directory):
+```json
+"rag-retriever": {
+  "command": "/Users/timkitchens/.local/bin/mcp-rag-retriever"
+}
+```
+
+**Windows users**: Check `pipx list` for the exact path and use that full path in both cases.
 
 ### 5. Verify Setup
 Run a Claude Code command to test:

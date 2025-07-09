@@ -84,15 +84,23 @@ If you want to use RAG Retriever with Claude Code:
 
 ### 7. Add MCP Server
 ```bash
-# Get the full path (don't use tilde)
-echo "Full MCP path: $HOME/.local/bin/mcp-rag-retriever"
+# Get your home directory
+echo $HOME
 
-# Add RAG Retriever as MCP server using the FULL path from above
-claude mcp add-json -s user rag-retriever '{"type":"stdio","command":"/Users/username/.local/bin/mcp-rag-retriever"}'
+# Add RAG Retriever as MCP server using the FULL path
+# Replace /Users/timkitchens with your actual home directory from above
+claude mcp add-json -s user rag-retriever '{"type":"stdio","command":"/Users/timkitchens/.local/bin/mcp-rag-retriever"}'
 
-# Replace /Users/username/ with your actual home directory
 # Verify it's added
 claude mcp list
+```
+
+**For Other AI Assistants (Windsurf, Cursor, etc.):**
+Add this JSON configuration (with your actual home directory):
+```json
+"rag-retriever": {
+  "command": "/Users/timkitchens/.local/bin/mcp-rag-retriever"
+}
 ```
 
 ### 8. Grant Permissions
