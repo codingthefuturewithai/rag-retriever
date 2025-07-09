@@ -44,5 +44,5 @@ This command uses **direct implementation** as it involves comprehensive analysi
 
 ## Available MCP Tools
 - `list_collections()` - Get complete collection inventory
-- `vector_search(query, collection_name)` - Test search quality in specific collections
+- `vector_search(query_text, collection_name, search_all_collections)` - Test search quality in specific collections or across all collections
 - `crawl_and_index_url(url, max_depth, collection_name)` - Re-index content if needed

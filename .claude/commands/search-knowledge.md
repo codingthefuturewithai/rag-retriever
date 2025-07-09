@@ -8,14 +8,17 @@ This command requires the RAG Retriever MCP server to be configured in your Clau
 ## Arguments
 Use $ARGUMENTS to specify search parameters:
 - Query string (required)
-- Collection name (optional - **IMPORTANT**: if not specified, searches ONLY the "default" collection, not all collections)
+- Collection name (optional - if not specified, searches ONLY the "default" collection)
+- "all" - special keyword to search across ALL collections
 - Number of results (optional - defaults to 8)
 - Score threshold (optional - defaults to 0.3)
 
 Examples:
-- "Claude Code documentation" 
-- "Claude Code documentation claude_code_docs"
-- "error handling python 10 0.4"
+- "Claude Code documentation" - searches default collection only
+- "Claude Code documentation claude_code_docs" - searches specific collection
+- "Claude Code documentation all" - searches ALL collections
+- "error handling python 10 0.4" - searches default with custom limit/threshold
+- "error handling all 10 0.4" - searches all collections with custom parameters
 
 ## Implementation Approach
 This command uses **direct implementation** for focused knowledge retrieval.
@@ -23,18 +26,21 @@ This command uses **direct implementation** for focused knowledge retrieval.
 ## Your Task
 1. **Parse Arguments**
    - Extract query from $ARGUMENTS
-   - Identify optional collection name, limit, and score threshold
+   - Identify optional collection name (or "all" for cross-collection search)
+   - Parse optional limit and score threshold parameters
    - Use sensible defaults if not specified
 
 2. **Collection Selection**
-   - **CRITICAL**: If no collection specified, search will ONLY check the "default" collection
-   - Use `list_collections` to show all available collections if user needs different content
-   - Guide user to select appropriate collection based on their query
-   - Many users will need to specify a collection name to find their content
+   - If no collection specified: search ONLY the "default" collection
+   - If "all" specified: set `search_all_collections=True` to search across all collections
+   - If specific collection specified: search that collection only
+   - Use `list_collections` to show available collections if user needs guidance
 
 3. **Perform Search**
-   - Use `vector_search` with specified parameters
-   - Search the most relevant collection for the query
+   - Use `vector_search` with appropriate parameters:
+     - `search_all_collections=True` if user specified "all"
+     - `collection_name=name` if user specified a specific collection
+     - Default to "default" collection if no collection specified
    - Display results with relevance scores and source information
 
 4. **Result Analysis**
@@ -49,4 +55,4 @@ This command uses **direct implementation** for focused knowledge retrieval.
 
 ## Available MCP Tools
 - `list_collections()` - Discover available collections
-- `vector_search(query, limit, score_threshold, collection_name, search_all_collections)` - Search for information
+- `vector_search(query_text, limit, score_threshold, full_content, collection_name, search_all_collections)` - Search for information
