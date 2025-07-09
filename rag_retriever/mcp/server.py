@@ -86,6 +86,53 @@ def register_tools(mcp_server: FastMCP) -> None:
     """Register all MCP tools with the server"""
 
     @mcp_server.tool(
+        name="list_collections",
+        description="List all available collections in the vector store with their document counts and metadata",
+    )
+    def list_collections() -> list[types.TextContent]:
+        """List all available collections in the vector store.
+        
+        Returns information about each collection including:
+        - Collection name
+        - Number of documents
+        - Creation/modification timestamps (if available)
+        """
+        try:
+            logger.debug("Listing vector store collections")
+            
+            # Create a VectorStore instance to access collection information
+            store = VectorStore()
+            collections = store.list_collections()
+            
+            if not collections:
+                return [types.TextContent(type="text", text="No collections found in the vector store.")]
+            
+            # Format collections as markdown
+            markdown = "# Vector Store Collections\n\n"
+            
+            for collection in collections:
+                name = collection.get("name", "Unknown")
+                count = collection.get("count", 0)
+                
+                markdown += f"## {name}\n\n"
+                markdown += f"**Document Count:** {count}\n\n"
+                
+                # Add metadata if available
+                if "metadata" in collection and collection["metadata"]:
+                    markdown += "**Metadata:**\n"
+                    for key, value in collection["metadata"].items():
+                        markdown += f"- {key}: {value}\n"
+                    markdown += "\n"
+                
+                markdown += "---\n\n"
+            
+            return [types.TextContent(type="text", text=markdown)]
+            
+        except Exception as e:
+            logger.error(f"Error listing collections: {e}", exc_info=True)
+            return [types.TextContent(type="text", text=f"Error listing collections: {str(e)}")]
+
+    @mcp_server.tool(
         name="web_search",
         description="Perform a web search using the configured default provider (set in config.yaml)",
     )

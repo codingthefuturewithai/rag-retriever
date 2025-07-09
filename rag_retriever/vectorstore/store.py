@@ -234,10 +234,33 @@ class VectorStore:
 
     def list_collections(self) -> List[Dict[str, Any]]:
         """List all available collections and their metadata."""
-        return [
-            {"name": name, **collection._collection_metadata.to_dict()}
-            for name, collection in self._collections.items()
-        ]
+        # First, scan for any collections that might exist on disk but not loaded
+        vectorstore_path = Path(self.persist_directory)
+        if vectorstore_path.exists():
+            for collection_dir in vectorstore_path.iterdir():
+                if collection_dir.is_dir() and collection_dir.name != "__pycache__":
+                    # Ensure collection is loaded
+                    self._get_or_create_collection(collection_dir.name)
+        
+        # Now return all loaded collections with their metadata
+        collections = []
+        for name, collection in self._collections.items():
+            try:
+                # Get actual document count from ChromaDB
+                count = collection._collection.count()
+                metadata = collection._collection_metadata.to_dict()
+                metadata["count"] = count
+                collections.append({"name": name, **metadata})
+            except Exception as e:
+                logger.warning(f"Error getting metadata for collection {name}: {e}")
+                # Fallback to basic info
+                collections.append({
+                    "name": name,
+                    "count": 0,
+                    "error": str(e)
+                })
+        
+        return collections
 
     def get_collection_metadata(self, collection_name: str) -> Dict[str, Any]:
         """Get metadata for a specific collection."""
