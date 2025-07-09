@@ -87,7 +87,7 @@ def register_tools(mcp_server: FastMCP) -> None:
 
     @mcp_server.tool(
         name="list_collections",
-        description="List all available collections in the vector store with their document counts and metadata",
+        description="List all available vector store collections with document counts, creation dates, and metadata. Shows which collections contain indexed content for semantic search. No parameters required.",
     )
     def list_collections() -> list[types.TextContent]:
         """List all available collections in the vector store.
@@ -134,7 +134,7 @@ def register_tools(mcp_server: FastMCP) -> None:
 
     @mcp_server.tool(
         name="web_search",
-        description="Perform a web search using the configured default provider (set in config.yaml)",
+        description="Search the web using Google or DuckDuckGo. Takes a search query string, optional number of results (default 5), and optional provider ('google' or 'duckduckgo'). Returns web search results with titles, URLs, and snippets.",
     )
     def web_search(
         search_string: str = Field(description="Search query string"),
@@ -194,7 +194,7 @@ def register_tools(mcp_server: FastMCP) -> None:
 
     @mcp_server.tool(
         name="vector_search",
-        description="Search the vector store for semantically relevant content with configurable parameters",
+        description="Search indexed content using semantic similarity. Takes a query string, optional result limit (default 8), optional score threshold (default 0.3), optional collection name (defaults to 'default'), and optional search_all_collections flag. Returns relevant documents with scores and source information.",
     )
     async def query(
         query_text: str = Field(description="The search query text"),
@@ -338,7 +338,7 @@ def register_tools(mcp_server: FastMCP) -> None:
 
     @mcp_server.tool(
         name="crawl_and_index_url",
-        description="Fetch and process web content, recursively crawling linked pages and storing everything in the vector store for future semantic search",
+        description="Crawl a website and index its content for semantic search. Takes a URL, optional max_depth for recursive crawling (default 2), and optional collection_name (defaults to 'default'). Processes web pages, extracts text, and stores in vector database. Returns confirmation when crawling starts.",
     )
     async def fetch_url(
         url: str = Field(description="URL to fetch and process"),
