@@ -27,20 +27,37 @@ api:
 ```
 
 ### 4. Add MCP Server to Claude Code
-Add the MCP server using the wrapper script:
+First get the full path (don't use tilde):
 
 ```bash
-claude mcp add-json -s user rag-retriever '{"type":"stdio","command":"~/.local/bin/mcp-rag-retriever"}'
+echo "Full MCP path: $HOME/.local/bin/mcp-rag-retriever"
 ```
 
-**Note**: The path may vary by system:
-- **macOS/Linux**: `~/.local/bin/mcp-rag-retriever`
-- **Windows**: Check `pipx list` for the exact path
+Add the MCP server using the FULL path from above:
+
+```bash
+claude mcp add-json -s user rag-retriever '{"type":"stdio","command":"/Users/username/.local/bin/mcp-rag-retriever"}'
+```
+
+**Important**: Replace `/Users/username/` with your actual home directory path from the echo command.
+
+**Windows users**: Check `pipx list` for the exact path and use that full path.
 
 ### 5. Verify Setup
 Run a Claude Code command to test:
 ```
 /list-collections
+```
+
+### 6. Test with Real Content
+Index Claude Code documentation to verify full functionality:
+```
+/index-website "https://docs.anthropic.com/en/docs/claude-code/overview 3 claude_code_docs"
+```
+
+Wait 1-2 minutes for crawling, then test search:
+```
+/search-knowledge "MCP server setup claude_code_docs"
 ```
 
 ## Available MCP Tools

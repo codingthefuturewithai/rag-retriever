@@ -91,14 +91,20 @@ rag-retriever --help
 ### 6. MCP Server Setup (Optional but Recommended)
 If I want to use RAG Retriever with Claude Code:
 
-**Add MCP Server (correct command using wrapper script):**
+**First, determine my home directory and build the full path:**
+You should run this to get my exact path:
 ```bash
-claude mcp add-json -s user rag-retriever '{"type":"stdio","command":"~/.local/bin/mcp-rag-retriever"}'
+echo "Full MCP path: $HOME/.local/bin/mcp-rag-retriever"
 ```
 
-**Note**: On different systems, the path might be:
-- **macOS/Linux**: `~/.local/bin/mcp-rag-retriever`
-- **Windows**: Check `pipx list` for the correct path
+**Then add MCP Server using the full path (NO tilde):**
+```bash
+claude mcp add-json -s user rag-retriever '{"type":"stdio","command":"/Users/username/.local/bin/mcp-rag-retriever"}'
+```
+
+**Replace `/Users/username/` with my actual home directory path from the echo command above.**
+
+**Windows users**: Check `pipx list` to get the exact path, then use that full path.
 
 **Grant Permissions:**
 Edit `~/.claude/settings.json` to add:
@@ -106,8 +112,8 @@ Edit `~/.claude/settings.json` to add:
 "mcp__rag-retriever__*"
 ```
 
-### 7. Test Installation
-Create a test collection:
+### 7. Test Basic Installation
+Create a simple test collection:
 ```bash
 rag-retriever --fetch "https://example.com" --collection test
 ```
@@ -116,6 +122,27 @@ Then search it:
 ```bash
 rag-retriever --search "test query" --collection test
 ```
+
+### 8. Test MCP Integration with Real Content
+If MCP setup was completed, test with Claude Code by indexing the official Claude Code documentation:
+
+**In Claude Code, run this command to index Claude Code docs:**
+```
+/index-website "https://docs.anthropic.com/en/docs/claude-code/overview 3 claude_code_docs"
+```
+
+This will:
+- Crawl the Claude Code documentation site
+- Index to depth 3 (comprehensive coverage)
+- Store in a collection named "claude_code_docs"
+- Take 1-2 minutes to complete
+
+**Wait 1-2 minutes for crawling to complete, then test search:**
+```
+/search-knowledge "setup MCP server claude_code_docs"
+```
+
+This should return relevant information about MCP server setup from the Claude Code documentation, proving the system is working end-to-end.
 
 ## Important Configuration Options
 
@@ -192,10 +219,11 @@ Edit config.yaml to customize:
 
 After setup, I should be able to:
 - Run `rag-retriever --help` without errors
-- See config file at the correct OS path
-- Have chromium browser installed
-- Create and search collections
+- See config file at the correct OS path with only API key needing configuration
+- Have chromium browser automatically installed
+- Create and search collections via command line
 - Use MCP server with Claude Code (if configured)
+- Index Claude Code documentation and search it successfully
 
 ## Next Steps After Setup
 

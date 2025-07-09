@@ -84,9 +84,13 @@ If you want to use RAG Retriever with Claude Code:
 
 ### 7. Add MCP Server
 ```bash
-# Add RAG Retriever as MCP server (using wrapper script)
-claude mcp add-json -s user rag-retriever '{"type":"stdio","command":"~/.local/bin/mcp-rag-retriever"}'
+# Get the full path (don't use tilde)
+echo "Full MCP path: $HOME/.local/bin/mcp-rag-retriever"
 
+# Add RAG Retriever as MCP server using the FULL path from above
+claude mcp add-json -s user rag-retriever '{"type":"stdio","command":"/Users/username/.local/bin/mcp-rag-retriever"}'
+
+# Replace /Users/username/ with your actual home directory
 # Verify it's added
 claude mcp list
 ```
@@ -102,8 +106,19 @@ Edit `~/.claude/settings.json` and add to the "allow" array:
 # Restart Claude Code
 claude
 
-# Test with:
+# Test basic integration:
 /list-collections
+```
+
+### 10. Test with Real Content
+Index Claude Code documentation to verify full functionality:
+```
+/index-website "https://docs.anthropic.com/en/docs/claude-code/overview 3 claude_code_docs"
+```
+
+Wait 1-2 minutes for crawling, then test search:
+```
+/search-knowledge "MCP server setup claude_code_docs"
 ```
 
 ## Common Commands
