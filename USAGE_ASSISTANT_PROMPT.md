@@ -87,6 +87,26 @@ rag-retriever --ui                     # Launch web interface
 
 ## Best Practices
 
+### 🏗️ **Collection Organization (CRITICAL)**
+- **Group related topics in single collections** - Keep Python docs, Django docs, FastAPI docs separate, not mixed
+- **Use descriptive, consistent names** - `python_docs`, `company_wiki`, `claude_code_docs` not `docs1`, `stuff`
+- **Avoid spreading related knowledge** - Don't put React concepts across multiple collections
+- **Plan hierarchically** - `frontend_docs` > `react_docs` > `react_hooks_docs` for specific needs
+
+### 📊 **Content Quality Management (ESSENTIAL)**
+- **ALWAYS assess content quality before indexing** - Poor documentation corrupts your knowledge base
+- **Use AI to evaluate content** - Have your AI assistant review sample content for accuracy
+- **Watch for contradictory information** - Multiple sources saying different things = quality problem
+- **Identify and remove outdated content** - Old documentation leads to wrong answers
+- **Monitor search relevance scores** - Consistently low scores (< 0.3) indicate quality issues
+
+### 🔍 **Quality Assessment Workflow**
+1. **Pre-indexing**: Have AI review sample pages for accuracy and completeness
+2. **Post-indexing**: Use `/audit-collections` to systematically assess quality
+3. **Regular testing**: Search for known topics and verify answers are correct
+4. **Score monitoring**: Track relevance scores - declining scores indicate quality degradation
+5. **Source validation**: Check that sources are current and authoritative
+
 ### Effective Indexing
 - **Use descriptive collection names** - `claude_code_docs` not `docs1`
 - **Set appropriate max_depth** - 2-3 levels usually sufficient
@@ -102,7 +122,7 @@ rag-retriever --ui                     # Launch web interface
 - **Check relevance scores** - Scores below 0.3 may not be relevant
 
 ### Collection Management
-- **Regular audits** - Check collection health and content freshness
+- **Regular audits** - Use `/audit-collections` to check collection health
 - **Consistent naming** - Use underscore_style for collection names
 - **Avoid duplication** - Don't index same content in multiple collections
 - **Plan for growth** - Start with core content, expand gradually

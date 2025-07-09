@@ -45,6 +45,13 @@ RAG Retriever enhances your AI coding workflows by providing:
 - **Health Monitoring**: Audit collections for quality and freshness
 - **Easy Cleanup**: Remove or rebuild collections as needed
 
+### 🎯 Quality Management
+- **Content Quality Assessment**: Systematic evaluation of indexed content
+- **AI-Powered Quality Review**: Use AI to assess accuracy and completeness
+- **Contradiction Detection**: Find conflicting information across collections
+- **Relevance Monitoring**: Track search quality metrics over time
+- **Best Practice Guidance**: Comprehensive collection organization strategies
+
 ### 🤖 AI Integration
 - **MCP Server**: Direct integration with Claude Code
 - **Custom Commands**: Pre-built workflows for common tasks
@@ -73,6 +80,9 @@ Crawl and index website content:
 
 ### `/audit-collections`
 Review collection health, identify issues, and get maintenance recommendations.
+
+### `/assess-quality`
+Systematically evaluate content quality, accuracy, and reliability to ensure high-quality search results.
 
 ## How It Works
 

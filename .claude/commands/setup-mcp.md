@@ -42,10 +42,10 @@ claude mcp add-json -s user rag-retriever '{"type":"stdio","command":"/Users/tim
 **Important**: Replace `/Users/timkitchens` with your actual home directory from the echo command above.
 
 **For Other AI Assistants (Windsurf, Cursor, etc.):**
-Add this JSON configuration (with your actual home directory):
+Add this JSON configuration (replace with your actual home directory):
 ```json
 "rag-retriever": {
-  "command": "/Users/timkitchens/.local/bin/mcp-rag-retriever"
+  "command": "/Users/yourusername/.local/bin/mcp-rag-retriever"
 }
 ```
 

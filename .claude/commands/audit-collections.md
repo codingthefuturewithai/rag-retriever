@@ -15,10 +15,12 @@ This command uses **direct implementation** as it involves comprehensive analysi
    - Identify collections that may need attention
 
 2. **Content Quality Assessment**
-   - Perform sample searches in each collection
-   - Evaluate result quality and relevance
+   - Perform sample searches in each collection using known topics
+   - Evaluate result quality and relevance - are answers accurate and complete?
+   - Test for contradictory information - do different results conflict?
    - Check for potential duplicates or outdated content
    - Assess metadata richness and accuracy
+   - **AI Quality Review**: Use AI to evaluate sample content for accuracy, completeness, and currency
 
 3. **Usage Analysis**
    - Identify most and least used collections
@@ -30,11 +32,19 @@ This command uses **direct implementation** as it involves comprehensive analysi
    - Check for any technical issues or corruption
    - Validate search functionality across collections
 
-5. **Recommendations**
+5. **Quality Assessment Workflow**
+   - For each collection, search for 3-5 known topics and verify accuracy
+   - Check relevance scores - collections with consistently low scores (< 0.3) need attention
+   - Look for contradictory information within collections
+   - Identify outdated content that should be removed or updated
+   - Test cross-collection searches to find duplicate or conflicting information
+
+6. **Recommendations**
    - Suggest collections that need updating or re-indexing
    - Recommend consolidation of similar collections
    - Identify gaps in knowledge coverage
    - Propose new collections for missing topic areas
+   - **Flag quality issues**: Highlight collections with poor, outdated, or contradictory content
 
 ## Success Criteria
 - Comprehensive audit report of all collections
