@@ -1,0 +1,2 @@
+crawl4ai>=0.4.0
+playwright>=1.42.0

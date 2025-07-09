@@ -17,24 +17,58 @@ RAG Retriever is a semantic search system that:
 
 ## Available Interfaces
 
-### 1. Command Line Interface
+### 1. MCP Server (Claude Code Integration)
+**Best for**: AI assistant workflows, secure operations, day-to-day usage
+
+- `/rag-list-collections` - Discover available collections
+- `/rag-search-knowledge` - Search across collections  
+- `/rag-index-website` - Crawl and index websites
+- `/rag-audit-collections` - Review collection health
+- `/rag-assess-quality` - Evaluate content quality
+- `/rag-manage-collections` - Administrative guidance (provides CLI commands)
+- `/rag-ingest-content` - Advanced content ingestion guidance
+- `/rag-cli-help` - Interactive CLI help system
+
+### 2. Command Line Interface (Full Control)
+**Best for**: Administrative tasks, advanced content ingestion, system maintenance
+
 ```bash
 rag-retriever --help                    # Show all options
-rag-retriever --fetch URL              # Index a website
-rag-retriever --search "query"         # Search content
-rag-retriever --ui                     # Launch web interface
+rag-retriever --fetch-url URL           # Index a website
+rag-retriever --query "search terms"    # Search content
+rag-retriever --list-collections        # Show collections
+rag-retriever --clean --collection NAME # Delete collection
+rag-retriever --ingest-image PATH       # Analyze images
+rag-retriever --github-repo URL         # Index GitHub repository
+rag-retriever --ui                      # Launch web interface
 ```
 
-### 2. Claude Code Commands (if MCP configured)
-- `/list-collections` - Discover available collections
-- `/search-knowledge` - Search across collections  
-- `/index-website` - Crawl and index websites
-- `/audit-collections` - Review collection health
+**For CLI-specific operations, use the specialized prompts:**
+- [`CLI_ASSISTANT_PROMPT.md`](CLI_ASSISTANT_PROMPT.md) - Complete CLI reference
+- [`ADMIN_ASSISTANT_PROMPT.md`](ADMIN_ASSISTANT_PROMPT.md) - Administrative operations
+- [`ADVANCED_CONTENT_INGESTION_PROMPT.md`](ADVANCED_CONTENT_INGESTION_PROMPT.md) - Rich content processing
 
 ### 3. MCP Tools (for other AI assistants)
 - `list_collections()` - Show available collections
 - `vector_search(query, collection_name, search_all_collections)` - Search content
 - `crawl_and_index_url(url, max_depth, collection_name)` - Index websites
+- `web_search(query, num_results, provider)` - Search the web
+
+## MCP vs CLI Decision Guide
+
+### Use MCP Server When:
+- Working with AI assistants (Claude Code, etc.)
+- Performing routine search and indexing operations
+- Want secure, controlled access to functionality
+- Need AI-friendly tool descriptions and workflows
+
+### Use CLI When:
+- Need to delete collections or clean vector store
+- Processing local files, images, or directories
+- Integrating with GitHub repositories or Confluence
+- Performing system administration or maintenance
+- Need verbose logging or custom output formats
+- Troubleshooting system issues
 
 ## Common Workflows
 
@@ -102,10 +136,11 @@ rag-retriever --ui                     # Launch web interface
 
 ### 🔍 **Quality Assessment Workflow**
 1. **Pre-indexing**: Have AI review sample pages for accuracy and completeness
-2. **Post-indexing**: Use `/audit-collections` to systematically assess quality
+2. **Post-indexing**: Use `/rag-audit-collections` to systematically assess quality
 3. **Regular testing**: Search for known topics and verify answers are correct
 4. **Score monitoring**: Track relevance scores - declining scores indicate quality degradation
 5. **Source validation**: Check that sources are current and authoritative
+6. **Administrative cleanup**: Use CLI for collection deletion and maintenance when needed
 
 ### Effective Indexing
 - **Use descriptive collection names** - `claude_code_docs` not `docs1`
@@ -169,10 +204,11 @@ rag-retriever --ui
 ## Troubleshooting Common Issues
 
 ### Poor Search Results
-- **Check collection contents** - Use `/audit-collections` to verify content
+- **Check collection contents** - Use `/rag-audit-collections` to verify content
 - **Try different queries** - Rephrase your search terms
 - **Lower score threshold** - Try 0.2 instead of 0.3
 - **Check embedding model** - Ensure using text-embedding-3-large
+- **Administrative cleanup** - Use CLI to delete and re-index poor collections
 
 ### Indexing Failures
 - **Check crawler logs** - Look for specific error messages
@@ -205,10 +241,21 @@ rag-retriever --ui
 ## Claude Code Integration
 
 If I have MCP configured, you can:
-- Use `/list-collections` to show available collections
-- Use `/search-knowledge` to search for information
-- Use `/index-website` to help me add new content
-- Use `/audit-collections` to review collection health
+- Use `/rag-list-collections` to show available collections
+- Use `/rag-search-knowledge` to search for information
+- Use `/rag-index-website` to help me add new content
+- Use `/rag-audit-collections` to review collection health
+- Use `/rag-assess-quality` to evaluate content quality
+- Use `/rag-manage-collections` for administrative guidance
+- Use `/rag-ingest-content` for advanced content ingestion help
+- Use `/rag-cli-help` for CLI command assistance
+
+## When You Need CLI Operations
+
+For operations requiring CLI access, direct me to the appropriate specialized prompts:
+- **Administrative tasks**: [`ADMIN_ASSISTANT_PROMPT.md`](ADMIN_ASSISTANT_PROMPT.md)
+- **Advanced content ingestion**: [`ADVANCED_CONTENT_INGESTION_PROMPT.md`](ADVANCED_CONTENT_INGESTION_PROMPT.md)
+- **Complete CLI reference**: [`CLI_ASSISTANT_PROMPT.md`](CLI_ASSISTANT_PROMPT.md)
 
 ## Success Metrics
 
