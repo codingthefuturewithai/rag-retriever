@@ -27,21 +27,15 @@ api:
 ```
 
 ### 4. Add MCP Server to Claude Code
-Add to your Claude Code MCP configuration:
+Add the MCP server using the wrapper script:
 
-```json
-{
-  "mcpServers": {
-    "rag-retriever": {
-      "command": "python",
-      "args": ["-m", "rag_retriever.mcp"],
-      "env": {
-        "OPENAI_API_KEY": "sk-your-api-key-here"
-      }
-    }
-  }
-}
+```bash
+claude mcp add-json -s user rag-retriever '{"type":"stdio","command":"~/.local/bin/mcp-rag-retriever"}'
 ```
+
+**Note**: The path may vary by system:
+- **macOS/Linux**: `~/.local/bin/mcp-rag-retriever`
+- **Windows**: Check `pipx list` for the exact path
 
 ### 5. Verify Setup
 Run a Claude Code command to test:

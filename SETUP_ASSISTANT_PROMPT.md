@@ -29,14 +29,14 @@ Before we start, verify I have:
 ## Installation Steps You'll Help Me With
 
 ### 1. Install RAG Retriever
-Choose the appropriate installation method:
-
-**Option A: Via pipx (Recommended)**
+**Recommended: Via pipx (includes automatic browser installation)**
 ```bash
 pipx install rag-retriever
 ```
 
-**Option B: Development Installation**
+**Note**: This automatically installs Playwright browsers during installation via the post-install script. No additional browser installation is needed in most cases.
+
+**Alternative: Development Installation**
 If I want to modify the code:
 ```bash
 git clone https://github.com/user/rag-retriever.git
@@ -50,27 +50,34 @@ Run the initialization command:
 rag-retriever --init
 ```
 
-This creates OS-specific config files:
+This creates a config file with ALL settings pre-configured:
 - **macOS/Linux**: `~/.config/rag-retriever/config.yaml`
 - **Windows**: `%APPDATA%\rag-retriever\config.yaml`
 
-### 3. Configure API Key
-**CRITICAL**: I need to add my OpenAI API key to the config file. 
+### 3. Configure API Key (ONLY Required Change)
+**CRITICAL**: The config file has everything pre-configured EXCEPT the OpenAI API key.
 
 **You should:**
 - Tell me the exact location of my config file
-- Show me the exact YAML structure to add
+- Show me that I only need to replace `null` with my API key
 - Remind me to keep my API key secret
 - **NEVER** ask me to show you the API key
 
-**Example structure to show me:**
+**Find this section in config.yaml and replace `null`:**
 ```yaml
 api:
-  openai_api_key: sk-your-actual-api-key-here
+  openai_api_key: sk-your-actual-api-key-here  # Change from: null
 ```
 
-### 4. Install Browser Dependencies
-RAG Retriever needs browser support for web crawling. Help me run:
+**Everything else in the config can stay as-is for basic usage.**
+
+### 4. Verify Browser Installation (Usually Not Needed)
+The pipx installation should have automatically installed browsers. Test:
+```bash
+rag-retriever --help
+```
+
+If you see browser-related errors, run:
 ```bash
 python -m playwright install chromium
 ```
@@ -84,10 +91,14 @@ rag-retriever --help
 ### 6. MCP Server Setup (Optional but Recommended)
 If I want to use RAG Retriever with Claude Code:
 
-**Add MCP Server:**
+**Add MCP Server (correct command using wrapper script):**
 ```bash
-claude mcp add --transport stdio -s user rag-retriever python -m rag_retriever.mcp
+claude mcp add-json -s user rag-retriever '{"type":"stdio","command":"~/.local/bin/mcp-rag-retriever"}'
 ```
+
+**Note**: On different systems, the path might be:
+- **macOS/Linux**: `~/.local/bin/mcp-rag-retriever`
+- **Windows**: Check `pipx list` for the correct path
 
 **Grant Permissions:**
 Edit `~/.claude/settings.json` to add:

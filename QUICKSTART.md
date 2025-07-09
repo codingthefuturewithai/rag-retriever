@@ -12,7 +12,7 @@ This guide provides the EXACT commands to get RAG Retriever installed and runnin
 
 ### 1. Install RAG Retriever
 ```bash
-# Recommended: Install via pipx for isolation
+# Recommended: Install via pipx (automatically installs browsers)
 pipx install rag-retriever
 
 # Alternative: Install via pip
@@ -21,7 +21,7 @@ pip install rag-retriever
 
 ### 2. Initialize Configuration
 ```bash
-# Create config files at OS-specific locations
+# Create config file with all settings pre-configured
 rag-retriever --init
 ```
 
@@ -29,17 +29,17 @@ rag-retriever --init
 - **macOS/Linux**: `~/.config/rag-retriever/config.yaml`
 - **Windows**: `%APPDATA%\rag-retriever\config.yaml`
 
-### 3. Configure API Key
-**IMPORTANT**: Add your OpenAI API key to the config file.
+### 3. Configure API Key (ONLY Required Change)
+**IMPORTANT**: Replace `null` with your OpenAI API key in the config file.
 
 **macOS/Linux:**
 ```bash
 # Edit the config file
 nano ~/.config/rag-retriever/config.yaml
 
-# Add this structure:
+# Find this line and replace null:
 api:
-  openai_api_key: sk-your-actual-api-key-here
+  openai_api_key: sk-your-actual-api-key-here  # Change from: null
 ```
 
 **Windows:**
@@ -47,14 +47,17 @@ api:
 # Edit the config file
 notepad %APPDATA%\rag-retriever\config.yaml
 
-# Add this structure:
+# Find this line and replace null:
 api:
-  openai_api_key: sk-your-actual-api-key-here
+  openai_api_key: sk-your-actual-api-key-here  # Change from: null
 ```
 
-### 4. Install Browser Dependencies
+### 4. Verify Installation (browsers auto-installed)
 ```bash
-# Required for web crawling
+# Check that everything is working (browsers should be pre-installed)
+rag-retriever --help
+
+# If you see browser errors, run:
 python -m playwright install chromium
 ```
 
@@ -81,8 +84,8 @@ If you want to use RAG Retriever with Claude Code:
 
 ### 7. Add MCP Server
 ```bash
-# Add RAG Retriever as MCP server
-claude mcp add --transport stdio -s user rag-retriever python -m rag_retriever.mcp
+# Add RAG Retriever as MCP server (using wrapper script)
+claude mcp add-json -s user rag-retriever '{"type":"stdio","command":"~/.local/bin/mcp-rag-retriever"}'
 
 # Verify it's added
 claude mcp list
