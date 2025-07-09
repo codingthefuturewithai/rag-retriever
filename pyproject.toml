@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "rag-retriever"
-version = "0.3.3"
+version = "0.4.0"
 description = "A tool for crawling, indexing, and semantically searching web content with RAG capabilities"
 readme = "README.md"
 authors = [
@@ -35,9 +35,8 @@ dependencies = [
     "langchain-google-community>=0.0.11",
     "lxml==5.3.0",
     "openai==1.59.4",
-    "playwright==1.42.0",
+    "playwright>=1.49.0",
     "pypdf==4.1.0",
-    "python-dotenv==1.0.1",
     "pyyaml==6.0.2",
     "importlib-resources>=6.1.1",
     "unstructured[pdf]>=0.12.0",
@@ -54,7 +53,8 @@ dependencies = [
     "uvicorn>=0.27.0",
     "streamlit>=1.32.0",
     "pandas>=2.2.0",
-    "plotly>=5.19.0"
+    "plotly>=5.19.0",
+    "crawl4ai>=0.4.0"
 ]
 
 [project.optional-dependencies]
@@ -76,7 +76,7 @@ include = ["rag_retriever*", "scripts*"]
 namespaces = true
 
 [tool.setuptools.package-data]
-rag_retriever = ["config/*.yaml", "config/.env.example", "ui/*.py", "static/*"]
+rag_retriever = ["config/*.yaml", "ui/*.py", "static/*"]
 
 [project.scripts]
 rag-retriever = "rag_retriever.cli:main"

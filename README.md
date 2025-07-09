@@ -122,13 +122,24 @@ The following dependencies are only required for specific advanced PDF processin
 
 ### System Requirements
 
-The application uses Playwright with Chromium for web crawling:
+The application supports multiple web crawling backends:
 
+**Playwright Crawler** (Default):
 - Chromium browser is automatically installed during package installation
 - Sufficient disk space for Chromium (~200MB)
 - Internet connection for initial setup and crawling
 
-Note: The application will automatically download and manage Chromium installation.
+**Crawl4AI Crawler** (Alternative, 20x faster):
+- Chromium browser (automatically installed via Playwright)
+- Additional system dependencies for optimal performance
+- Configured via `crawler.type: "crawl4ai"` in config.yaml
+
+**System-Level Dependencies**:
+- Git (Required for core functionality, GitHub integration)
+- At least one working crawler (Playwright OR Crawl4AI) must be available
+- All dependencies are validated at startup with clear error messages
+
+Note: The application will automatically download and manage Chromium installation. System validation occurs before any configuration is used to ensure all required tools are available.
 
 ## Installation
 

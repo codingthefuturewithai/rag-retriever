@@ -14,6 +14,13 @@ import warnings
 from playwright.async_api import Error as PlaywrightError
 from rag_retriever.crawling.playwright_crawler import PlaywrightCrawler
 from rag_retriever.crawling.exceptions import PageLoadError, ContentExtractionError
+
+# Try to import Crawl4AI crawler, fallback if not available
+try:
+    from rag_retriever.crawling.crawl4ai_crawler import Crawl4AICrawler
+    CRAWL4AI_AVAILABLE = True
+except ImportError:
+    CRAWL4AI_AVAILABLE = False
 from rag_retriever.search.searcher import Searcher
 from rag_retriever.vectorstore.store import VectorStore, get_vectorstore_path
 from rag_retriever.utils.config import (
@@ -22,6 +29,7 @@ from rag_retriever.utils.config import (
     get_user_friendly_config_path,
 )
 from rag_retriever.utils.windows import suppress_asyncio_warnings, windows_event_loop
+from rag_retriever.utils.system_validation import validate_system_dependencies, SystemValidationError
 from openai import OpenAI
 
 logger = logging.getLogger(__name__)
@@ -30,6 +38,18 @@ logger = logging.getLogger(__name__)
 MAX_RETRIES = 3
 # Delay between retries (in seconds)
 RETRY_DELAY = 2
+
+
+def get_crawler():
+    """Get the appropriate crawler based on configuration."""
+    crawler_type = config.crawler.get("type", "playwright")
+    
+    if crawler_type == "crawl4ai":
+        logger.info("Using Crawl4AI crawler")
+        return Crawl4AICrawler()
+    else:
+        logger.info("Using Playwright crawler")
+        return PlaywrightCrawler()
 
 
 def get_system_info() -> Dict[str, str]:
@@ -97,6 +117,14 @@ def process_url(
 
     @windows_event_loop
     def _process():
+        # Validate system dependencies first
+        try:
+            validate_system_dependencies()
+        except SystemValidationError as e:
+            logger.error("System validation failed:")
+            logger.error(str(e))
+            return 1
+        
         # Enable asyncio debug mode
         loop = asyncio.get_event_loop()
         loop.set_debug(True)
@@ -133,7 +161,6 @@ def process_url(
         api_key = config.get_openai_api_key()
         logger.debug("- API key: %s", mask_api_key(api_key if api_key else ""))
         logger.debug("- Config file: %s", config.config_path)
-        logger.debug("- Environment file: %s", config.env_path)
 
         # Browser configuration
         logger.debug("\nBrowser configuration:")
@@ -154,7 +181,7 @@ def process_url(
         try:
             logger.info("\nStarting content fetch and indexing process...")
             logger.debug("Initializing browser...")
-            crawler = PlaywrightCrawler()
+            crawler = get_crawler()
             store = VectorStore(collection_name=collection_name)
 
             retry_count = 0
@@ -328,7 +355,6 @@ def search_content(
     api_key = config.get_openai_api_key()
     logger.debug("- API key: %s", mask_api_key(api_key if api_key else ""))
     logger.debug("- Config file: %s", config.config_path)
-    logger.debug("- Environment file: %s", config.env_path)
 
     try:
         logger.info("\nStarting content search...")

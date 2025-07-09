@@ -107,6 +107,10 @@ search:
     api_key: null # Your Google API key
     cse_id: null # Your Custom Search Engine ID
 
+# Crawler settings
+crawler:
+  type: "crawl4ai" # Options: "playwright" or "crawl4ai"
+
 # Browser settings for web crawling
 browser:
   wait_time: 2 # Base wait time in seconds

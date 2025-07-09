@@ -27,6 +27,7 @@ logging.getLogger("google").setLevel(logging.WARNING)  # Added for Google API
 # Now import the rest
 from rag_retriever.main import process_url, search_content
 from rag_retriever.vectorstore.store import clean_vectorstore, VectorStore
+from rag_retriever.utils.system_validation import validate_system_dependencies, SystemValidationError
 from rag_retriever.document_processor import (
     LocalDocumentLoader,
     ImageLoader,
@@ -311,7 +312,16 @@ def main():
             print(f"RAG Retriever version {version}")
             return 0
         except importlib.metadata.PackageNotFoundError:
-            logger.error("Could not determine package version")
+            print("RAG Retriever version: development")
+            return 0
+    
+    # Validate system dependencies early (skip for init and version)
+    if not args.init:
+        try:
+            validate_system_dependencies()
+        except SystemValidationError as e:
+            logger.error("System validation failed:")
+            logger.error(str(e))
             return 1
 
     # Handle UI launch first

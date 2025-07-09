@@ -9,7 +9,6 @@ import shutil
 import stat
 
 import yaml
-from dotenv import load_dotenv
 
 logger = logging.getLogger(__name__)
 
@@ -43,11 +42,6 @@ def get_user_config_path() -> Path:
     return get_config_dir() / "config.yaml"
 
 
-def get_user_env_path() -> Path:
-    """Get user-specific .env file path."""
-    return get_config_dir() / ".env"
-
-
 def ensure_user_directories() -> None:
     """Create user config and data directories if they don't exist."""
     config_dir = get_config_dir()
@@ -57,39 +51,6 @@ def ensure_user_directories() -> None:
     data_dir.mkdir(parents=True, exist_ok=True)
 
     logger.debug("Created user directories: %s, %s", config_dir, data_dir)
-
-
-def create_user_env() -> None:
-    """Create a new .env file in user config directory using the example template."""
-    env_path = get_user_env_path()
-
-    # Check if .env exists and has content
-    if env_path.exists():
-        with open(env_path, "r") as f:
-            content = f.read().strip()
-            if content:  # File exists and has content
-                # Check if it has a valid API key
-                if "OPENAI_API_KEY" in content and not content.endswith(
-                    "your-api-key-here"
-                ):
-                    logger.info(
-                        "User .env already exists with API key at: %s", env_path
-                    )
-                    return
-                else:
-                    logger.warning("Existing .env found but no valid API key detected")
-                    logger.warning(
-                        "Please edit %s to add your OpenAI API key", env_path
-                    )
-                    return
-
-    # Create new .env or overwrite empty one
-    with files("rag_retriever.config").joinpath(".env.example").open("r") as src:
-        with open(env_path, "w") as dst:
-            dst.write(src.read())
-
-    logger.info("Created .env file at: %s", env_path)
-    logger.warning("Please edit this file to add your OpenAI API key")
 
 
 def create_user_config() -> None:
@@ -132,35 +93,6 @@ def mask_api_key(key: str) -> str:
     return f"{key[:4]}...{key[-4:]}"
 
 
-def log_env_source() -> None:
-    """Log information about where environment variables are loaded from."""
-    api_key = os.getenv("OPENAI_API_KEY")
-    if not api_key:
-        logger.warning("OPENAI_API_KEY is not set in any environment file")
-        return
-
-    # Check each possible source
-    env_sources = [
-        (Path("~/.env").expanduser(), "home directory (~/.env)"),
-        (get_user_env_path(), "user config directory"),
-        (Path(".env"), "current directory"),
-    ]
-
-    for env_path, description in env_sources:
-        if env_path.exists():
-            with open(env_path) as f:
-                if "OPENAI_API_KEY" in f.read():
-                    logger.info(
-                        "Using OPENAI_API_KEY from %s (key: %s)",
-                        description,
-                        mask_api_key(api_key),
-                    )
-                    return
-
-    logger.info(
-        "Using OPENAI_API_KEY from environment variables (key: %s)",
-        mask_api_key(api_key),
-    )
 
 
 class Config:
@@ -169,7 +101,6 @@ class Config:
     def __init__(self, config_path: str | None = None):
         """Initialize configuration manager."""
         self._config_path = None
-        self._env_path = None
 
         # Debug path resolution
         config_dir = get_config_dir()
@@ -264,6 +195,11 @@ class Config:
         return self._config["search"]
 
     @property
+    def crawler(self) -> Dict[str, Any]:
+        """Get crawler configuration."""
+        return self._config.get("crawler", {})
+
+    @property
     def browser(self) -> Dict[str, Any]:
         """Get browser configuration."""
         return self._config.get("browser", {})
@@ -273,10 +209,6 @@ class Config:
         """Get the path to the active configuration file."""
         return self._config_path or "using default configuration"
 
-    @property
-    def env_path(self) -> str:
-        """Get the path to the active environment file."""
-        return self._env_path or "environment variables not loaded from file"
 
     @property
     def api(self) -> Dict[str, Any]:
@@ -307,6 +239,8 @@ class Config:
             logger.debug("Found API key in config file")
             if isinstance(api_key, str) and api_key.startswith("sk-"):
                 logger.debug("Using API key from config file")
+                # Set environment variable for crawl4ai and other dependencies
+                os.environ["OPENAI_API_KEY"] = api_key
                 return api_key
             else:
                 logger.debug("API key in config is invalid format: %s", type(api_key))
