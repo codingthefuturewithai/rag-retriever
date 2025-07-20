@@ -11,11 +11,39 @@ This guide provides the EXACT commands to get RAG Retriever installed and runnin
 ## Step-by-Step Commands
 
 ### 1. Install RAG Retriever
+
+#### Recommended Method (Most Reliable)
+Use `uv tool install` for complete isolation from other Python projects:
+
 ```bash
-# Recommended: Install via pipx (automatically installs browsers)
+# Install using uv tool (recommended)
+uv tool install rag-retriever
+
+# Find installation path for configuration
+uv tool dir
+```
+
+The installation path will be something like:
+- **macOS**: `/Users/YOUR_USERNAME/.local/share/uv/tools/rag-retriever`
+- **Windows**: `C:\Users\YOUR_USERNAME\AppData\Roaming\uv\tools\rag-retriever`
+- **Linux**: `/home/YOUR_USERNAME/.local/share/uv/tools/rag-retriever`
+
+#### Quick Start (Use with Caution)
+For quick testing, you can use `uvx`, but be aware this may cause Python dependency conflicts:
+
+```bash
+# Quick test (may have conflicts)
+uvx rag-retriever --help
+```
+
+⚠️ **Warning**: Using `uvx` runs packages in a shared environment which can lead to dependency conflicts with other Python tools. For production use, always prefer `uv tool install`.
+
+#### Alternative Methods
+```bash
+# Via pipx (if uv is not available)
 pipx install rag-retriever
 
-# Alternative: Install via pip
+# Via pip (least isolated)
 pip install rag-retriever
 ```
 
@@ -82,24 +110,48 @@ rag-retriever --search "example" --collection test
 
 If you want to use RAG Retriever with Claude Code:
 
-### 7. Add MCP Server
-```bash
-# Get your home directory
-echo $HOME
+### 7. Configure MCP Server
 
-# Add RAG Retriever as MCP server using the FULL path
-# Replace /Users/timkitchens with your actual home directory from above
-claude mcp add-json -s user rag-retriever '{"type":"stdio","command":"/Users/timkitchens/.local/bin/mcp-rag-retriever"}'
+#### For Claude Desktop
+Add to your Claude Desktop configuration:
+
+**macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
+**Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
+
+```json
+{
+  "mcpServers": {
+    "rag-retriever": {
+      "command": "/absolute/path/to/uv/tools/rag-retriever/bin/rag-retriever",
+      "args": ["--mcp"],
+      "env": {
+        "OPENAI_API_KEY": "your-api-key-here"
+      }
+    }
+  }
+}
+```
+
+Replace `/absolute/path/to/uv/tools/rag-retriever` with the actual path from `uv tool dir`.
+
+#### For Claude Code CLI
+```bash
+# Get the uv tools directory
+uv tool dir
+
+# Add RAG Retriever as MCP server using the FULL path from above
+# Example: If uv tool dir shows /Users/username/.local/share/uv/tools
+claude mcp add-json -s user rag-retriever '{"type":"stdio","command":"/Users/username/.local/share/uv/tools/rag-retriever/bin/mcp-rag-retriever"}'
 
 # Verify it's added
 claude mcp list
 ```
 
-**For Other AI Assistants (Windsurf, Cursor, etc.):**
-Add this JSON configuration (replace with your actual home directory):
+#### For Other AI Assistants (Windsurf, Cursor, etc.)
+Add this JSON configuration (use path from `uv tool dir`):
 ```json
 "rag-retriever": {
-  "command": "/Users/yourusername/.local/bin/mcp-rag-retriever"
+  "command": "/path/from/uv/tool/dir/rag-retriever/bin/mcp-rag-retriever"
 }
 ```
 
@@ -200,16 +252,34 @@ content:
 
 ### Installation Issues
 ```bash
-# If pipx fails
-pip install rag-retriever
+# If uv is not installed
+curl -LsSf https://astral.sh/uv/install.sh | sh  # macOS/Linux
+# Or visit https://github.com/astral-sh/uv for Windows
+
+# If uv tool install fails
+uv tool uninstall rag-retriever  # Clean any partial install
+uv tool install rag-retriever    # Retry
 
 # If browser install fails
 python -m playwright install chromium --force
 
 # If dependencies are missing
 pip install --upgrade pip
-pip install rag-retriever[all]
 ```
+
+### Dependency Conflicts
+If you experience Python dependency conflicts:
+
+1. **Use isolated installation**: Always prefer `uv tool install` over `uvx`
+2. **Check existing tools**: Run `uv tool list` to see installed tools
+3. **Clean installation**: 
+   ```bash
+   uv tool uninstall rag-retriever
+   uv tool install rag-retriever
+   ```
+4. **Verify isolation**: The tool should be completely isolated in its own environment
+
+For detailed dependency conflict resolution, see the [MCP Server Installation Guide](https://codingthefuturewithai.atlassian.net/wiki/spaces/ACT/pages/89161729).
 
 ### API Key Issues
 ```bash

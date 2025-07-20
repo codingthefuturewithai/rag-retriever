@@ -29,16 +29,43 @@ Before we start, verify I have:
 ## Installation Steps You'll Help Me With
 
 ### 1. Install RAG Retriever
-**Recommended: Via pipx (includes automatic browser installation)**
+
+#### Recommended Method (Most Reliable)
+Use `uv tool install` for complete isolation from other Python projects:
+
 ```bash
-pipx install rag-retriever
+# Install uv if not already installed
+curl -LsSf https://astral.sh/uv/install.sh | sh  # macOS/Linux
+# Or visit https://github.com/astral-sh/uv for Windows
+
+# Install using uv tool (recommended)
+uv tool install rag-retriever
+
+# Find installation path for configuration
+uv tool dir
 ```
 
-**Note**: This automatically installs Playwright browsers during installation via the post-install script. No additional browser installation is needed in most cases.
+The installation path will be something like:
+- **macOS**: `/Users/YOUR_USERNAME/.local/share/uv/tools/rag-retriever`
+- **Windows**: `C:\Users\YOUR_USERNAME\AppData\Roaming\uv\tools\rag-retriever`
+- **Linux**: `/home/YOUR_USERNAME/.local/share/uv/tools/rag-retriever`
 
-**Alternative: Development Installation**
-If I want to modify the code:
+#### Quick Start (Use with Caution)
+For quick testing, you can use `uvx`, but be aware this may cause Python dependency conflicts:
+
 ```bash
+# Quick test (may have conflicts)
+uvx rag-retriever --help
+```
+
+⚠️ **Warning**: Using `uvx` runs packages in a shared environment which can lead to dependency conflicts with other Python tools. For production use, always prefer `uv tool install`.
+
+#### Alternative Methods
+```bash
+# Via pipx (if uv is not available)
+pipx install rag-retriever
+
+# Development Installation
 git clone https://github.com/user/rag-retriever.git
 cd rag-retriever
 pip install -e .
@@ -91,28 +118,51 @@ rag-retriever --help
 ### 6. MCP Server Setup (Optional but Recommended)
 If I want to use RAG Retriever with Claude Code:
 
-**You should automatically determine my home directory and build the command:**
-Run this to get my home directory:
-```bash
-echo $HOME
-```
+#### For Claude Desktop
+Add to your Claude Desktop configuration file:
 
-Then use that path to construct the command. For example, if my home directory is `/Users/timkitchens`, the command would be:
-```bash
-claude mcp add-json -s user rag-retriever '{"type":"stdio","command":"/Users/timkitchens/.local/bin/mcp-rag-retriever"}'
-```
+**macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
+**Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
 
-**Important**: Replace `/Users/timkitchens` with MY actual home directory from the echo command above.
-
-**For Other AI Assistants (Windsurf, Cursor, etc.):**
-If I want to use RAG Retriever with other AI coding assistants, provide this JSON configuration (replace with my actual home directory):
 ```json
-"rag-retriever": {
-  "command": "/Users/yourusername/.local/bin/mcp-rag-retriever"
+{
+  "mcpServers": {
+    "rag-retriever": {
+      "command": "/absolute/path/to/uv/tools/rag-retriever/bin/rag-retriever",
+      "args": ["--mcp"],
+      "env": {
+        "OPENAI_API_KEY": "your-api-key-here"
+      }
+    }
+  }
 }
 ```
 
-**Windows users**: Use `pipx list` to get the exact path, then use that full path in both cases.
+Replace `/absolute/path/to/uv/tools/rag-retriever` with the actual path from `uv tool dir`.
+
+#### For Claude Code CLI
+**You should automatically determine the uv tools directory:**
+Run this to get the tools directory:
+```bash
+uv tool dir
+```
+
+Then use that path to construct the command. For example, if the tools directory is `/Users/username/.local/share/uv/tools`, the command would be:
+```bash
+claude mcp add-json -s user rag-retriever '{"type":"stdio","command":"/Users/username/.local/share/uv/tools/rag-retriever/bin/mcp-rag-retriever"}'
+```
+
+**Important**: Replace the path with MY actual tools directory from the `uv tool dir` command above.
+
+#### For Other AI Assistants (Windsurf, Cursor, etc.)
+If I want to use RAG Retriever with other AI coding assistants, provide this JSON configuration (use path from `uv tool dir`):
+```json
+"rag-retriever": {
+  "command": "/path/from/uv/tool/dir/rag-retriever/bin/mcp-rag-retriever"
+}
+```
+
+**Windows users**: The path will use backslashes, like `C:\Users\...\AppData\Roaming\uv\tools\rag-retriever\Scripts\mcp-rag-retriever.exe`
 
 **Grant Permissions in Claude Code:**
 Edit `~/.claude/settings.json` to add:
