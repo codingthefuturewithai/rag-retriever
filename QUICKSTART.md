@@ -19,33 +19,26 @@ Use `uv tool install` for complete isolation from other Python projects:
 # Install using uv tool (recommended)
 uv tool install rag-retriever
 
-# Find installation path for configuration
+# Find where the executable is installed (needed for MCP server setup later)
 uv tool dir
 ```
 
-The installation path will be something like:
-- **macOS**: `/Users/YOUR_USERNAME/.local/share/uv/tools/rag-retriever`
-- **Windows**: `C:\Users\YOUR_USERNAME\AppData\Roaming\uv\tools\rag-retriever`
-- **Linux**: `/home/YOUR_USERNAME/.local/share/uv/tools/rag-retriever`
+The executable will be installed in something like:
+- **macOS**: `/Users/YOUR_USERNAME/.local/share/uv/tools/rag-retriever/bin/rag-retriever`
+- **Windows**: `C:\Users\YOUR_USERNAME\AppData\Roaming\uv\tools\rag-retriever\Scripts\rag-retriever.exe`
+- **Linux**: `/home/YOUR_USERNAME/.local/share/uv/tools/rag-retriever/bin/rag-retriever`
 
-#### Quick Start (Use with Caution)
-For quick testing, you can use `uvx`, but be aware this may cause Python dependency conflicts:
+#### Quick Start with uvx (Less Desirable)
+For quick testing only - may cause Python dependency conflicts:
 
 ```bash
-# Quick test (may have conflicts)
+# Quick test (shared environment - may have conflicts)
 uvx rag-retriever --help
 ```
 
-⚠️ **Warning**: Using `uvx` runs packages in a shared environment which can lead to dependency conflicts with other Python tools. For production use, always prefer `uv tool install`.
+⚠️ **Warning**: Using `uvx` runs packages in a shared environment which can lead to dependency conflicts with other Python tools. For any real usage, always prefer `uv tool install`.
 
-#### Alternative Methods
-```bash
-# Via pipx (if uv is not available)
-pipx install rag-retriever
-
-# Via pip (least isolated)
-pip install rag-retriever
-```
+**Note**: Other installation methods (pip, pipx, development) are not supported. Use at your own risk.
 
 ### 2. Initialize Configuration
 ```bash

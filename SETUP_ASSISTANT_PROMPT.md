@@ -41,35 +41,26 @@ curl -LsSf https://astral.sh/uv/install.sh | sh  # macOS/Linux
 # Install using uv tool (recommended)
 uv tool install rag-retriever
 
-# Find installation path for configuration
+# Find where the executable is installed (needed for MCP server setup later)
 uv tool dir
 ```
 
-The installation path will be something like:
-- **macOS**: `/Users/YOUR_USERNAME/.local/share/uv/tools/rag-retriever`
-- **Windows**: `C:\Users\YOUR_USERNAME\AppData\Roaming\uv\tools\rag-retriever`
-- **Linux**: `/home/YOUR_USERNAME/.local/share/uv/tools/rag-retriever`
+The executable will be installed in something like:
+- **macOS**: `/Users/YOUR_USERNAME/.local/share/uv/tools/rag-retriever/bin/rag-retriever`
+- **Windows**: `C:\Users\YOUR_USERNAME\AppData\Roaming\uv\tools\rag-retriever\Scripts\rag-retriever.exe`
+- **Linux**: `/home/YOUR_USERNAME/.local/share/uv/tools/rag-retriever/bin/rag-retriever`
 
-#### Quick Start (Use with Caution)
-For quick testing, you can use `uvx`, but be aware this may cause Python dependency conflicts:
+#### Quick Start with uvx (Less Desirable)
+For quick testing only - may cause Python dependency conflicts:
 
 ```bash
-# Quick test (may have conflicts)
+# Quick test (shared environment - may have conflicts)
 uvx rag-retriever --help
 ```
 
-⚠️ **Warning**: Using `uvx` runs packages in a shared environment which can lead to dependency conflicts with other Python tools. For production use, always prefer `uv tool install`.
+⚠️ **Warning**: Using `uvx` runs packages in a shared environment which can lead to dependency conflicts with other Python tools. For any real usage, always prefer `uv tool install`.
 
-#### Alternative Methods
-```bash
-# Via pipx (if uv is not available)
-pipx install rag-retriever
-
-# Development Installation
-git clone https://github.com/user/rag-retriever.git
-cd rag-retriever
-pip install -e .
-```
+**Note**: If you want to use pip, pipx, or development installation, you're on your own. We only support and recommend uv tool install (preferred) or uvx (quick testing only).
 
 ### 2. Initialize Configuration
 Run the initialization command:
